@@ -21,6 +21,7 @@ export const localjuno = {
     charity3: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
     pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
 
   denoms: {
@@ -37,19 +38,12 @@ export const localjuno = {
     accounts: "",
     cw4GrpReviewTeam: "",
     cw3ReviewTeam: "",
-<<<<<<< HEAD
     swapRouter: "",
-
-=======
->>>>>>> main
+    giftcards: "",
     vaultLocked1: "",
     vaultLiquid1: "",
     vaultLocked2: "",
     vaultLiquid2: "",
-<<<<<<< HEAD
-
-=======
->>>>>>> main
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
@@ -110,11 +104,7 @@ export const localjuno = {
     community_contract: "",
     distributor_contract: "",
     gov_contract: "",
-<<<<<<< HEAD
     gov_holder_contract: "",
-=======
-    gov_hodler_contract: "",
->>>>>>> main
     staking_contract: "",
     vesting_contract: "",
   },

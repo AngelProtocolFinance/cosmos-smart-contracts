@@ -21,6 +21,7 @@ export const testnet = {
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
 
     junoIbcClient: "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
@@ -32,6 +33,7 @@ export const testnet = {
     cw4GrpReviewTeam: "juno168v32h347du4wc8y5gf6sljkhvktqvn85r2vywekzfwaq4e3sdlqscd5sd",
     cw3ReviewTeam: "juno16p5mnk2r73yze7emyqw8w6p6cnf7qjlmqwc3lx6c36t9lj5fgmjst3cjnx",
     swapRouter: "juno1kd7lvretrqldelqdvpj37kjpqpkwzlsynqevzkhtntq702kqwg6sssmfsr",
+    giftcards: "juno1q5q8fgw83fusujz7x339yq352tlxdk2f0q2a6qz72dl0r9lk5y7qwf6w3u",
     vaultLocked1: "juno1jyxdcsrnurrelw0k8clz42zwhwszs2g832000u9872wvm6jv8clszkzhdg",
     vaultLiquid1: "juno16ykya903fs6uz24he57v8v6nxmmfnn0d3ahd6d583ujj22ztv4tsqdr4w0",
     vaultLocked2: "juno1gnh5vfrkxrm5pslgzcg4qq0qqfpy40xpl9ehkjqwnxfadcqhecxqlhrv92",
@@ -119,6 +121,7 @@ export const mainnet = {
   mnemonicKeys: {
     apTeam: "",
     apTreasury: "juno1fz8jx4qhkgdrm5vm3s20n670mf872xsp2c0a6cl0yuncquzmj4jss2cfgj", // this is the CW3 of the AP Endowment
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
@@ -129,7 +132,8 @@ export const mainnet = {
     cw3ApTeam: "juno1sae4p8crnac0h9m27psn205d6k586f7cnm4eshws623v05g95teqvj2s8q",
     cw4GrpReviewTeam: "juno1a22f8dxevu3er7vs4lkrca9n8rgf8uvgjd8s2p5eq787vmczq59syuplqx",
     cw3ReviewTeam: "juno1vp2q50smgzw64xm2j2ksntej34pnnedaz4qkwdh8zah9kjcaas6s8g92t8",
-    swapRouter: "", 
+    swapRouter: "",
+    giftcards: "",
     vaults: [],
   },
   members: [

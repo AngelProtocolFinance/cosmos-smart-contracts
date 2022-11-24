@@ -144,6 +144,13 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
+import {
+  testSendDepositToGiftcards,
+  testClaimGiftcardsDeposit,
+  testQueryGiftcardsBalance,
+  testQueryGiftcardsConfig,
+  testQueryGiftcardsDeposit 
+} from "./core/accessories";
 import { localjuno } from "../../config/localjunoConstants";
 import { localibc } from "../../config/localIbcConstants";
 
@@ -191,6 +198,7 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  giftcards: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 2. Setting up signing clients for all possible actors"));
   const networkInfo = config.networkInfo;
@@ -221,6 +229,13 @@ export async function testExecute(
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
+
+  /* --- GIFTCARD contract --- */
+  // await testSendDepositToGiftcards(actors.apTeam.client, actors.apTeam.addr, giftcards, { denom: "ujunox", amount: "4206900" });
+  // await testClaimGiftcardsDeposit(actors.apTeam.client, actors.apTeam.addr, giftcards, 1, "juno...34251"); 
+  // await testQueryGiftcardsConfig(actors.apTeam.client, giftcards);
+  // await testQueryGiftcardsBalance(actors.apTeam.client, giftcards, config.mnemonicKeys.keeper);
+  // await testQueryGiftcardsDeposit(actors.apTeam.client, giftcards, 1);
 
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
