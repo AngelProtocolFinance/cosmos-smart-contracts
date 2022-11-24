@@ -139,6 +139,7 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  giftcards: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddMemberToC4Group(juno, apTeamAddr, cw3ReviewTeam, cw4GrpReviewTeam, "juno1h27pex3z3mm97gwfdhan8cfak8yzvtvprjlcz7");

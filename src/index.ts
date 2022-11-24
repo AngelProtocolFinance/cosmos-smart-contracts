@@ -29,6 +29,9 @@ import * as IBC from "./environments/ibc";
 		case "localjuno_setup_endowments":
 			await LocalNet.startSetupEndowments();
 			break;
+		case "localjuno_setup_giftcards":
+			await LocalNet.startSetupGiftcards();
+			break;
 		// case "localjuno_setup_halo":
 		// 	await LocalNet.startSetupHalo();
 		// 	break;
@@ -62,6 +65,9 @@ import * as IBC from "./environments/ibc";
 		case "testnet_setup_loopvaults":
 			await TestNet.startSetupLoopVaults();
 			break;
+		case "testnet_setup_giftcards":
+			await TestNet.startSetupGiftcards();
+			break;
 		// case "testnet_setup_halo":
 		// 	await TestNet.startSetupHalo();
 		// 	break;
@@ -82,6 +88,9 @@ import * as IBC from "./environments/ibc";
 			break;
 		case "mainnet_setup_endowments":
 			await MainNet.startSetupEndowments();
+			break;
+		case "mainnet_setup_giftcards":
+			await MainNet.startSetupGiftcards();
 			break;
 		// case "mainnet_setup_halo":
 		// 	await MainNet.startSetupHalo();
