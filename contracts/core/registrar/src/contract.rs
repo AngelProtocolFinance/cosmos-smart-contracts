@@ -7,11 +7,10 @@ use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDe
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::to_vec;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult,
+    entry_point, from_slice, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    StdError, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw_storage_plus::Map;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -176,12 +175,13 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             cw3_code: old_config.cw3_code,
             cw4_code: old_config.cw4_code,
             accepted_tokens: old_config.accepted_tokens,
-        }),
-    )?;
+        })?,
+    );
 
     // Move the `tax_rate` value to new `FEES` map
     let tax_rate_map_key = FEES.key("vaults_harvest");
-    deps.storage.set(&tax_rate_map_key, old_config.tax_rate)?;
+    deps.storage
+        .set(&tax_rate_map_key, &to_vec(&old_config.tax_rate)?);
 
     Ok(Response::default())
 }
