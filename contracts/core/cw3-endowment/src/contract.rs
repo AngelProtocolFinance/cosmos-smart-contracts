@@ -10,9 +10,9 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
-    MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
-    SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
+    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
+    Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult,
+    WasmMsg, WasmMsg::Execute, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
