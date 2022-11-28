@@ -2,8 +2,7 @@ use crate::msg::{
     ConfigResponse, ExecuteMsg, MetaProposalListResponse, MetaProposalResponse, MigrateMsg,
 };
 use crate::state::{
-    next_id, Ballot, Config, OldConfig, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS,
-    TEMP_CONFIG,
+    next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{EndowmentInstantiateMsg as InstantiateMsg, QueryMsg};
@@ -804,23 +803,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new config struct and save to storage
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let old_config: OldConfig = from_slice(&data)?;
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            registrar_contract: old_config.registrar_contract,
-            threshold: old_config.threshold,
-            max_voting_period: old_config.max_voting_period,
-            group_addr: old_config.group_addr,
-            require_execution: false, // default to auto-execute
-        },
-    )?;
 
     Ok(Response::default())
 }
