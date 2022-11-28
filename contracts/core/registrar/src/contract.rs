@@ -1,15 +1,17 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG, FEES, NETWORK_CONNECTIONS};
+use crate::state::{Config, OldConfig, CONFIG, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
+use cosmwasm_std::to_vec;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw_storage_plus::Map;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -51,7 +53,7 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &configs)?;
 
     // setup first basic fees
-    FEES.save(deps.storage, &"vault_harvest", &tax_rate)?;
+    FEES.save(deps.storage, &"vaults_harvest", &tax_rate)?;
     FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
 
     // setup basic JUNO network info for native Vaults
@@ -148,11 +150,38 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
         }));
     }
 
-    // setup first fees
-    FEES.save(deps.storage, &"vault_harvest", &Decimal::percent(20))?; // Default to 0.2 or 20%
-
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // setup the new config struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let old_config: OldConfig = from_slice(&data)?;
+    deps.storage.set(
+        "config".as_bytes(),
+        &to_vec(&Config {
+            owner: old_config.owner,
+            applications_review: old_config.applications_review,
+            index_fund_contract: old_config.index_fund_contract,
+            accounts_contract: old_config.accounts_contract,
+            treasury: old_config.treasury,
+            rebalance: old_config.rebalance,
+            split_to_liquid: old_config.split_to_liquid,
+            halo_token: old_config.halo_token,
+            gov_contract: old_config.gov_contract,
+            charity_shares_contract: old_config.charity_shares_contract,
+            swaps_router: old_config.swaps_router,
+            cw3_code: old_config.cw3_code,
+            cw4_code: old_config.cw4_code,
+            accepted_tokens: old_config.accepted_tokens,
+        }),
+    )?;
+
+    // Move the `tax_rate` value to new `FEES` map
+    let tax_rate_map_key = FEES.key("vaults_harvest");
+    deps.storage.set(&tax_rate_map_key, old_config.tax_rate)?;
 
     Ok(Response::default())
 }
