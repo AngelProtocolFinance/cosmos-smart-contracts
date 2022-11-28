@@ -1447,34 +1447,22 @@ fn prepare_swap_router_swap_msgs(
             .unwrap(),
             funds: coins(swap_amount.u128(), denom.to_string()),
         })],
-        AssetInfo::Token { ref contract_addr } => vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: swap_router.to_string(),
-                    amount: swap_amount,
-                    expires: None,
+        AssetInfo::Token { ref contract_addr } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                contract: swap_router,
+                amount: swap_amount,
+                msg: to_binary(&AstroRouterExecuteMsg::ExecuteSwapOperations {
+                    operations,
+                    minimum_receive: None,
+                    to: None,
+                    max_spread: None,
                 })
                 .unwrap(),
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: swap_router,
-                    amount: swap_amount,
-                    msg: to_binary(&AstroRouterExecuteMsg::ExecuteSwapOperations {
-                        operations,
-                        minimum_receive: None,
-                        to: None,
-                        max_spread: None,
-                    })
-                    .unwrap(),
-                })
-                .unwrap(),
-                funds: vec![],
-            }),
-        ],
+            })
+            .unwrap(),
+            funds: vec![],
+        })],
     };
     Ok(msgs)
 }
@@ -1531,18 +1519,6 @@ fn prepare_astroport_pair_swap_msg(
     input_amount: Uint128,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs: Vec<CosmosMsg> = vec![];
-    if let AssetInfo::Token { contract_addr } = input_asset_info {
-        msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract.to_string(),
-                amount: input_amount,
-                expires: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        }));
-    }
 
     match input_asset_info {
         AssetInfo::NativeToken { denom } => {
