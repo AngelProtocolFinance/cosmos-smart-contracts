@@ -10,13 +10,12 @@ use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
-use cosmwasm_std::{from_slice, to_vec};
 use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20CoinVerified, Cw20ReceiveMsg};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
-use crate::state::{Config, OldConfig, CONFIG, GIFT_CARDS};
+use crate::state::{Config, CONFIG, GIFT_CARDS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "gift-cards";
@@ -252,24 +251,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new config struct and save to storage
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let old_config: OldConfig = from_slice(&data)?;
-    deps.storage.set(
-        "config".as_bytes(),
-        &to_vec(&Config {
-            owner: old_config.owner,
-            registrar_contract: old_config.registrar_contract,
-        })?,
-    );
-
-    // Remove the "DEPOSITS" & "BALANCES" maps from storage
-    deps.storage.remove("deposit".as_bytes());
-    deps.storage.remove("balance".as_bytes());
 
     Ok(Response::default())
 }
