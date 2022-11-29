@@ -972,7 +972,7 @@ pub fn stake_lp_token(
             let tax_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: config.registrar_contract.to_string(),
                 msg: to_binary(&RegistrarQueryMsg::Fee {
-                    name: "vault_harvest".to_string(),
+                    name: "vaults_harvest".to_string(),
                 })?,
             }))?;
             let tax_mint_amount = vt_mint_amount * tax_rate;
