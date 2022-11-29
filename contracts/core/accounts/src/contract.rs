@@ -307,7 +307,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
                 rebalance: old_endow.rebalance,
                 kyc_donors_only: old_endow.kyc_donors_only,
                 pending_redemptions: old_endow.pending_redemptions,
-                copycat_strategy: old_endow.copycat_strategy,
+                copycat_strategy: None,
                 dao: None,
                 dao_token: None,
                 donation_match_active: false,
@@ -327,6 +327,9 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             },
         )?;
     }
+
+    // Remove the "PROFILES" map
+    deps.storage.remove("profiles".as_bytes());
 
     Ok(Response::default())
 }
