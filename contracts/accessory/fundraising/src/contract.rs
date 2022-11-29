@@ -1,6 +1,7 @@
 use crate::error::ContractError;
 use crate::msg::{
-    CreateMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, ListResponse, QueryMsg, ReceiveMsg,
+    CreateMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, ListResponse, MigrateMsg, QueryMsg,
+    ReceiveMsg,
 };
 use crate::state::{
     all_campaigns, Campaign, Config, ContributorInfo, CAMPAIGNS, CONFIG, CONTRIBUTORS,
@@ -15,7 +16,7 @@ use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 // version info for migration info
@@ -761,4 +762,25 @@ fn query_list_by_contributor(deps: Deps, contributor: String) -> StdResult<ListR
         .collect::<Vec<Campaign>>();
 
     Ok(ListResponse { campaigns })
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let ver = get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Can only upgrade from same type".to_string(),
+        }));
+    }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version >= CONTRACT_VERSION.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        }));
+    }
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    Ok(Response::default())
 }

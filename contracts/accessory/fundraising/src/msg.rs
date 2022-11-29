@@ -152,3 +152,6 @@ pub struct DetailsResponse {
     /// Balance of native/cw20 tokens locked as fundraising reward
     pub locked_balance: GenericBalance,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}
