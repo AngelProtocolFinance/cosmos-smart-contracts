@@ -1,11 +1,11 @@
 use super::mock_querier::{mock_dependencies, WasmMockQuerier};
-use crate::contract::{execute, instantiate, query};
+use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentType, Profile, SocialMedialUrls,
-    StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, EndowmentBalanceResponse, EndowmentType, Profile,
+    SocialMedialUrls, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -546,6 +546,28 @@ fn test_donate() {
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(2, endow.strategies.locked.len());
 
+    // Cannot deposit several tokens at once.
+    let info = mock_info(
+        DEPOSITOR,
+        &[
+            Coin {
+                denom: "ujuno".to_string(),
+                amount: Uint128::from(100_u128),
+            },
+            Coin {
+                denom: "uusd".to_string(),
+                amount: Uint128::from(100_u128),
+            },
+        ],
+    );
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let err = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap_err();
+    assert_eq!(err, ContractError::InvalidCoinsDeposited {});
+
     // Try the "Deposit" w/ "Auto Invest" turned on. Two Vault deposits should now take place.
     let donation_amt = 200_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
@@ -626,6 +648,48 @@ fn test_withdraw() {
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
     assert_eq!(2, res.messages.len());
+
+    // Try to "withdraw" cw20 tokens
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    let withdraw_msg = ExecuteMsg::Withdraw {
+        id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
+        beneficiary: "beneficiary".to_string(),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
+            amount: Uint128::from(100_u128),
+        }],
+    };
+    let err = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap_err();
+    assert_eq!(err, ContractError::InsufficientFunds {});
+
+    // Deposit cw20 token first & withdraw
+    let donation_amt = 200_u128;
+    let info = mock_info("test-cw20", &[]);
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: DEPOSITOR.to_string(),
+        amount: Uint128::from(donation_amt),
+        msg: to_binary(&deposit_msg).unwrap(),
+    });
+    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    let withdraw_msg = ExecuteMsg::Withdraw {
+        id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
+        beneficiary: "beneficiary".to_string(),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
+            amount: Uint128::from(100_u128),
+        }],
+    };
+    let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
+    assert_eq!(res.messages.len(), 2);
 }
 
 #[test]
@@ -800,6 +864,25 @@ fn test_vault_receipt() {
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(0, endow.pending_redemptions);
+
+    // Same logic applies to the cw20 token vault_receipt
+    let info = mock_info("test-cw20", &[]);
+    let msg = ReceiveMsg::VaultReceipt {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+    };
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::Receive(cw20::Cw20ReceiveMsg {
+            sender: "vault".to_string(),
+            msg: to_binary(&msg).unwrap(),
+            amount: Uint128::from(100_u128),
+        }),
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
 }
 
 #[test]
@@ -1007,6 +1090,19 @@ fn test_swap_receipt() {
     )
     .unwrap();
 
+    let info = mock_info("swaps_router_addr", &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Liquid,
+            final_asset: Asset::native("ujuno", 2000000_u128),
+        },
+    )
+    .unwrap();
+
     // Check the result(state.balances)
     let res = query(
         deps.as_ref(),
@@ -1020,6 +1116,98 @@ fn test_swap_receipt() {
     .unwrap();
     let balance: Uint128 = from_binary(&res).unwrap();
     assert_eq!(balance, Uint128::from(1000000_u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::Native("ujuno".to_string()),
+            acct_type: AccountType::Liquid,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(2000000_u128));
+
+    // Same logic applies to "SwapReceipt" of cw20 tokens
+    let info = mock_info("test-cw20", &[]);
+    let msg = ReceiveMsg::SwapReceipt {
+        id: CHARITY_ID,
+        final_asset: Asset {
+            info: AssetInfoBase::Cw20(Addr::unchecked("test-cw20")),
+            amount: Uint128::from(1000000_u128),
+        },
+        acct_type: AccountType::Liquid,
+    };
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Receive(cw20::Cw20ReceiveMsg {
+            sender: "swaps_router_addr".to_string(),
+            msg: to_binary(&msg).unwrap(),
+            amount: Uint128::from(1000000_u128),
+        }),
+    )
+    .unwrap();
+
+    let info = mock_info("test-cw20", &[]);
+    let msg = ReceiveMsg::SwapReceipt {
+        id: CHARITY_ID,
+        final_asset: Asset {
+            info: AssetInfoBase::Cw20(Addr::unchecked("test-cw20")),
+            amount: Uint128::from(2000000_u128),
+        },
+        acct_type: AccountType::Locked,
+    };
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Receive(cw20::Cw20ReceiveMsg {
+            sender: "swaps_router_addr".to_string(),
+            msg: to_binary(&msg).unwrap(),
+            amount: Uint128::from(1000000_u128),
+        }),
+    )
+    .unwrap();
+
+    // Check the result
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::cw20(Addr::unchecked("test-cw20")),
+            acct_type: AccountType::Liquid,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(1000000_u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::cw20(Addr::unchecked("test-cw20")),
+            acct_type: AccountType::Locked,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(2000000_u128));
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Balance { id: CHARITY_ID },
+    )
+    .unwrap();
+    let bal: EndowmentBalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(bal.tokens_on_hand.liquid.cw20.len(), 1);
 }
 
 #[test]
@@ -1357,4 +1545,50 @@ fn test_distribute_to_beneficiary() {
     )
     .unwrap();
     assert_eq!(res.messages.len(), 0);
+}
+
+#[test]
+fn test_query_endowment_list() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Check if the query returns correct list
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentList {
+            proposal_link: None,
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let endow_lists: EndowmentListResponse = from_binary(&res).unwrap();
+    assert_eq!(endow_lists.endowments.len(), 1);
+
+    // Check the result of conidtion queries
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentList {
+            proposal_link: Some(1),
+            start_after: Some(100),
+            limit: None,
+        },
+    )
+    .unwrap();
+    let endow_lists: EndowmentListResponse = from_binary(&res).unwrap();
+    assert_eq!(endow_lists.endowments.len(), 0);
+}
+
+#[test]
+fn test_migrate() {
+    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
+
+    let err = migrate(deps.as_mut(), env, MigrateMsg {}).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        })
+    );
 }
