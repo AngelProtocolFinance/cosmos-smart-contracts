@@ -6,8 +6,8 @@ use angel_core::structs::GenericBalance;
 use angel_core::utils::validate_deposit_fund;
 
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
+    entry_point, from_binary, to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20CoinVerified, Cw20ReceiveMsg};
@@ -50,7 +50,8 @@ pub fn receive_cw20(
     };
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::Deposit { to_address }) => {
-            execute_deposit(deps, info, to_address, cw20_fund)
+            let sender = deps.api.addr_validate(&cw20_msg.sender)?;
+            execute_deposit(deps, sender, to_address, cw20_fund)
         }
         _ => Err(ContractError::InvalidInputs {}),
     }
@@ -73,7 +74,7 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            execute_deposit(deps, info, to_address, native_fund)
+            execute_deposit(deps, info.sender, to_address, native_fund)
         }
         ExecuteMsg::Claim { deposit, recipient } => execute_claim(deps, info, deposit, recipient),
         ExecuteMsg::Spend { asset, deposit_msg } => execute_spend(deps, info, asset, deposit_msg),
@@ -87,7 +88,7 @@ pub fn execute(
 
 pub fn execute_deposit(
     deps: DepsMut,
-    info: MessageInfo,
+    sender: Addr,
     to_address: Option<String>,
     fund: Asset,
 ) -> Result<Response, ContractError> {
@@ -106,7 +107,7 @@ pub fn execute_deposit(
     }
 
     let mut deposit = Deposit {
-        sender: info.sender,
+        sender: sender,
         token: fund,
         claimed: false,
     };
@@ -352,6 +353,3 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     Ok(Response::default())
 }
-
-#[cfg(test)]
-mod tests {}
