@@ -1,6 +1,8 @@
 use angel_core::messages::dexs::InfoResponse;
-use angel_core::responses::registrar::VaultDetailResponse;
-use angel_core::structs::{AccountType, EndowmentType};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::structs::{
+    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails,
+};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -241,7 +243,26 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Uint128::from(1000000_u128)).unwrap(),
                 )),
-                QueryMsg::Config {} => unimplemented!(),
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&ConfigResponse {
+                        owner: "registrar-owner".to_string(),
+                        version: "v1.0".to_string(),
+                        accounts_contract: None,
+                        treasury: "treasury".to_string(),
+                        rebalance: RebalanceDetails::default(),
+                        index_fund: None,
+                        split_to_liquid: SplitDetails::default(),
+                        halo_token: None,
+                        gov_contract: None,
+                        charity_shares_contract: None,
+                        cw3_code: None,
+                        cw4_code: None,
+                        accepted_tokens: AcceptedTokens::default(),
+                        applications_review: "applications_review".to_string(),
+                        swaps_router: None,
+                    })
+                    .unwrap(),
+                )),
                 QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
                         vault: angel_core::structs::YieldVault {
