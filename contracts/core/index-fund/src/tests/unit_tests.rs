@@ -2,11 +2,13 @@ use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
 use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
-use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, to_binary, Addr, Decimal, Timestamp, Uint128};
+use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::{
+    coins, from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Timestamp, Uint128, WasmMsg,
+};
 use cw20::Cw20ReceiveMsg;
 
-use crate::contract::{execute, instantiate, query};
+use crate::contract::{execute, instantiate, migrate, query};
 use crate::executers::{calculate_split, rotate_fund};
 
 use super::mock_querier::mock_dependencies;
@@ -30,6 +32,11 @@ fn proper_initialization() {
     // we can just call .unwrap() to assert this was a success
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
+
+    // Check the state
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.active_fund, 0);
 }
 
 #[test]
@@ -173,6 +180,21 @@ fn only_owner_can_update_config() {
     .unwrap_err();
     assert_eq!(ContractError::Unauthorized {}, err);
 
+    // New config.funding_goal should meet some conditions
+    let info = mock_info(&ap_team, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateConfig(UpdateConfigMsg {
+            fund_member_limit: Some(40),
+            fund_rotation: Some(100_u64),
+            funding_goal: Some(Uint128::zero()),
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
     // only owner can update the config
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -214,6 +236,22 @@ fn only_owner_can_update_alliance_member_list() {
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
+
+    // Check the alliance member
+    let err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMember {
+            address: Addr::unchecked("address"),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        cosmwasm_std::StdError::GenericErr {
+            msg: "Cannot find member".to_string()
+        }
+    );
 
     // non-owner cannot update the alliance member list
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
@@ -576,6 +614,16 @@ fn sc_owner_can_remove_member() {
     let res = execute(deps.as_mut(), mock_env(), info, new_fund_msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
 
+    // Cannot add members which exceeds the number of limit
+    let update_members_msg = ExecuteMsg::UpdateMembers {
+        fund_id: 1,
+        add: (1..30).collect::<Vec<u32>>(),
+        remove: vec![2],
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let err = execute(deps.as_mut(), mock_env(), info, update_members_msg.clone()).unwrap_err();
+    assert_eq!(err, ContractError::IndexFundMembershipExceeded {});
+
     // Update the fund members
     let update_members_msg = ExecuteMsg::UpdateMembers {
         fund_id: 1,
@@ -820,4 +868,304 @@ fn test_non_tca_without_split() {
         calculate_split(false, sc_split.clone(), None, None),
         sc_split.default
     );
+}
+
+#[test]
+fn test_deposit() {
+    let mut deps = mock_dependencies(&[]);
+
+    // Instantiate the contract
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Cannot deposit several tokens at once
+    let info = mock_info(
+        &ap_team.clone(),
+        &[
+            Coin {
+                denom: "ujuno".to_string(),
+                amount: Uint128::from(100_u128),
+            },
+            Coin {
+                denom: "uusd".to_string(),
+                amount: Uint128::from(100_u128),
+            },
+        ],
+    );
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: None,
+            split: None,
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidCoinsDeposited {});
+
+    // Deposit fund should be one of accepted tokens
+    let info = mock_info(
+        &ap_team.clone(),
+        &[Coin {
+            denom: "uusd".to_string(),
+            amount: Uint128::from(100_u128),
+        }],
+    );
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: None,
+            split: None,
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(cosmwasm_std::StdError::GenericErr {
+            msg: "Not accepted token: uusd".to_string()
+        })
+    );
+
+    // Cannot deposit zero balance
+    let info = mock_info(
+        &ap_team.clone(),
+        &[Coin {
+            denom: "ujuno".to_string(),
+            amount: Uint128::zero(),
+        }],
+    );
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: None,
+            split: None,
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidZeroAmount {});
+
+    // There SHOULD be active fund before any deposit
+    let info = mock_info(
+        &ap_team.clone(),
+        &[Coin {
+            denom: "ujuno".to_string(),
+            amount: Uint128::from(100_u128),
+        }],
+    );
+    let _err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: None,
+            split: None,
+        }),
+    )
+    .unwrap_err();
+
+    // Create fund
+    let new_fund_msg = ExecuteMsg::CreateFund {
+        name: String::from("Ending Hunger"),
+        description: String::from("Some fund of charities"),
+        members: vec![],
+        rotating_fund: Some(true),
+        split_to_liquid: None,
+        expiry_time: None,
+        expiry_height: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        new_fund_msg.clone(),
+    )
+    .unwrap();
+
+    // fund should have the members
+    let info = mock_info(
+        &ap_team.clone(),
+        &[Coin {
+            denom: "ujuno".to_string(),
+            amount: Uint128::from(100_u128),
+        }],
+    );
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: None,
+            split: None,
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::IndexFundEmpty {});
+
+    let info = mock_info(
+        &ap_team.clone(),
+        &[Coin {
+            denom: "ujuno".to_string(),
+            amount: Uint128::from(100_u128),
+        }],
+    );
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: Some(1),
+            split: None,
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::IndexFundEmpty {});
+
+    // Add the fund members
+    let info = mock_info(&ap_team.clone(), &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateMembers {
+            fund_id: 1,
+            add: vec![1],
+            remove: vec![],
+        },
+    )
+    .unwrap();
+
+    // Succeed to deposit funds
+    let info = mock_info(
+        &ap_team.clone(),
+        &[Coin {
+            denom: "ujuno".to_string(),
+            amount: Uint128::from(100_u128),
+        }],
+    );
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit(DepositMsg {
+            fund_id: None,
+            split: None,
+        }),
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+
+    // Same logic applies to cw20 token deposit
+    let info = mock_info("test-cw20", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Receive(cw20::Cw20ReceiveMsg {
+            sender: ap_team.clone(),
+            msg: to_binary(&ReceiveMsg::Deposit(DepositMsg {
+                fund_id: Some(1),
+                split: None,
+            }))
+            .unwrap(),
+            amount: Uint128::from(100_u128),
+        }),
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+
+    // Check the fund state
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::ActiveFundDonations {}).unwrap();
+    let donate_list: DonationListResponse = from_binary(&res).unwrap();
+    assert_eq!(donate_list.donors.len(), 0);
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::InvolvedFunds { endowment_id: 1 },
+    )
+    .unwrap();
+    let involved_funds: FundListResponse = from_binary(&res).unwrap();
+    assert_eq!(involved_funds.funds.len(), 1);
+}
+
+#[test]
+fn test_migrate() {
+    let mut deps = mock_dependencies(&[]);
+    // Instantiate the contract
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Migrate
+    let _err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
+}
+
+#[test]
+fn test_query_msg_builder() {
+    let mut deps = mock_dependencies(&[]);
+    // Instantiate the contract
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Query
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Deposit {
+            token_denom: "ujuno".to_string(),
+            amount: Uint128::from(100_u128),
+            fund_id: Some(1),
+            split: None,
+        },
+    )
+    .unwrap();
+
+    let msg: CosmosMsg = from_binary(&res).unwrap();
+    assert_eq!(
+        msg,
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: MOCK_CONTRACT_ADDR.to_string(),
+            msg: to_binary(&ExecuteMsg::Deposit(DepositMsg {
+                fund_id: Some(1),
+                split: None
+            }))
+            .unwrap(),
+            funds: vec![Coin {
+                denom: "ujuno".to_string(),
+                amount: Uint128::from(100_u128)
+            }]
+        })
+    )
 }
