@@ -1,13 +1,13 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG, FEES, NETWORK_CONNECTIONS};
+use crate::state::{Config, OldConfig, CONFIG, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult,
+    entry_point, from_slice, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
+    StdError, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -65,7 +65,7 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &configs)?;
 
     // setup first basic fees
-    FEES.save(deps.storage, &"vault_harvest", &tax_rate)?;
+    FEES.save(deps.storage, &"vaults_harvest", &tax_rate)?;
     FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
 
     // setup basic JUNO network info for native Vaults
@@ -147,7 +147,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -162,8 +162,60 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
         }));
     }
 
+    // Get the collector addr from user input
+    let collector_addr = msg
+        .collector_addr
+        .map(|addr| deps.api.addr_validate(&addr).unwrap());
+
+    // setup the new config struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let old_config: OldConfig = from_slice(&data)?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: old_config.owner,
+            applications_review: old_config.applications_review,
+            index_fund_contract: old_config.index_fund_contract,
+            accounts_contract: old_config.accounts_contract,
+            treasury: old_config.treasury,
+            cw3_code: old_config.cw3_code,
+            cw4_code: old_config.cw4_code,
+            subdao_gov_code: None,
+            subdao_cw20_token_code: None,
+            subdao_bonding_token_code: None,
+            subdao_cw900_code: None,
+            subdao_distributor_code: None,
+            donation_match_code: None,
+            donation_match_charites_contract: None,
+            split_to_liquid: old_config.split_to_liquid,
+            halo_token: old_config.halo_token,
+            halo_token_lp_contract: None,
+            gov_contract: old_config.gov_contract,
+            collector_addr: collector_addr,
+            collector_share: Decimal::zero(), // SHOULD be checked
+            charity_shares_contract: old_config.charity_shares_contract,
+            accepted_tokens: old_config.accepted_tokens,
+            swap_factory: None,
+            fundraising_contract: None,
+            rebalance: old_config.rebalance,
+            swaps_router: old_config.swaps_router,
+        },
+    )?;
+
     // setup first fees
-    FEES.save(deps.storage, &"vault_harvest", &Decimal::percent(20))?; // Default to 0.2 or 20%
+    FEES.save(
+        deps.storage,
+        &"endowtype_charity",
+        &msg.endowtype_fees.endowtype_charity.unwrap_or_default(),
+    )?;
+    FEES.save(
+        deps.storage,
+        &"endowtype_normal",
+        &msg.endowtype_fees.endowtype_normal.unwrap_or_default(),
+    )?;
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
