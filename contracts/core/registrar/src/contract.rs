@@ -65,7 +65,7 @@ pub fn instantiate(
     CONFIG.save(deps.storage, &configs)?;
 
     // setup first basic fees
-    FEES.save(deps.storage, &"vault_harvest", &tax_rate)?;
+    FEES.save(deps.storage, &"vaults_harvest", &tax_rate)?;
     FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
 
     // setup basic JUNO network info for native Vaults
@@ -206,7 +206,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     )?;
 
     // setup first fees
-    FEES.save(deps.storage, &"vault_harvest", &Decimal::percent(20))?; // Default to 0.2 or 20%
     FEES.save(
         deps.storage,
         &"endowtype_charity",
