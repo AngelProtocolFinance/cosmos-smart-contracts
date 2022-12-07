@@ -127,10 +127,10 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub settings_controller: Option<SettingsController>,
     pub new_registrar: String,
     pub max_general_category_id: u8,
     pub ibc_controller: Option<String>,
+    pub settings_controller: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

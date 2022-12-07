@@ -10,6 +10,7 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
     VaultListResponse,
 };
+use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
     DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
@@ -303,6 +304,10 @@ pub fn update_config(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.ibc_controller,
     };
+    config.settings_controller = match msg.settings_controller {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.settings_controller,
+    };
 
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
@@ -451,6 +456,12 @@ pub fn update_endowment_settings(
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        config
+            .settings_controller
+            .expect("Settings-controller contract not exist yet."),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
+    )?;
 
     let state = STATES.load(deps.storage, msg.id)?;
     if state.closing_endowment {
@@ -479,7 +490,8 @@ pub fn update_endowment_settings(
     }
 
     if info.sender.ne(&endowment.owner)
-        && (endowment.dao.is_some() && info.sender != *endowment.dao.as_ref().unwrap())
+        && (endowment_settings.dao.is_some()
+            && info.sender != *endowment_settings.dao.as_ref().unwrap())
     {
         return Err(ContractError::Unauthorized {});
     }
@@ -497,48 +509,18 @@ pub fn update_endowment_settings(
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
-        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiarigites {
-            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-            if env.block.time.seconds() < endow_mature_time {
-                if endowment
-                    .settings_controller
-                    .whitelisted_beneficiaries
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
-                    endowment.whitelisted_beneficiaries = whitelisted_beneficiaries;
-                }
-            }
-        }
-        if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
-            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-            if env.block.time.seconds() < endow_mature_time {
-                if endowment
-                    .settings_controller
-                    .whitelisted_contributors
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
-                    endowment.whitelisted_contributors = whitelisted_contributors;
-                }
-            }
-        }
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
-                if endowment.settings_controller.maturity_time.can_change(
-                    &info.sender,
-                    &endowment.owner,
-                    endowment.dao.as_ref(),
-                    env.block.time,
-                ) {
+                if endowment_settings
+                    .settings_controller
+                    .maturity_time
+                    .can_change(
+                        &info.sender,
+                        &endowment.owner,
+                        endowment_settings.dao.as_ref(),
+                        env.block.time,
+                    )
+                {
                     i
                 } else {
                     endowment.maturity_time
@@ -553,45 +535,28 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    if endowment.settings_controller.kyc_donors_only.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
+    if endowment_settings
+        .settings_controller
+        .kyc_donors_only
+        .can_change(
+            &info.sender,
+            &endowment.owner,
+            endowment_settings.dao.as_ref(),
+            env.block.time,
+        )
+    {
         endowment.kyc_donors_only = match msg.kyc_donors_only {
             Some(i) => i,
             None => endowment.kyc_donors_only,
         };
     }
 
-    if let Some(whitelist) = msg.maturity_whitelist {
-        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-        if env.block.time.seconds() < endow_mature_time {
-            let UpdateMaturityWhitelist { add, remove } = whitelist;
-            for addr in add {
-                let validated_addr = deps.api.addr_validate(&addr)?;
-                endowment.maturity_whitelist.push(validated_addr);
-            }
-            for addr in remove {
-                let validated_addr = deps.api.addr_validate(&addr)?;
-                let id = endowment
-                    .maturity_whitelist
-                    .iter()
-                    .position(|v| *v == validated_addr);
-                if let Some(id) = id {
-                    endowment.maturity_whitelist.swap_remove(id);
-                }
-            }
-        }
-    }
-
     endowment.name = match msg.name.clone() {
         Some(name) => {
-            if endowment.settings_controller.name.can_change(
+            if endowment_settings.settings_controller.name.can_change(
                 &info.sender,
                 &endowment.owner,
-                endowment.dao.as_ref(),
+                endowment_settings.dao.as_ref(),
                 env.block.time,
             ) {
                 name
@@ -603,12 +568,16 @@ pub fn update_endowment_settings(
     };
     endowment.categories = match msg.categories {
         Some(categories) => {
-            if endowment.settings_controller.categories.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_settings
+                .settings_controller
+                .categories
+                .can_change(
+                    &info.sender,
+                    &endowment.owner,
+                    endowment_settings.dao.as_ref(),
+                    env.block.time,
+                )
+            {
                 // check that at least 1 SDG category is set for charity endowments
                 if endowment.endow_type == EndowmentType::Charity {
                     if endowment.categories.sdgs.is_empty() {
@@ -638,10 +607,10 @@ pub fn update_endowment_settings(
     };
     endowment.logo = match msg.logo.clone() {
         Some(logo) => {
-            if endowment.settings_controller.logo.can_change(
+            if endowment_settings.settings_controller.logo.can_change(
                 &info.sender,
                 &endowment.owner,
-                endowment.dao.as_ref(),
+                endowment_settings.dao.as_ref(),
                 env.block.time,
             ) {
                 Some(logo)
@@ -653,10 +622,10 @@ pub fn update_endowment_settings(
     };
     endowment.image = match msg.image.clone() {
         Some(image) => {
-            if endowment.settings_controller.image.can_change(
+            if endowment_settings.settings_controller.image.can_change(
                 &info.sender,
                 &endowment.owner,
-                endowment.dao.as_ref(),
+                endowment_settings.dao.as_ref(),
                 env.block.time,
             ) {
                 Some(image)
@@ -667,21 +636,6 @@ pub fn update_endowment_settings(
         None => endowment.image,
     };
 
-    endowment.settings_controller = match msg.settings_controller.clone() {
-        Some(controller) => {
-            if endowment.settings_controller.image.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
-                controller
-            } else {
-                endowment.settings_controller
-            }
-        }
-        None => endowment.settings_controller,
-    };
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
@@ -1260,6 +1214,12 @@ pub fn deposit(
     let mut res = Response::default();
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        config
+            .settings_controller
+            .expect("Settings-controller contract not exist yet."),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
+    )?;
 
     // check that the Endowment has been approved to receive deposits
     if !endowment.deposit_approved {
@@ -1280,12 +1240,12 @@ pub fn deposit(
 
     // Deduct the `deposit_fee` from `deposit_amount` if configured.
     // Send the `deposit_fee` to `payout_address` if any.
-    if endowment.deposit_fee.is_some() {
+    if endowment_settings.deposit_fee.is_some() {
         let EndowmentFee {
             payout_address,
             fee_percentage,
             active,
-        } = endowment.deposit_fee.clone().unwrap();
+        } = endowment_settings.deposit_fee.clone().unwrap();
         if active {
             let deposit_fee_amount = deposit_amount * fee_percentage;
 
@@ -1342,19 +1302,19 @@ pub fn deposit(
         // Non-Charity Endowments also have the ability to override user split suggestions and use their defaults.
         let new_splits = match (
             endowment.endow_type.clone(),
-            endowment.split_to_liquid.clone(),
+            endowment_settings.split_to_liquid.clone(),
         ) {
             (EndowmentType::Charity, _) | (_, None) => check_splits(
                 registrar_split_configs,
                 locked_split,
                 liquid_split,
-                endowment.ignore_user_splits,
+                endowment_settings.ignore_user_splits,
             ),
             (_, Some(endow_split_configs)) => check_splits(
                 endow_split_configs,
                 locked_split,
                 liquid_split,
-                endowment.ignore_user_splits,
+                endowment_settings.ignore_user_splits,
             ),
         };
         locked_split = new_splits.0;
@@ -1834,13 +1794,21 @@ pub fn withdraw(
     beneficiary: String,
     assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let config = CONFIG.load(deps.storage)?;
-    let mut state = STATES.load(deps.storage, id)?;
-    let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
     let mut native_coins_fees: Vec<Coin> = vec![];
+
+    let mut state = STATES.load(deps.storage, id)?;
+    let mut state_bal: GenericBalance = state.balances.get(&acct_type);
+
+    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        config
+            .settings_controller
+            .expect("Settings-controller contract not exist yet."),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id },
+    )?;
 
     if !endowment.withdraw_approved {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1877,7 +1845,7 @@ pub fn withdraw(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
             }
-            if !endowment.maturity_whitelist.contains(&info.sender) {
+            if !endowment_settings.maturity_whitelist.contains(&info.sender) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Sender address is not listed in maturity_whitelist.",
                 )));
@@ -1885,7 +1853,7 @@ pub fn withdraw(
         }
         (EndowmentType::Normal, AccountType::Liquid) => {
             if !(info.sender == endowment.owner
-                || endowment
+                || endowment_settings
                     .whitelisted_beneficiaries
                     .contains(&info.sender.to_string()))
             {

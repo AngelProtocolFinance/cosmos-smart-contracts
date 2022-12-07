@@ -34,6 +34,7 @@ pub fn instantiate(
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_account_id: 1_u32,
             max_general_category_id: 1_u8,
+            settings_controller: None,
         },
     )?;
 

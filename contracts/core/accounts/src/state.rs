@@ -20,6 +20,7 @@ pub struct Config {
     pub ibc_controller: Addr, // created to allow IBC packet sending to other Cosmos chains
     pub next_account_id: u32,
     pub max_general_category_id: u8,
+    pub settings_controller: Option<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

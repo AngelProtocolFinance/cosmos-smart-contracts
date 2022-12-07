@@ -21,6 +21,7 @@ pub struct ConfigResponse {
     pub registrar_contract: String,
     pub next_account_id: u32,
     pub max_general_category_id: u8,
+    pub settings_controller: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
