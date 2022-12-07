@@ -5,16 +5,15 @@ use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3Instantiat
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
-use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
     VaultListResponse,
 };
 use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationsReceived,
-    EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails,
-    SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
+    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SplitDetails,
+    StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -141,28 +140,10 @@ pub fn create_endowment(
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
                 copycat_strategy: None,
-                // dao: None,
-                // dao_token: None,
-                // donation_match_active: false,
-                // donation_match_contract,
-                // whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
-                // whitelisted_contributors: msg.whitelisted_contributors.clone(),
-                // earnings_fee: msg.earnings_fee.clone(),
-                // withdraw_fee: msg.withdraw_fee.clone(),
-                // deposit_fee: msg.deposit_fee.clone(),
-                // aum_fee: msg.aum_fee.clone(),
-                // maturity_whitelist: vec![],
                 tier: msg.tier.clone(),
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
-                // settings_controller: msg
-                //     .settings_controller
-                //     .clone()
-                //     .unwrap_or(SettingsController::default()),
-                // parent: msg.parent,
-                // split_to_liquid: split_settings.0,
-                // ignore_user_splits: split_settings.1,
             }),
         },
     )?;
