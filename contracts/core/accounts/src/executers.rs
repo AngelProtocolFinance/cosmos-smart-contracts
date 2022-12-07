@@ -12,10 +12,9 @@ use angel_core::responses::registrar::{
 };
 use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
-    DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
-    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
-    VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
+    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SplitDetails,
+    StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
