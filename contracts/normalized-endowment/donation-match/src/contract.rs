@@ -9,6 +9,7 @@ use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::subdao_bonding_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfig;
+use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{EndowmentStatus, EndowmentType};
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
@@ -134,6 +135,15 @@ fn execute_donor_match(
         accounts_contract.to_string(),
         &AccountQueryMsg::Endowment { id: endowment_id },
     )?;
+    let accounts_config: angel_core::responses::accounts::ConfigResponse = deps
+        .querier
+        .query_wasm_smart(accounts_contract.to_string(), &AccountQueryMsg::Config {})?;
+    let endow_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        accounts_config.settings_controller,
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings {
+            id: endowment_id,
+        },
+    )?;
 
     if endow_detail.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
@@ -151,7 +161,7 @@ fn execute_donor_match(
             }
         }
         EndowmentType::Normal => {
-            if env.contract.address != endow_detail.donation_match_contract {
+            if env.contract.address != endow_settings.donation_match_contract.unwrap() {
                 return Err(ContractError::Unauthorized {});
             }
         }
