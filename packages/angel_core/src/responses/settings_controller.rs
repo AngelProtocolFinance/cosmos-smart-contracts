@@ -7,6 +7,8 @@ use crate::structs::{EndowmentFee, SettingsController, SplitDetails};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub registrar_contract: String,
+    pub accounts_contract: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

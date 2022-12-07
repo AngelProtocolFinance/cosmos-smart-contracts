@@ -125,6 +125,10 @@ pub fn update_config(
         config.registrar_contract = deps.api.addr_validate(&registrar)?;
     }
 
+    if let Some(accounts) = msg.accounts_contract {
+        config.accounts_contract = Some(deps.api.addr_validate(&accounts)?);
+    }
+
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
 }

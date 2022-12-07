@@ -7,6 +7,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
+        registrar_contract: config.registrar_contract.to_string(),
+        accounts_contract: config
+            .accounts_contract
+            .map_or("".to_string(), |addr| addr.to_string()),
     })
 }
 
