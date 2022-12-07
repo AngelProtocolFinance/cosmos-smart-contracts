@@ -12,9 +12,9 @@ use angel_core::responses::registrar::{
 };
 use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
-    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SplitDetails,
-    StrategyComponent, SwapOperation, VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationsReceived,
+    EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails,
+    SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -224,32 +224,23 @@ pub fn create_endowment(
         registrar_config.subdao_bonding_token_code,
         registrar_config.subdao_gov_code,
     ) {
-        (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
-            res = res.add_submessage(SubMsg {
-                id: 1,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: gov_code,
-                    admin: None,
-                    label: "new endowment dao contract".to_string(),
-                    msg: to_binary(&DaoInstantiateMsg {
-                        id: config.next_account_id,
-                        quorum: dao_setup.quorum,
-                        threshold: dao_setup.threshold,
-                        voting_period: dao_setup.voting_period,
-                        timelock_period: dao_setup.timelock_period,
-                        expiration_period: dao_setup.expiration_period,
-                        proposal_deposit: dao_setup.proposal_deposit,
-                        snapshot_period: dao_setup.snapshot_period,
-                        endow_type: msg.endow_type.clone(),
-                        endow_owner: msg.owner.to_string(),
-                        registrar_contract: config.registrar_contract.to_string(),
-                        token: dao_setup.token,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            });
+        (Some(dao_setup), Some(_token_code), Some(_gov_code)) => {
+            if config.settings_controller.is_none() {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: format!("Settings_controller contract not exist yet."),
+                }));
+            }
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.settings_controller.as_ref().unwrap().to_string(),
+                msg: to_binary(
+                    &angel_core::messages::settings_controller::ExecuteMsg::SetupDao {
+                        endowment_id: config.next_account_id,
+                        setup: dao_setup,
+                    },
+                )
+                .unwrap(),
+                funds: vec![],
+            }))
         }
         (Some(_dao_setup), None, _) | (Some(_dao_setup), _, None) => {
             return Err(ContractError::Std(StdError::GenericErr {
