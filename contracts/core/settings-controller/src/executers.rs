@@ -6,6 +6,7 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::settings_controller::*;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
+use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
     VaultListResponse,
@@ -125,10 +126,6 @@ pub fn update_config(
         config.registrar_contract = deps.api.addr_validate(&registrar)?;
     }
 
-    if let Some(accounts) = msg.accounts_contract {
-        config.accounts_contract = Some(deps.api.addr_validate(&accounts)?);
-    }
-
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
 }
@@ -142,60 +139,43 @@ pub fn update_endowment_settings(
     let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
 
-    let state = STATES.load(deps.storage, msg.id)?;
-    if state.closing_endowment {
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract,
+        &angel_core::messages::registrar::QueryMsg::Config {},
+    )?;
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        registrar_config.accounts_contract.unwrap(),
+        &angel_core::messages::accounts::QueryMsg::Endowment { id: msg.id },
+    )?;
+    let endow_state: angel_core::responses::accounts::StateResponse =
+        deps.querier.query_wasm_smart(
+            registrar_config.accounts_contract.unwrap(),
+            &angel_core::messages::accounts::QueryMsg::State { id: msg.id },
+        )?;
+
+    if endow_state.closing_endowment {
         return Err(ContractError::UpdatesAfterClosed {});
     }
 
-    if !(info.sender == config.owner || info.sender == endowment.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // Only config.owner can update owner, tier and endowment_type fields
-    if info.sender == config.owner {
-        endowment.tier = msg.tier;
-        if let Some(owner) = msg.owner {
-            endowment.owner = deps.api.addr_validate(&owner)?;
+    if !(info.sender == config.owner || info.sender == endow_detail.owner) {
+        if endowment.dao.is_none() || info.sender != *endowment.dao.as_ref().unwrap() {
+            return Err(ContractError::Unauthorized {});
         }
-        if let Some(endow_type) = msg.endow_type {
-            endowment.endow_type = match endow_type.as_str() {
-                "charity" => EndowmentType::Charity,
-                "normal" => EndowmentType::Normal,
-                _ => return Err(ContractError::InvalidInputs {}),
-            };
-        }
-        ENDOWMENTSETTINGS.save(deps.storage, msg.id, &endowment)?;
-        return Ok(Response::new().add_attribute("action", "update_endowment_settings"));
     }
-
-    if info.sender.ne(&endowment.owner)
-        && (endowment.dao.is_some() && info.sender != *endowment.dao.as_ref().unwrap())
-    {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    endowment.owner = match msg.owner {
-        Some(i) => {
-            // only the endowment owner can update these configs
-            if info.sender != endowment.owner {
-                return Err(ContractError::Unauthorized {});
-            }
-            deps.api.addr_validate(&i)?
-        }
-        None => endowment.owner,
-    };
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
-    if endowment.endow_type != EndowmentType::Charity {
+    if endow_detail.endow_type != EndowmentType::Charity {
         if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
-            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            let endow_mature_time = endow_detail
+                .maturity_time
+                .expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
                 if endowment
                     .settings_controller
                     .whitelisted_beneficiaries
                     .can_change(
                         &info.sender,
-                        &endowment.owner,
+                        &endow_detail.owner,
                         endowment.dao.as_ref(),
                         env.block.time,
                     )
@@ -205,14 +185,16 @@ pub fn update_endowment_settings(
             }
         }
         if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
-            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            let endow_mature_time = endow_detail
+                .maturity_time
+                .expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
                 if endowment
                     .settings_controller
                     .whitelisted_contributors
                     .can_change(
                         &info.sender,
-                        &endowment.owner,
+                        &endow_detail.owner,
                         endowment.dao.as_ref(),
                         env.block.time,
                     )
@@ -221,42 +203,12 @@ pub fn update_endowment_settings(
                 }
             }
         }
-        endowment.maturity_time = match msg.maturity_time {
-            Some(i) => {
-                if endowment.settings_controller.maturity_time.can_change(
-                    &info.sender,
-                    &endowment.owner,
-                    endowment.dao.as_ref(),
-                    env.block.time,
-                ) {
-                    i
-                } else {
-                    endowment.maturity_time
-                }
-            }
-            None => endowment.maturity_time,
-        };
-        endowment.rebalance = match msg.rebalance {
-            Some(i) => i,
-            None => endowment.rebalance,
-        };
-    }
-
-    // validate address strings passed
-    if endowment.settings_controller.kyc_donors_only.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
-        endowment.kyc_donors_only = match msg.kyc_donors_only {
-            Some(i) => i,
-            None => endowment.kyc_donors_only,
-        };
     }
 
     if let Some(whitelist) = msg.maturity_whitelist {
-        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+        let endow_mature_time = endow_detail
+            .maturity_time
+            .expect("Cannot get maturity time");
         if env.block.time.seconds() < endow_mature_time {
             let UpdateMaturityWhitelist { add, remove } = whitelist;
             for addr in add {
@@ -276,92 +228,11 @@ pub fn update_endowment_settings(
         }
     }
 
-    endowment.name = match msg.name.clone() {
-        Some(name) => {
-            if endowment.settings_controller.name.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
-                name
-            } else {
-                endowment.name
-            }
-        }
-        None => endowment.name,
-    };
-    endowment.categories = match msg.categories {
-        Some(categories) => {
-            if endowment.settings_controller.categories.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
-                // check that at least 1 SDG category is set for charity endowments
-                if endowment.endow_type == EndowmentType::Charity {
-                    if endowment.categories.sdgs.is_empty() {
-                        return Err(ContractError::InvalidInputs {});
-                    }
-                    endowment.categories.sdgs.sort();
-                    for item in endowment.categories.sdgs.clone().into_iter() {
-                        if item > 17 || item == 0 {
-                            return Err(ContractError::InvalidInputs {});
-                        }
-                    }
-                }
-                if !endowment.categories.general.is_empty() {
-                    endowment.categories.general.sort();
-                    if endowment.categories.general.last().unwrap()
-                        > &config.max_general_category_id
-                    {
-                        return Err(ContractError::InvalidInputs {});
-                    }
-                }
-                categories
-            } else {
-                endowment.categories
-            }
-        }
-        None => endowment.categories,
-    };
-    endowment.logo = match msg.logo.clone() {
-        Some(logo) => {
-            if endowment.settings_controller.logo.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
-                Some(logo)
-            } else {
-                endowment.logo
-            }
-        }
-        None => endowment.logo,
-    };
-    endowment.image = match msg.image.clone() {
-        Some(image) => {
-            if endowment.settings_controller.image.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
-                Some(image)
-            } else {
-                endowment.image
-            }
-        }
-        None => endowment.image,
-    };
-
     endowment.settings_controller = match msg.settings_controller.clone() {
         Some(controller) => {
             if endowment.settings_controller.image.can_change(
                 &info.sender,
-                &endowment.owner,
+                &endow_detail.owner,
                 endowment.dao.as_ref(),
                 env.block.time,
             ) {

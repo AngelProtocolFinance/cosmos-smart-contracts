@@ -29,9 +29,6 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            accounts_contract: msg
-                .accounts_contract
-                .map(|addr| deps.api.addr_validate(&addr).unwrap()),
         },
     )?;
 
