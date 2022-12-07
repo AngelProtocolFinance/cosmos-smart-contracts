@@ -50,10 +50,10 @@ pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
             if id == 0 || dao == Addr::unchecked("") || dao_token == Addr::unchecked("") {
                 return Err(ContractError::AccountNotCreated {});
             }
-            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+            let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, id)?;
             endowment.dao = Some(dao);
             endowment.dao_token = Some(dao_token);
-            ENDOWMENTS.save(deps.storage, id, &endowment)?;
+            ENDOWMENTSETTINGS.save(deps.storage, id, &endowment)?;
 
             // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
             Ok(Response::default()
@@ -90,9 +90,9 @@ pub fn donation_match_reply(
             if id == 0 || donation_match_contract == Addr::unchecked("") {
                 return Err(ContractError::AccountNotCreated {});
             }
-            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+            let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, id)?;
             endowment.donation_match_contract = Some(donation_match_contract);
-            ENDOWMENTS.save(deps.storage, id, &endowment)?;
+            ENDOWMENTSETTINGS.save(deps.storage, id, &endowment)?;
 
             // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
             Ok(Response::default().add_attribute(
@@ -102,24 +102,6 @@ pub fn donation_match_reply(
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
-}
-
-pub fn update_owner(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_owner: String,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.owner = deps.api.addr_validate(&new_owner)?;
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::default())
 }
 
 pub fn update_config(
@@ -135,7 +117,13 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.owner = deps.api.addr_validate(&msg.owner)?;
+    if let Some(owner) = msg.owner {
+        config.owner = deps.api.addr_validate(&owner)?;
+    }
+
+    if let Some(registrar) = msg.registrar_contract {
+        config.registrar_contract = deps.api.addr_validate(&registrar)?;
+    }
 
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
@@ -147,7 +135,7 @@ pub fn update_endowment_settings(
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
 
     let state = STATES.load(deps.storage, msg.id)?;
@@ -172,7 +160,7 @@ pub fn update_endowment_settings(
                 _ => return Err(ContractError::InvalidInputs {}),
             };
         }
-        ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+        ENDOWMENTSETTINGS.save(deps.storage, msg.id, &endowment)?;
         return Ok(Response::new().add_attribute("action", "update_endowment_settings"));
     }
 
@@ -380,7 +368,7 @@ pub fn update_endowment_settings(
         }
         None => endowment.settings_controller,
     };
-    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+    ENDOWMENTSETTINGS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
 }
@@ -395,7 +383,7 @@ pub fn update_delegate(
     delegate_address: String,
     delegate_expiry: Option<u64>,
 ) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, id)?;
 
     // grab a setting's permissions from SettingsController
     let mut permissions = endowment
@@ -428,7 +416,7 @@ pub fn update_delegate(
     endowment
         .settings_controller
         .set_permissions(setting, permissions)?;
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
+    ENDOWMENTSETTINGS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::default().add_attribute("action", "update_delegate"))
 }
@@ -439,7 +427,7 @@ pub fn update_endowment_fees(
     info: MessageInfo,
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, msg.id)?;
 
     // only normalized endowments can update the additional fees
     if endowment.endow_type != EndowmentType::Charity {
@@ -485,7 +473,7 @@ pub fn update_endowment_fees(
         endowment.aum_fee = msg.aum_fee;
     }
 
-    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+    ENDOWMENTSETTINGS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new()
         .add_attribute("action", "update_endowment_fees")
@@ -499,7 +487,7 @@ pub fn setup_dao(
     endowment_id: u32,
     msg: DaoSetup,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    let endowment = ENDOWMENTSETTINGS.load(deps.storage, endowment_id)?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != endowment.owner {
@@ -552,7 +540,7 @@ pub fn setup_donation_match(
     endowment_id: u32,
     setup: DonationMatch,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    let endowment = ENDOWMENTSETTINGS.load(deps.storage, endowment_id)?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != endowment.owner {

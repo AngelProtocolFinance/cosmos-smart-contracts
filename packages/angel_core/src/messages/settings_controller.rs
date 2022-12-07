@@ -9,6 +9,7 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
     pub owner_sc: String,
+    pub registrar_contract: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -40,7 +41,8 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub owner: String,
+    pub owner: Option<String>,
+    pub registrar_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

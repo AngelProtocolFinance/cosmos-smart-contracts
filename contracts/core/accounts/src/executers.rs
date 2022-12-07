@@ -11,9 +11,10 @@ use angel_core::responses::registrar::{
     VaultListResponse,
 };
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
-    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SplitDetails,
-    StrategyComponent, SwapOperation, VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
+    DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
+    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
+    VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -496,7 +497,7 @@ pub fn update_endowment_settings(
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
-        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
+        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiarigites {
             let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
                 if endowment

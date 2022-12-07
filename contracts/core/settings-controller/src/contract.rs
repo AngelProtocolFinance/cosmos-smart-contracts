@@ -1,5 +1,6 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -27,6 +28,7 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
+            registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         },
     )?;
 
@@ -82,6 +84,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::EndowmentSettings { id } => {
             to_binary(&queriers::query_endowment_settings(deps, id)?)
         }
+    }
+}
+
+/// Replies back to the Endowment Account from various multisig contract calls (@ some passed code_id)
+/// should be caught and handled to fire subsequent setup calls and ultimately the storing of the multisig
+/// as the Accounts endowment owner
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        // 0 => executers::cw3_reply(deps, env, msg.result),
+        1 => executers::dao_reply(deps, env, msg.result),
+        2 => executers::donation_match_reply(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
     }
 }
 
