@@ -124,11 +124,6 @@ pub fn execute(
             acct_type,
             strategies,
         } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
-        ExecuteMsg::CopycatStrategies {
-            id,
-            acct_type,
-            id_to_copy,
-        } => executers::copycat_strategies(deps, info, id, acct_type, id_to_copy),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }

@@ -42,7 +42,6 @@ pub struct Endowment {
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
-    pub copycat_strategy: Option<u32>, // endowment ID to copy their strategy
     pub proposal_link: Option<u64>, // link back the CW3 Proposal that created an endowment
 }
 

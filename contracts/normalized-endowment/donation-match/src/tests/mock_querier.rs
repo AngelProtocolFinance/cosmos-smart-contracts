@@ -3,7 +3,7 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
-    SettingsController, SplitDetails, VaultType, YieldVault,
+    SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -215,30 +215,22 @@ impl WasmMockQuerier {
                 QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentDetailsResponse {
                         owner: Addr::unchecked("endow-cw3"),
-                        // dao: None,
-                        // dao_token: None,
                         name: "Test Endowment".to_string(),
-                        // description: "Test endowment".to_string(),
                         strategies: AccountStrategies::default(),
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,
                         maturity_time: None,
                         oneoff_vaults: OneOffVaults::default(),
                         rebalance: RebalanceDetails::default(),
-                        // donation_match_contract: "donation-match-contract".to_string(),
                         kyc_donors_only: false,
-                        // maturity_whitelist: vec![],
                         deposit_approved: true,
                         withdraw_approved: true,
                         pending_redemptions: 0,
-                        copycat_strategy: None,
                         proposal_link: None,
                         categories: Categories::default(),
                         tier: None,
                         image: None,
                         logo: None,
-                        // settings_controller: SettingsController::default(),
-                        // parent: None,
                     }).unwrap()
                 )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(

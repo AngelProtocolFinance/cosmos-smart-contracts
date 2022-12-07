@@ -1,6 +1,6 @@
 use crate::structs::{
-    AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
-    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, DaoSetup, EndowmentFee, EndowmentType, RebalanceDetails,
+    SettingsController, SplitDetails, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -73,12 +73,6 @@ pub enum ExecuteMsg {
         id: u32,
         acct_type: AccountType,
         vaults: Vec<(String, Uint128)>,
-    },
-    // set another endowment's strategy to "copycat" as your own
-    CopycatStrategies {
-        id: u32,
-        acct_type: AccountType,
-        id_to_copy: u32,
     },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),

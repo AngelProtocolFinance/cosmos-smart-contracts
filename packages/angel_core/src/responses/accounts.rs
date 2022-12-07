@@ -1,7 +1,6 @@
 use crate::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentEntry,
     EndowmentFee, EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
-    SettingsController,
 };
 use cosmwasm_std::Addr;
 use schemars::JsonSchema;
@@ -47,7 +46,6 @@ pub struct EndowmentDetailsResponse {
     pub rebalance: RebalanceDetails,
     pub kyc_donors_only: bool,
     pub pending_redemptions: u8,
-    pub copycat_strategy: Option<u32>,
     pub proposal_link: Option<u64>,
 }
 
