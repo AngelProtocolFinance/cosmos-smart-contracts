@@ -5,7 +5,9 @@ use angel_core::messages::settings_controller::*;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{DaoSetup, DonationMatch, EndowmentType};
+use angel_core::structs::{
+    DaoSetup, DonationMatch, EndowmentSettings, EndowmentType, SettingsController,
+};
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn, Response,
     StdError, SubMsg, SubMsgResult, WasmMsg, WasmQuery,
@@ -110,6 +112,44 @@ pub fn update_config(
 
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
+}
+
+pub fn create_endowment_settings(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: CreateEndowSettingsMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
+    if info.sender != registrar_config.accounts_contract.unwrap() {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    ENDOWMENTSETTINGS.update(deps.storage, msg.id, |existing| match existing {
+        Some(_) => Err(ContractError::AlreadyInUse {}),
+        None => Ok(EndowmentSettings {
+            dao: None,
+            dao_token: None,
+            donation_match_active: msg.donation_match_active,
+            donation_match_contract: msg.donation_match_contract,
+            whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
+            whitelisted_contributors: msg.whitelisted_contributors.clone(),
+            maturity_whitelist: vec![],
+            settings_controller: msg.settings_controller.clone(),
+            parent: msg.parent,
+            split_to_liquid: msg.split_to_liquid,
+            ignore_user_splits: msg.ignore_user_split,
+            earnings_fee: msg.earnings_fee.clone(),
+            withdraw_fee: msg.withdraw_fee.clone(),
+            deposit_fee: msg.deposit_fee.clone(),
+            aum_fee: msg.aum_fee.clone(),
+        }),
+    })?;
+
+    Ok(Response::new().add_attribute("action", "create_endowment_settings"))
 }
 
 pub fn update_endowment_settings(

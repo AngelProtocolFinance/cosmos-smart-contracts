@@ -43,7 +43,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
+        ExecuteMsg::CreateEndowmentSettings(msg) => {
+            executers::create_endowment_settings(deps, env, info, msg)
+        }
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
         }
@@ -74,6 +76,7 @@ pub fn execute(
             delegate_address,
             delegate_expiry,
         ),
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
     }
 }
 
