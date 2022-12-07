@@ -143,13 +143,14 @@ pub fn update_endowment_settings(
         config.registrar_contract,
         &angel_core::messages::registrar::QueryMsg::Config {},
     )?;
+    let accounts_contract = registrar_config.accounts_contract.unwrap();
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_contract.unwrap(),
+        accounts_contract.to_string(),
         &angel_core::messages::accounts::QueryMsg::Endowment { id: msg.id },
     )?;
     let endow_state: angel_core::responses::accounts::StateResponse =
         deps.querier.query_wasm_smart(
-            registrar_config.accounts_contract.unwrap(),
+            accounts_contract,
             &angel_core::messages::accounts::QueryMsg::State { id: msg.id },
         )?;
 
@@ -260,6 +261,16 @@ pub fn update_delegate(
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, id)?;
 
+    let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract,
+        &angel_core::messages::registrar::QueryMsg::Config {},
+    )?;
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        registrar_config.accounts_contract.unwrap(),
+        &angel_core::messages::accounts::QueryMsg::Endowment { id },
+    )?;
+
     // grab a setting's permissions from SettingsController
     let mut permissions = endowment
         .settings_controller
@@ -270,7 +281,7 @@ pub fn update_delegate(
         "set" => {
             permissions.set_delegate(
                 &info.sender,
-                &endowment.owner,
+                &endow_detail.owner,
                 endowment.dao.as_ref(),
                 deps.api.addr_validate(&delegate_address)?,
                 delegate_expiry,
@@ -279,7 +290,7 @@ pub fn update_delegate(
         "revoke" => {
             permissions.revoke_delegate(
                 &info.sender,
-                &endowment.owner,
+                &endow_detail.owner,
                 endowment.dao.as_ref(),
                 env.block.time,
             );
@@ -304,8 +315,18 @@ pub fn update_endowment_fees(
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, msg.id)?;
 
+    let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract,
+        &angel_core::messages::registrar::QueryMsg::Config {},
+    )?;
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        registrar_config.accounts_contract.unwrap(),
+        &angel_core::messages::accounts::QueryMsg::Endowment { id: msg.id },
+    )?;
+
     // only normalized endowments can update the additional fees
-    if endowment.endow_type != EndowmentType::Charity {
+    if endow_detail.endow_type != EndowmentType::Charity {
         return Err(ContractError::Std(StdError::generic_err(
             "Charity Endowments may not change endowment fees",
         )));
@@ -314,7 +335,7 @@ pub fn update_endowment_fees(
     // Update the "EndowmentFee"s
     if endowment.settings_controller.earnings_fee.can_change(
         &info.sender,
-        &endowment.owner,
+        &endow_detail.owner,
         endowment.dao.as_ref(),
         env.block.time,
     ) {
@@ -323,7 +344,7 @@ pub fn update_endowment_fees(
 
     if endowment.settings_controller.deposit_fee.can_change(
         &info.sender,
-        &endowment.owner,
+        &endow_detail.owner,
         endowment.dao.as_ref(),
         env.block.time,
     ) {
@@ -332,7 +353,7 @@ pub fn update_endowment_fees(
 
     if endowment.settings_controller.withdraw_fee.can_change(
         &info.sender,
-        &endowment.owner,
+        &endow_detail.owner,
         endowment.dao.as_ref(),
         env.block.time,
     ) {
@@ -341,7 +362,7 @@ pub fn update_endowment_fees(
 
     if endowment.settings_controller.aum_fee.can_change(
         &info.sender,
-        &endowment.owner,
+        &endow_detail.owner,
         endowment.dao.as_ref(),
         env.block.time,
     ) {
@@ -364,8 +385,16 @@ pub fn setup_dao(
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTSETTINGS.load(deps.storage, endowment_id)?;
     let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &angel_core::messages::registrar::QueryMsg::Config {},
+    )?;
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        registrar_config.accounts_contract.unwrap(),
+        &angel_core::messages::accounts::QueryMsg::Endowment { id: endowment_id },
+    )?;
 
-    if info.sender != endowment.owner {
+    if info.sender != endow_detail.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -397,8 +426,8 @@ pub fn setup_dao(
                 proposal_deposit: msg.proposal_deposit,
                 snapshot_period: msg.snapshot_period,
                 token: msg.token,
-                endow_type: endowment.endow_type,
-                endow_owner: endowment.owner.to_string(),
+                endow_type: endow_detail.endow_type,
+                endow_owner: endow_detail.owner.to_string(),
                 registrar_contract: config.registrar_contract.to_string(),
             })?,
             funds: vec![],
@@ -417,8 +446,16 @@ pub fn setup_donation_match(
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTSETTINGS.load(deps.storage, endowment_id)?;
     let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &angel_core::messages::registrar::QueryMsg::Config {},
+    )?;
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        registrar_config.accounts_contract.unwrap(),
+        &angel_core::messages::accounts::QueryMsg::Endowment { id: endowment_id },
+    )?;
 
-    if info.sender != endowment.owner {
+    if info.sender != endow_detail.owner {
         return Err(ContractError::Unauthorized {});
     }
 
