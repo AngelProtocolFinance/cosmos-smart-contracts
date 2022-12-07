@@ -7,7 +7,6 @@ use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -26,8 +25,6 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    // catch ICA msg responses from ICA Controller
-    ReceiveIbcResponse(ReceiveIbcResponseMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     /// reinvest vault assets from Liquid to Locked
