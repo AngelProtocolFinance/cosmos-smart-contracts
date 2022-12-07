@@ -687,54 +687,6 @@ pub fn update_endowment_settings(
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
 }
 
-pub fn update_delegate(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    id: u32,
-    setting: String,
-    action: String,
-    delegate_address: String,
-    delegate_expiry: Option<u64>,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-
-    // grab a setting's permissions from SettingsController
-    let mut permissions = endowment
-        .settings_controller
-        .get_permissions(setting.clone())?;
-
-    // update the delegate field appropraitely based on action
-    match action.as_str() {
-        "set" => {
-            permissions.set_delegate(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                deps.api.addr_validate(&delegate_address)?,
-                delegate_expiry,
-            );
-        }
-        "revoke" => {
-            permissions.revoke_delegate(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            );
-        }
-        _ => unimplemented!(),
-    }
-
-    // save mutated permissions back to SettingsController
-    endowment
-        .settings_controller
-        .set_permissions(setting, permissions)?;
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::default().add_attribute("action", "update_delegate"))
-}
-
 pub fn update_strategies(
     deps: DepsMut,
     _env: Env,
