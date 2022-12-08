@@ -335,7 +335,7 @@ fn test_update_endowment_fees() {
     )
     .unwrap();
 
-    // Endowment SHOULD be "Charity" type
+    // Endowment SHOULD be "Normal" type
     let info = mock_info("anyone", &[]);
     let mut msg = UpdateEndowmentFeesMsg {
         id: 2,
@@ -398,4 +398,256 @@ fn test_update_endowment_fees() {
     assert_eq!(endow_settings.earnings_fee, msg.earnings_fee);
     assert_eq!(endow_settings.deposit_fee, msg.deposit_fee);
     assert_eq!(endow_settings.withdraw_fee, msg.withdraw_fee);
+}
+
+#[test]
+fn test_update_delegate() {
+    // Instantiate the contract
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Succeed to create EndowmentSettings
+    let info = mock_info("accounts-contract", &[]);
+    let msg = CreateEndowSettingsMsg {
+        id: 1,
+        donation_match_active: false,
+        donation_match_contract: None,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        maturity_whitelist: vec![],
+        settings_controller: SettingsController::default(),
+        parent: None,
+        split_to_liquid: None,
+        ignore_user_splits: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CreateEndowmentSettings(msg),
+    )
+    .unwrap();
+
+    // "setting" name should be correct
+    let info = mock_info("endowment-owner", &[]);
+    let _err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateDelegate {
+            endowment_id: 1,
+            setting: "any-fee".to_string(),
+            action: "set".to_string(),
+            delegate_address: "new-delegate-address".to_string(),
+            delegate_expiry: None,
+        },
+    )
+    .unwrap_err();
+
+    // "action" should be either of "set" or "revoke"
+    let info = mock_info("endowment-owner", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateDelegate {
+            endowment_id: 1,
+            setting: "aum_fee".to_string(),
+            action: "blahblah".to_string(),
+            delegate_address: "new-delegate-address".to_string(),
+            delegate_expiry: None,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Succeed to update the settings
+    let info = mock_info("endowment-owner", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateDelegate {
+            endowment_id: 1,
+            setting: "aum_fee".to_string(),
+            action: "set".to_string(),
+            delegate_address: "new-delegate-address".to_string(),
+            delegate_expiry: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
+}
+
+#[test]
+fn test_setup_dao() {
+    // Instantiate the contract
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Succeed to create EndowmentSettings
+    let info = mock_info("accounts-contract", &[]);
+    let msg = CreateEndowSettingsMsg {
+        id: 1,
+        donation_match_active: false,
+        donation_match_contract: None,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        maturity_whitelist: vec![],
+        settings_controller: SettingsController::default(),
+        parent: None,
+        split_to_liquid: None,
+        ignore_user_splits: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CreateEndowmentSettings(msg),
+    )
+    .unwrap();
+
+    // Only the Endowment owner can call this entry
+    let info = mock_info(AP_TEAM, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetupDao {
+            endowment_id: 1,
+            setup: angel_core::structs::DaoSetup {
+                quorum: Decimal::percent(10),
+                threshold: Decimal::percent(50),
+                voting_period: 300,
+                timelock_period: 200,
+                expiration_period: 500,
+                proposal_deposit: Uint128::from(1000000_u128),
+                snapshot_period: 100,
+                token: angel_core::structs::DaoToken::NewCw20 {
+                    initial_supply: Uint128::from(1000000_u128),
+                    name: "New cw20".to_string(),
+                    symbol: "NC2".to_string(),
+                },
+            },
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed
+    let info = mock_info("endowment-owner", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetupDao {
+            endowment_id: 1,
+            setup: angel_core::structs::DaoSetup {
+                quorum: Decimal::percent(10),
+                threshold: Decimal::percent(50),
+                voting_period: 300,
+                timelock_period: 200,
+                expiration_period: 500,
+                proposal_deposit: Uint128::from(1000000_u128),
+                snapshot_period: 100,
+                token: angel_core::structs::DaoToken::NewCw20 {
+                    initial_supply: Uint128::from(1000000_u128),
+                    name: "New cw20".to_string(),
+                    symbol: "NC2".to_string(),
+                },
+            },
+        },
+    )
+    .unwrap();
+    assert_eq!(1, res.messages.len());
+}
+
+#[test]
+fn test_setup_donation_match() {
+    // Instantiate the contract
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Succeed to create EndowmentSettings
+    let info = mock_info("accounts-contract", &[]);
+    let msg = CreateEndowSettingsMsg {
+        id: 1,
+        donation_match_active: false,
+        donation_match_contract: None,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        maturity_whitelist: vec![],
+        settings_controller: SettingsController::default(),
+        parent: None,
+        split_to_liquid: None,
+        ignore_user_splits: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CreateEndowmentSettings(msg),
+    )
+    .unwrap();
+
+    // Only the Endowment owner can call this entry
+    let info = mock_info(AP_TEAM, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetupDonationMatch {
+            endowment_id: 1,
+            setup: angel_core::structs::DonationMatch::Cw20TokenReserve {
+                reserve_addr: "reserve-token".to_string(),
+                lp_addr: "lp-token".to_string(),
+            },
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed
+    let info = mock_info("endowment-owner", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetupDonationMatch {
+            endowment_id: 1,
+            setup: angel_core::structs::DonationMatch::Cw20TokenReserve {
+                reserve_addr: "reserve-token".to_string(),
+                lp_addr: "lp-token".to_string(),
+            },
+        },
+    )
+    .unwrap();
+    assert_eq!(1, res.messages.len());
 }

@@ -325,7 +325,7 @@ pub fn update_delegate(
                 env.block.time,
             );
         }
-        _ => unimplemented!(),
+        _ => return Err(ContractError::InvalidInputs {}),
     }
 
     // save mutated permissions back to SettingsController
