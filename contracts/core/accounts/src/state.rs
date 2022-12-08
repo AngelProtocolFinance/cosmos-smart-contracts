@@ -11,6 +11,15 @@ use serde::{Deserialize, Serialize};
 
 const DEFAULT_LIMIT: u64 = 15;
 const MAX_LIMIT: u64 = 80;
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct OldConfig {
+    pub owner: Addr, // DANO/AP Team Address
+    pub registrar_contract: Addr,
+    pub ibc_controller: Addr, // created to allow IBC packet sending to other Cosmos chains
+    pub next_account_id: u32,
+    pub max_general_category_id: u8,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

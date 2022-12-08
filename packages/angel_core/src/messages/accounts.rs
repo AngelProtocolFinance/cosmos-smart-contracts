@@ -14,7 +14,7 @@ use super::settings_controller::UpdateMaturityWhitelist;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {
-    pub last_earnings_harvest: u64,
+    pub settings_controller_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
