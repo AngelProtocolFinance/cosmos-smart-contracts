@@ -2,8 +2,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails, VaultType,
-    YieldVault,
+    AcceptedTokens, AccountStrategies, AccountType, BalanceInfo, Categories, DonationsReceived,
+    EndowmentType, OneOffVaults, RebalanceDetails, SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -21,26 +21,8 @@ use std::marker::PhantomData;
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    Vault {
-        vault_addr: String,
-    },
-    VaultList {
-        network: Option<String>,
-        endowment_type: Option<EndowmentType>,
-        acct_type: Option<AccountType>,
-        vault_type: Option<VaultType>,
-        approved: Option<bool>,
-        start_after: Option<String>,
-        limit: Option<u64>,
-    },
-    // Mock the "vault::balance { endowment_id: u32 }" query
-    Balance {
-        endowment_id: u32,
-    },
-    // Mock the "registrar::fee { name: String }" query
-    Fee {
-        name: String,
-    },
+    Endowment { id: u32 },
+    State { id: u32 },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -223,14 +205,11 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::Balance { endowment_id: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&Uint128::from(1000000_u128)).unwrap(),
-                )),
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
                         version: "0.1.0".to_string(),
-                        accounts_contract: Some("accounts_contract_addr".to_string()),
+                        accounts_contract: Some("accounts-contract".to_string()),
                         treasury: "treasury".to_string(),
                         rebalance: RebalanceDetails::default(),
                         index_fund: Some("index_fund".to_string()),
@@ -264,150 +243,80 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr } => {
-                    if let "liquid-vault" = vault_addr.as_str() {
-                        SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&VaultDetailResponse {
-                                vault: YieldVault {
-                                    network: "juno".to_string(),
-                                    address: Addr::unchecked("liquid-vault").to_string(),
-                                    input_denom: "input-denom".to_string(),
-                                    yield_token: Addr::unchecked("yield-token").to_string(),
-                                    approved: true,
-                                    restricted_from: vec![],
-                                    acct_type: AccountType::Liquid,
-                                    vault_type: VaultType::Native,
-                                },
-                            })
-                            .unwrap(),
-                        ))
-                    } else {
-                        SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&VaultDetailResponse {
-                                vault: YieldVault {
-                                    network: "juno".to_string(),
-                                    address: Addr::unchecked("vault").to_string(),
-                                    input_denom: "input-denom".to_string(),
-                                    yield_token: Addr::unchecked("yield-token").to_string(),
-                                    approved: true,
-                                    restricted_from: vec![],
-                                    acct_type: AccountType::Locked,
-                                    vault_type: VaultType::Native,
-                                },
-                            })
-                            .unwrap(),
-                        ))
-                    }
-                }
-                QueryMsg::VaultList {
-                    network: _,
-                    endowment_type: _,
-                    acct_type: Some(AccountType::Locked),
-                    vault_type: _,
-                    approved: _,
-                    start_after: _,
-                    limit: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultListResponse {
-                        vaults: vec![
-                            YieldVault {
-                                address: Addr::unchecked("vault").to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
+                QueryMsg::Endowment { id } => match id {
+                    1 => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
+                            owner: Addr::unchecked("endowment-owner"),
+                            name: "Test Endowment 1".to_string(),
+                            categories: Categories::default(),
+                            tier: Some(2),
+                            endow_type: EndowmentType::Normal,
+                            logo: Some("test-logo".to_string()),
+                            image: Some("test-image".to_string()),
+                            status: angel_core::structs::EndowmentStatus::Approved,
+                            deposit_approved: true,
+                            withdraw_approved: true,
+                            maturity_time: Some(0),
+                            strategies: AccountStrategies::default(),
+                            oneoff_vaults: OneOffVaults::default(),
+                            rebalance: RebalanceDetails::default(),
+                            kyc_donors_only: false,
+                            pending_redemptions: 0,
+                            proposal_link: None,
+                        })
+                        .unwrap(),
+                    )),
+                    2 => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
+                            owner: Addr::unchecked("endowment-owner"),
+                            name: "Test Endowment 1".to_string(),
+                            categories: Categories::default(),
+                            tier: Some(2),
+                            endow_type: EndowmentType::Charity,
+                            logo: Some("test-logo".to_string()),
+                            image: Some("test-image".to_string()),
+                            status: angel_core::structs::EndowmentStatus::Approved,
+                            deposit_approved: true,
+                            withdraw_approved: true,
+                            maturity_time: Some(0),
+                            strategies: AccountStrategies::default(),
+                            oneoff_vaults: OneOffVaults::default(),
+                            rebalance: RebalanceDetails::default(),
+                            kyc_donors_only: false,
+                            pending_redemptions: 0,
+                            proposal_link: None,
+                        })
+                        .unwrap(),
+                    )),
+                    _ => unreachable!(),
+                },
+                QueryMsg::State { id } => match id {
+                    1 => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&angel_core::responses::accounts::StateResponse {
+                            donations_received: DonationsReceived {
+                                locked: Uint128::from(1000000_u128),
+                                liquid: Uint128::from(1000000_u128),
                             },
-                            YieldVault {
-                                address: Addr::unchecked("tech_strategy_component_addr")
-                                    .to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
+                            balances: BalanceInfo::default(),
+                            closing_endowment: false,
+                            closing_beneficiary: None,
+                        })
+                        .unwrap(),
+                    )),
+                    2 => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&angel_core::responses::accounts::StateResponse {
+                            donations_received: DonationsReceived {
+                                locked: Uint128::from(1000000_u128),
+                                liquid: Uint128::from(1000000_u128),
                             },
-                        ],
-                    })
-                    .unwrap(),
-                )),
-                QueryMsg::VaultList {
-                    network: _,
-                    endowment_type: _,
-                    acct_type: Some(AccountType::Liquid),
-                    vault_type: _,
-                    approved: _,
-                    start_after: _,
-                    limit: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultListResponse {
-                        vaults: vec![YieldVault {
-                            address: Addr::unchecked("cash_strategy_component_addr").to_string(),
-                            network: "juno-1".to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Liquid,
-                            vault_type: VaultType::Native,
-                        }],
-                    })
-                    .unwrap(),
-                )),
-                QueryMsg::VaultList {
-                    network: _,
-                    endowment_type: _,
-                    acct_type: _,
-                    vault_type: _,
-                    approved: _,
-                    start_after: _,
-                    limit: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultListResponse {
-                        vaults: vec![
-                            YieldVault {
-                                address: Addr::unchecked("vault").to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
-                            },
-                            YieldVault {
-                                address: Addr::unchecked("cash_strategy_component_addr")
-                                    .to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Liquid,
-                                vault_type: VaultType::Native,
-                            },
-                            YieldVault {
-                                address: Addr::unchecked("tech_strategy_component_addr")
-                                    .to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
-                            },
-                        ],
-                    })
-                    .unwrap(),
-                )),
-                QueryMsg::Fee { name: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&Decimal::from_ratio(10_u128, 100_u128)).unwrap(),
-                )),
+                            balances: BalanceInfo::default(),
+                            closing_endowment: true,
+                            closing_beneficiary: None,
+                        })
+                        .unwrap(),
+                    )),
+                    _ => unreachable!(),
+                },
             },
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
                 let key: &[u8] = key.as_slice();

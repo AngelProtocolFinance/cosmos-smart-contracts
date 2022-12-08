@@ -141,7 +141,7 @@ pub fn create_endowment_settings(
             settings_controller: msg.settings_controller.clone(),
             parent: msg.parent,
             split_to_liquid: msg.split_to_liquid,
-            ignore_user_splits: msg.ignore_user_split,
+            ignore_user_splits: msg.ignore_user_splits,
             earnings_fee: msg.earnings_fee.clone(),
             withdraw_fee: msg.withdraw_fee.clone(),
             deposit_fee: msg.deposit_fee.clone(),
@@ -343,7 +343,9 @@ pub fn update_endowment_fees(
     info: MessageInfo,
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTSETTINGS
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentSettings::default());
 
     let config = CONFIG.load(deps.storage)?;
     let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
@@ -356,7 +358,7 @@ pub fn update_endowment_fees(
     )?;
 
     // only normalized endowments can update the additional fees
-    if endow_detail.endow_type != EndowmentType::Charity {
+    if endow_detail.endow_type == EndowmentType::Charity {
         return Err(ContractError::Std(StdError::generic_err(
             "Charity Endowments may not change endowment fees",
         )));
