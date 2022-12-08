@@ -10,6 +10,8 @@ use cw_utils::{Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use super::settings_controller::UpdateMaturityWhitelist;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {
     pub last_earnings_harvest: u64,
@@ -183,6 +185,12 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
+
+    pub donation_match_active: Option<bool>,
+    pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
+    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

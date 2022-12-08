@@ -67,15 +67,13 @@ pub struct CreateEndowSettingsMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
+    pub setting_updater: Addr,
     pub id: u32,
-    pub donation_match_active: bool,
+    pub donation_match_active: Option<bool>,
     pub whitelisted_beneficiaries: Option<Vec<String>>,
     pub whitelisted_contributors: Option<Vec<String>>,
     pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
     pub settings_controller: Option<SettingsController>,
-    pub parent: Option<u64>,
-    pub split_to_liquid: Option<SplitDetails>,
-    pub ignore_user_split: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -5,9 +5,7 @@ use angel_core::messages::settings_controller::*;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{
-    DaoSetup, DonationMatch, EndowmentSettings, EndowmentType, SettingsController,
-};
+use angel_core::structs::{DaoSetup, DonationMatch, EndowmentSettings, EndowmentType};
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn, Response,
     StdError, SubMsg, SubMsgResult, WasmMsg, WasmQuery,
@@ -155,10 +153,12 @@ pub fn create_endowment_settings(
 pub fn update_endowment_settings(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTSETTINGS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTSETTINGS
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentSettings::default());
     let config = CONFIG.load(deps.storage)?;
 
     let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
@@ -180,8 +180,8 @@ pub fn update_endowment_settings(
         return Err(ContractError::UpdatesAfterClosed {});
     }
 
-    if !(info.sender == config.owner || info.sender == endow_detail.owner) {
-        if endowment.dao.is_none() || info.sender != *endowment.dao.as_ref().unwrap() {
+    if !(msg.setting_updater == config.owner || msg.setting_updater == endow_detail.owner) {
+        if endowment.dao.is_none() || msg.setting_updater != *endowment.dao.as_ref().unwrap() {
             return Err(ContractError::Unauthorized {});
         }
     }
@@ -197,7 +197,7 @@ pub fn update_endowment_settings(
                     .settings_controller
                     .whitelisted_beneficiaries
                     .can_change(
-                        &info.sender,
+                        &msg.setting_updater,
                         &endow_detail.owner,
                         endowment.dao.as_ref(),
                         env.block.time,
@@ -216,7 +216,7 @@ pub fn update_endowment_settings(
                     .settings_controller
                     .whitelisted_contributors
                     .can_change(
-                        &info.sender,
+                        &msg.setting_updater,
                         &endow_detail.owner,
                         endowment.dao.as_ref(),
                         env.block.time,
@@ -254,7 +254,7 @@ pub fn update_endowment_settings(
     endowment.settings_controller = match msg.settings_controller.clone() {
         Some(controller) => {
             if endowment.settings_controller.image.can_change(
-                &info.sender,
+                &msg.setting_updater,
                 &endow_detail.owner,
                 endowment.dao.as_ref(),
                 env.block.time,

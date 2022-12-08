@@ -134,6 +134,11 @@ fn test_update_endowment_settings() {
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
+        donation_match_active: todo!(),
+        whitelisted_beneficiaries: todo!(),
+        whitelisted_contributors: todo!(),
+        maturity_whitelist: todo!(),
+        settings_controller: todo!(),
     };
     let res = execute(
         deps.as_mut(),
@@ -162,6 +167,12 @@ fn test_update_endowment_settings() {
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
+
+        donation_match_active: None,
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
+        maturity_whitelist: None,
+        settings_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -611,6 +622,12 @@ fn test_withdraw() {
             tier: None,
             logo: None,
             image: None,
+
+            donation_match_active: None,
+            whitelisted_beneficiaries: None,
+            whitelisted_contributors: None,
+            maturity_whitelist: None,
+            settings_controller: None,
         }),
     )
     .unwrap();

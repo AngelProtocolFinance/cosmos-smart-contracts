@@ -437,9 +437,7 @@ pub fn update_endowment_settings(
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        config
-            .settings_controller
-            .expect("Settings-controller contract not exist yet."),
+        config.settings_controller.as_ref().unwrap().to_string(),
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
@@ -618,7 +616,28 @@ pub fn update_endowment_settings(
 
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
-    Ok(Response::new().add_attribute("action", "update_endowment_settings"))
+    let message = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.settings_controller.as_ref().unwrap().to_string(),
+        msg: to_binary(
+            &angel_core::messages::settings_controller::ExecuteMsg::UpdateEndowmentSettings(
+                angel_core::messages::settings_controller::UpdateEndowmentSettingsMsg {
+                    setting_updater: info.sender,
+                    id: msg.id,
+                    donation_match_active: msg.donation_match_active,
+                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
+                    whitelisted_contributors: msg.whitelisted_contributors,
+                    maturity_whitelist: msg.maturity_whitelist,
+                    settings_controller: msg.settings_controller,
+                },
+            ),
+        )
+        .unwrap(),
+        funds: vec![],
+    });
+
+    Ok(Response::new()
+        .add_attribute("action", "update_endowment_settings")
+        .add_message(message))
 }
 
 pub fn update_strategies(

@@ -1,5 +1,5 @@
 use crate::state::{CONFIG, ENDOWMENTSETTINGS};
-use angel_core::responses::settings_controller::*;
+use angel_core::{responses::settings_controller::*, structs::EndowmentSettings};
 use cosmwasm_std::{Deps, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -13,7 +13,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 pub fn query_endowment_settings(deps: Deps, id: u32) -> StdResult<EndowmentSettingsResponse> {
     // this fails if no account is found
-    let endowment = ENDOWMENTSETTINGS.load(deps.storage, id)?;
+    let endowment = ENDOWMENTSETTINGS
+        .load(deps.storage, id)
+        .unwrap_or(EndowmentSettings::default());
+
     Ok(EndowmentSettingsResponse {
         dao: endowment.dao,
         dao_token: endowment.dao_token,
