@@ -198,7 +198,7 @@ pub fn create_endowment(
                 .unwrap_or(SettingsController::default()),
             parent: msg.parent,
             split_to_liquid: split_settings.0,
-            ignore_user_split: split_settings.1,
+            ignore_user_splits: split_settings.1,
             earnings_fee: msg.earnings_fee.clone(),
             deposit_fee: msg.deposit_fee.clone(),
             withdraw_fee: msg.withdraw_fee.clone(),

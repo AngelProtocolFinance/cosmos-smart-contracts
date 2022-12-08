@@ -58,7 +58,7 @@ pub struct CreateEndowSettingsMsg {
     pub settings_controller: SettingsController,
     pub parent: Option<u64>,
     pub split_to_liquid: Option<SplitDetails>,
-    pub ignore_user_split: bool,
+    pub ignore_user_splits: bool,
     pub earnings_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,
