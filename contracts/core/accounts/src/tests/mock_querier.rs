@@ -1,9 +1,10 @@
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
+use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
-    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails, VaultType,
-    YieldVault,
+    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SettingsController, SplitDetails,
+    VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -40,6 +41,10 @@ pub enum QueryMsg {
     // Mock the "registrar::fee { name: String }" query
     Fee {
         name: String,
+    },
+    // Mock the "settings_controller::EndowmentSettings {id: [EndowmentID]}" query
+    EndowmentSettings {
+        id: u32,
     },
 }
 
@@ -407,6 +412,28 @@ impl WasmMockQuerier {
                 )),
                 QueryMsg::Fee { name: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Decimal::from_ratio(10_u128, 100_u128)).unwrap(),
+                )),
+                QueryMsg::EndowmentSettings { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentSettingsResponse {
+                        dao: None,
+                        dao_token: None,
+                        donation_match_active: false,
+                        donation_match_contract: Some(Addr::unchecked("donation-match-contract")),
+                        whitelisted_beneficiaries: vec![],
+                        whitelisted_contributors: vec![],
+                        maturity_whitelist: vec![Addr::unchecked(
+                            "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", // CHARITY_ADDR
+                        )],
+                        earnings_fee: None,
+                        withdraw_fee: None,
+                        deposit_fee: None,
+                        aum_fee: None,
+                        settings_controller: SettingsController::default(),
+                        parent: None,
+                        split_to_liquid: None,
+                        ignore_user_splits: false,
+                    })
+                    .unwrap(),
                 )),
             },
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {

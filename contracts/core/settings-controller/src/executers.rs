@@ -122,6 +122,8 @@ pub fn create_endowment_settings(
     let registrar_config: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
+
+    // Only the "accounts_contract" can call this entry.
     if info.sender != registrar_config.accounts_contract.unwrap() {
         return Err(ContractError::Unauthorized {});
     }
@@ -153,7 +155,7 @@ pub fn create_endowment_settings(
 pub fn update_endowment_settings(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTSETTINGS
@@ -166,6 +168,12 @@ pub fn update_endowment_settings(
         &angel_core::messages::registrar::QueryMsg::Config {},
     )?;
     let accounts_contract = registrar_config.accounts_contract.unwrap();
+
+    // Only the "accounts_contract" can call this entry.
+    if info.sender != accounts_contract {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
         accounts_contract.to_string(),
         &angel_core::messages::accounts::QueryMsg::Endowment { id: msg.id },

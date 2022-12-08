@@ -1,9 +1,10 @@
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
-    SplitDetails, VaultType, YieldVault,
+    SettingsController, SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -29,6 +30,8 @@ pub enum QueryMsg {
     Vault { vault_addr: String },
     // Mock the `accounts` endowment
     Endowment { id: u32 },
+    // Mock the "settings_controller::EndowmentSettings {id: [EndowmentID]}" query
+    EndowmentSettings { id: u32 },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -209,7 +212,7 @@ impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<Empty>) -> QuerierResult {
         match &request {
             QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: _,
+                contract_addr,
                 msg,
             }) => match from_binary(&msg).unwrap() {
                 QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
@@ -247,43 +250,56 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&ConfigResponse {
-                        version: "1.7.0".to_string(),
-                        owner: "Test-Endowment-Owner".to_string(),
-                        accounts_contract: Some("accounts-contract".to_string()),
-                        rebalance: RebalanceDetails::default(),
-                        applications_review: "applications-review".to_string(),
-                        swaps_router: Some("swaps-router".to_string()),
-                        cw3_code: Some(124),
-                        cw4_code: Some(125),
-                        subdao_gov_code: Some(126),
-                        subdao_bonding_token_code: Some(127),
-                        subdao_cw20_token_code: Some(129),
-                        subdao_cw900_code: Some(128),
-                        subdao_distributor_code: None,
-                        donation_match_code: None,
-                        halo_token: None,
-                        halo_token_lp_contract: None,
-                        gov_contract: None,
-                        treasury: "treasury-address".to_string(),
-                        index_fund: None,
-                        split_to_liquid: SplitDetails::default(),
-                        donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
-                        collector_addr: "collector-addr".to_string(),
-                        collector_share: Decimal::percent(50),
-                        charity_shares_contract: None,
-                        accepted_tokens: AcceptedTokens {
-                            native: vec![
-                                "uluna".to_string(),
-                                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
-                            ],
-                            cw20: vec![],
-                        },
-                        swap_factory: Some("swap-factory".to_string()),
-                    })
-                    .unwrap(),
-                )),
+                QueryMsg::Config {} => {
+                    match contract_addr.as_str() {
+                        "accounts-contract" => SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&angel_core::responses::accounts::ConfigResponse {
+                                owner: "owner".to_string(),
+                                registrar_contract: "registrar-contract".to_string(),
+                                next_account_id: 2,
+                                max_general_category_id: 1,
+                                settings_controller: "settings-controller-contract".to_string(),
+                            }).unwrap())),
+                        "registrar-contract" => SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&ConfigResponse {
+                                version: "1.7.0".to_string(),
+                                owner: "Test-Endowment-Owner".to_string(),
+                                accounts_contract: Some("accounts-contract".to_string()),
+                                rebalance: RebalanceDetails::default(),
+                                applications_review: "applications-review".to_string(),
+                                swaps_router: Some("swaps-router".to_string()),
+                                cw3_code: Some(124),
+                                cw4_code: Some(125),
+                                subdao_gov_code: Some(126),
+                                subdao_bonding_token_code: Some(127),
+                                subdao_cw20_token_code: Some(129),
+                                subdao_cw900_code: Some(128),
+                                subdao_distributor_code: None,
+                                donation_match_code: None,
+                                halo_token: None,
+                                halo_token_lp_contract: None,
+                                gov_contract: None,
+                                treasury: "treasury-address".to_string(),
+                                index_fund: None,
+                                split_to_liquid: SplitDetails::default(),
+                                donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
+                                collector_addr: "collector-addr".to_string(),
+                                collector_share: Decimal::percent(50),
+                                charity_shares_contract: None,
+                                accepted_tokens: AcceptedTokens {
+                                    native: vec![
+                                        "uluna".to_string(),
+                                        "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                    ],
+                                    cw20: vec![],
+                                },
+                                swap_factory: Some("swap-factory".to_string()),
+                            })
+                            .unwrap()
+                        )),
+                        _ => unreachable!(),
+                    }
+                }
                 QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
                         vault: YieldVault {
@@ -296,6 +312,28 @@ impl WasmMockQuerier {
                             acct_type: AccountType::Locked,
                             vault_type: VaultType::Native,
                         },
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::EndowmentSettings { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentSettingsResponse {
+                        dao: None,
+                        dao_token: None,
+                        donation_match_active: false,
+                        donation_match_contract: Some(Addr::unchecked("donation-match-contract")),
+                        whitelisted_beneficiaries: vec![],
+                        whitelisted_contributors: vec![],
+                        maturity_whitelist: vec![Addr::unchecked(
+                            "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", // CHARITY_ADDR
+                        )],
+                        earnings_fee: None,
+                        withdraw_fee: None,
+                        deposit_fee: None,
+                        aum_fee: None,
+                        settings_controller: SettingsController::default(),
+                        parent: None,
+                        split_to_liquid: None,
+                        ignore_user_splits: false,
                     })
                     .unwrap(),
                 )),
