@@ -29,6 +29,10 @@ import {
   testSendRestitutionFundsToEndowments,
 } from "./core/accounts";
 import {
+  testQuerySettingsControllerConfig,
+  testQuerySettingsControllerEndowSettings,
+} from "./core/settingsController";
+import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
@@ -459,6 +463,8 @@ export async function testExecute(
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 3, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr } } });
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId2, "10000000"); // possible query registrar error
 
+  /* --- Settings-Controller --- */
+
   /* --- LOOP VAULT(s) --- */
   // await testVaultUpdateConfig(actors.apTeam.client, apTeamAddr, vaultLocked1, {
   //   sibling_vault: undefined,
@@ -497,6 +503,9 @@ export async function testExecute(
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: config.networkInfo.nativeToken }, "locked");
+
+  await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
+  await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, 1); // endowment ID
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
