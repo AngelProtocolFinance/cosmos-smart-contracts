@@ -33,6 +33,7 @@ let cw3ReviewTeam: string;
 let indexFund: string;
 let donationMatchCharities: string;
 let swapRouter: string;
+let settingsController: string;
 
 let vault1: string;
 let vault2: string;
@@ -114,6 +115,10 @@ async function setup(
 	process.stdout.write("Uploading Accounts Wasm");
 	const accountsCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/accounts.wasm`);
 	console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
+
+	process.stdout.write("Uploading Settings-Controller Wasm");
+	const settingsControllerCodId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/settings_controller.wasm`);
+	console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${settingsControllerCodId}`);
 
 	process.stdout.write("Uploading CW4 Group Wasm");
 	const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
@@ -222,6 +227,20 @@ async function setup(
 		update_admin: { admin: cw3ApTeam },
 	});
 	console.log(chalk.green(" Done!"));
+
+	process.stdout.write("Instantiating Settings-Controller contract");
+	const settingsControllerResult = await instantiateContract(
+		juno,
+		apTeamAddr,
+		apTeamAddr,
+		settingsControllerCodId,
+		{
+			owner_sc: apTeamAddr,
+			registrar_contract: registrar,
+		}
+	);
+	settingsController = settingsControllerResult.contractAddress as string;
+	console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${settingsController}`);
 
 	process.stdout.write("Instantiating Accounts contract");
 	const accountsResult = await instantiateContract(
@@ -359,6 +378,17 @@ async function setup(
 			subdao_bonding_token_code: subdaoBondingToken,
 			donation_match_code: subdaoDonationMatch,
 			donation_match_charites_contract: donationMatchCharities,
+		},
+	});
+	console.log(chalk.green(" Done!"));
+
+	process.stdout.write("Update Accounts's config with various contracts");
+	await sendTransaction(juno, apTeamAddr, accounts, {
+		update_config: {
+			new_registrar: registrar,
+			max_general_category_id: 1,
+			ibc_controller: undefined,
+			settings_controller: settingsController,
 		},
 	});
 	console.log(chalk.green(" Done!"));
