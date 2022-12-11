@@ -29,7 +29,7 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
-  // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm', { last_earnings_harvest: 0 });
+  // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm', { settings_controller_contract: undefined });
   // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
 }
 
