@@ -38,6 +38,8 @@ export const localjuno = {
     cw4GrpReviewTeam: "",
     cw3ReviewTeam: "",
     swapRouter: "",
+    settingsController: "",
+    giftcards: "",
 
     vaultLocked1: "",
     vaultLiquid1: "",

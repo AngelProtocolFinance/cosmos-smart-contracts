@@ -57,6 +57,7 @@ let indexFund: string;
 let accounts: string;
 let donationMatching: string;
 let swapRouter: string;
+let settingsController: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -150,6 +151,7 @@ async function initialize() {
   accounts = config.contracts.accounts;
   donationMatching = config.contracts.donationMatching;
   swapRouter = config.contracts.swapRouter;
+  settingsController = config.contracts.settingsController;
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
@@ -540,6 +542,7 @@ export async function startMigrateCore(): Promise<void> {
     cw3ApTeam,
     cw3ReviewTeam,
     swapRouter,
+    settingsController,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }

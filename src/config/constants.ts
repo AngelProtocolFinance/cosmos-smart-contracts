@@ -37,6 +37,7 @@ export const testnet = {
     vaultLocked2: "juno1k2wx9r9409wqguwwmwrfz2u6kptmtlcsusfmqe8yaqec5f4tzujqskrw9p",
     vaultLiquid2: "juno14kq7mcpdgzu7dmgnj7j9p4ucg5tnqne78dc6hqy6sdxhjpswzn3se5j809",
     swapRouter: "",
+    settingsController: "",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
@@ -142,6 +143,7 @@ export const mainnet = {
     cw3ReviewTeam: "",
     endowmentIDs: [],
     swapRouter: "",
+    settingsController: "",
     vaults: [],
   },
   members: [
