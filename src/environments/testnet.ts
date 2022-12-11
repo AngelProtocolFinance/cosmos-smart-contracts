@@ -599,6 +599,7 @@ export async function startTests(): Promise<void> {
     vaultLocked2,
     vaultLiquid2,
     accounts,
+    settingsController,
     donationMatching,
     endowId1,
     endowId2,

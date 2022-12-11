@@ -128,6 +128,7 @@ export async function testExecute(
   registrar: string,
   indexFund: string,
   accounts: string,
+  settingsController: string,
   donationMatching: string,
   endowmentID: number,
   cw4GrpApTeam: string,

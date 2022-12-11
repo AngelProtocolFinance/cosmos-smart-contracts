@@ -290,6 +290,7 @@ export async function startTests(): Promise<void> {
     registrar,
     indexFund,
     accounts,
+    settingsController,
     donationMatching,
     endowmentIDs[0],
     cw4GrpApTeam,
