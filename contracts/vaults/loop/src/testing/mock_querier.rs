@@ -186,6 +186,7 @@ impl WasmMockQuerier {
                         },
                         applications_review: "applications-review".to_string(),
                         swaps_router: None,
+                        settings_controller: Some("settings-controller".to_string()),
                         subdao_gov_code: None,
                         subdao_cw20_token_code: None,
                         subdao_bonding_token_code: None,
