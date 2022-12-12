@@ -13,6 +13,8 @@ pub struct MigrateMsg {
     pub endowtype_fees: MigrateEndowTypeFees,
     // collector_addr
     pub collector_addr: Option<String>,
+    // settings_controller contract address
+    pub settings_controller_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -15,9 +15,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         registrar_contract: config.registrar_contract.to_string(),
         next_account_id: config.next_account_id,
         max_general_category_id: config.max_general_category_id,
-        settings_controller: config
-            .settings_controller
-            .map_or("".to_string(), |addr| addr.to_string()),
     })
 }
 

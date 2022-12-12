@@ -13,9 +13,7 @@ use serde::{Deserialize, Serialize};
 use super::settings_controller::UpdateMaturityWhitelist;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {
-    pub settings_controller_contract: Option<String>,
-}
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {

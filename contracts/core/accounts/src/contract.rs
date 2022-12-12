@@ -1,10 +1,8 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::OldConfig;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use cosmwasm_std::from_slice;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdError, StdResult,
@@ -36,7 +34,6 @@ pub fn instantiate(
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_account_id: 1_u32,
             max_general_category_id: 1_u8,
-            settings_controller: None,
         },
     )?;
 
@@ -235,7 +232,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -252,28 +249,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new config struct and save to storage
-    let settings_controller = msg
-        .settings_controller_contract
-        .map(|addr| deps.api.addr_validate(&addr).unwrap());
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let old_config: OldConfig = from_slice(&data)?;
-
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: old_config.owner,
-            registrar_contract: old_config.registrar_contract,
-            ibc_controller: old_config.ibc_controller,
-            next_account_id: old_config.next_account_id,
-            max_general_category_id: old_config.max_general_category_id,
-            settings_controller,
-        },
-    )?;
 
     Ok(Response::default())
 }

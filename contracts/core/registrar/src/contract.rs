@@ -60,6 +60,7 @@ pub fn instantiate(
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
         swaps_router: None,
+        settings_controller: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -166,6 +167,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     let collector_addr = msg
         .collector_addr
         .map(|addr| deps.api.addr_validate(&addr).unwrap());
+    let settings_controller = msg
+        .settings_controller_contract
+        .map(|addr| deps.api.addr_validate(&addr));
 
     // setup the new config struct and save to storage
     let data = deps
@@ -202,6 +206,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             fundraising_contract: None,
             rebalance: old_config.rebalance,
             swaps_router: old_config.swaps_router,
+            settings_controller,
         },
     )?;
 
