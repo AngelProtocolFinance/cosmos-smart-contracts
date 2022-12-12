@@ -221,7 +221,7 @@ pub struct DepositMsg {
 pub enum QueryMsg {
     // Get all Config details for the contract
     Config {},
-    // Get the balance of available UST and the invested portion balances
+    // Get the Endowment balance
     Balance {
         id: u32,
     },
@@ -238,12 +238,6 @@ pub enum QueryMsg {
         proposal_link: Option<u64>,
         start_after: Option<u32>,
         limit: Option<u64>,
-    },
-    // Get endowment token balance
-    TokenAmount {
-        id: u32,
-        asset_info: AssetInfo,
-        acct_type: AccountType,
     },
     Allowances {
         id: u32,

@@ -3,15 +3,14 @@ use crate::contract::{execute, instantiate, query};
 use crate::state::Allowances;
 use angel_core::errors::core::*;
 
-use angel_core::messages::accounts::UpdateConfigMsg;
 use angel_core::messages::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy,
-    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
+    UpdateConfigMsg, UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyComponent,
-    SwapOperation,
+    AccountType, Beneficiary, Categories, EndowmentBalanceResponse, EndowmentType, SplitDetails,
+    StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -1068,15 +1067,18 @@ fn test_swap_receipt() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::TokenAmount {
-            id: CHARITY_ID,
-            asset_info: AssetInfo::Native("ujuno".to_string()),
-            acct_type: AccountType::Locked,
-        },
+        QueryMsg::Balance { id: CHARITY_ID },
     )
     .unwrap();
-    let balance: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(balance, Uint128::from(1000000_u128));
+    let balance: EndowmentBalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].denom,
+        "ujuno".to_string(),
+    );
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].amount,
+        Uint128::from(1000000_u128)
+    );
 }
 
 #[test]
@@ -1190,15 +1192,18 @@ fn test_vaults_invest() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::TokenAmount {
-            id: CHARITY_ID,
-            asset_info: AssetInfo::Native("input-denom".to_string()),
-            acct_type: AccountType::Locked,
-        },
+        QueryMsg::Balance { id: CHARITY_ID },
     )
     .unwrap();
-    let balance: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(balance, Uint128::from(1000000_u128 - 300000_u128));
+    let balance: EndowmentBalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].denom,
+        "input-denom".to_string(),
+    );
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].amount,
+        Uint128::from(1000000_u128 - 300000_u128)
+    );
 }
 
 #[test]

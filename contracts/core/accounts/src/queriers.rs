@@ -2,10 +2,9 @@ use crate::state::{
     read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES,
 };
 use angel_core::responses::accounts::*;
-use angel_core::structs::{AccountType, EndowmentBalanceResponse, EndowmentEntry, Tier};
+use angel_core::structs::{EndowmentBalanceResponse, EndowmentEntry, Tier};
 use angel_core::utils::vault_endowment_balance;
-use cosmwasm_std::{Deps, StdResult, Uint128};
-use cw_asset::AssetInfo;
+use cosmwasm_std::{Deps, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -53,32 +52,6 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
         invested_locked,
         invested_liquid,
     })
-}
-
-pub fn query_token_amount(
-    deps: Deps,
-    id: u32,
-    asset_info: AssetInfo,
-    acct_type: AccountType,
-) -> StdResult<Uint128> {
-    let _endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let state = STATES.load(deps.storage, id)?;
-    let balance: Uint128 = match (asset_info, acct_type) {
-        (AssetInfo::Native(denom), AccountType::Liquid) => {
-            state.balances.liquid.get_denom_amount(denom).amount
-        }
-        (AssetInfo::Native(denom), AccountType::Locked) => {
-            state.balances.locked.get_denom_amount(denom).amount
-        }
-        (AssetInfo::Cw20(addr), AccountType::Liquid) => {
-            state.balances.liquid.get_token_amount(addr).amount
-        }
-        (AssetInfo::Cw20(addr), AccountType::Locked) => {
-            state.balances.locked.get_token_amount(addr).amount
-        }
-        _ => unreachable!(),
-    };
-    Ok(balance)
 }
 
 pub fn query_endowment_list(
