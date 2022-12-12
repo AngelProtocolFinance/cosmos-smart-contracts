@@ -1,7 +1,9 @@
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
-use angel_core::responses::settings_controller::EndowmentSettingsResponse;
+use angel_core::responses::settings_controller::{
+    EndowmentPermissionsResponse, EndowmentSettingsResponse,
+};
 use angel_core::structs::{
     AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SettingsController, SplitDetails,
     VaultType, YieldVault,
@@ -45,6 +47,12 @@ pub enum QueryMsg {
     // Mock the "settings_controller::EndowmentSettings {id: [EndowmentID]}" query
     EndowmentSettings {
         id: u32,
+    },
+    // Mock the "settings_controller::EndowmentPermissions {id: [EndowmentID]}" query
+    EndowmentPermissions {
+        id: u32,
+        setting_updater: Addr,
+        endowment_owner: Addr,
     },
 }
 
@@ -433,6 +441,30 @@ impl WasmMockQuerier {
                         parent: None,
                         split_to_liquid: None,
                         ignore_user_splits: false,
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::EndowmentPermissions {
+                    id: _,
+                    setting_updater: _,
+                    endowment_owner: _,
+                } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentPermissionsResponse {
+                        settings_controller: false,
+                        strategies: false,
+                        whitelisted_beneficiaries: false,
+                        whitelisted_contributors: false,
+                        maturity_time: false,
+                        profile: false,
+                        earnings_fee: false,
+                        withdraw_fee: false,
+                        deposit_fee: false,
+                        aum_fee: false,
+                        kyc_donors_only: false,
+                        name: false,
+                        image: false,
+                        logo: false,
+                        categories: false,
                     })
                     .unwrap(),
                 )),

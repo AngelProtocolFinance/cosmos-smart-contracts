@@ -131,7 +131,6 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
                 QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentDetailsResponse {
                         owner: Addr::unchecked("owner"),

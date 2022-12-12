@@ -14,23 +14,13 @@ use std::marker::PhantomData;
 
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::responses::vault::InfoResponse;
-use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails};
+use angel_core::structs::{AcceptedTokens, SplitDetails};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Info {},
-    EndowmentList {
-        status: Option<String>,
-        name: Option<Option<String>>,
-        owner: Option<Option<String>>,
-        tier: Option<Option<String>>,
-        un_sdg: Option<Option<u64>>,
-        endow_type: Option<Option<String>>,
-    },
-    Balance {
-        address: String,
-    },
+    Balance { address: String },
     Config {},
 }
 
@@ -148,30 +138,7 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
-                QueryMsg::EndowmentList {
-                    status: _,
-                    name: _,
-                    owner: _,
-                    tier: _,
-                    un_sdg: _,
-                    endow_type: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&EndowmentListResponse {
-                        endowments: vec![EndowmentEntry {
-                            id: 1,
-                            owner: "owner".to_string(),
-                            endow_type: angel_core::structs::EndowmentType::Charity,
-                            status: angel_core::structs::EndowmentStatus::Approved,
-                            name: None,
-                            logo: None,
-                            image: None,
-                            tier: None,
-                            un_sdg: None,
-                        }],
-                    })
-                    .unwrap(),
-                )),
+
                 // Simulating the `cw20::QueryMsg::Balance { address: [account_address]}`
                 QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&cw20::BalanceResponse {

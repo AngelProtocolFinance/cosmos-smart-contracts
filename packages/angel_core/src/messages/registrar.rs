@@ -1,5 +1,5 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails, Tier,
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
     VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
@@ -129,18 +129,6 @@ pub struct VaultAddMsg {
     pub restricted_from: Vec<EndowmentType>,
     pub acct_type: AccountType,
     pub vault_type: VaultType,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentEntryMsg {
-    pub endowment_addr: String,
-    pub name: Option<String>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub owner: Option<String>,
-    pub tier: Option<Option<Tier>>,
-    pub un_sdg: Option<Option<u64>>,
-    pub endow_type: Option<EndowmentType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

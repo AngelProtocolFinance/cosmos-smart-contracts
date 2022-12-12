@@ -435,21 +435,6 @@ impl RebalanceDetails {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct EndowmentEntry {
-    pub id: u32,
-    pub owner: String,
-    pub status: EndowmentStatus,
-    pub endow_type: EndowmentType,
-    pub name: Option<String>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub tier: Option<Tier>,
-    pub categories: Categories,
-    pub proposal_link: Option<u64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentStatus {
     Inactive = 0, // Default state when new Endowment is created
     // Statuses below are set by DANO or AP Team

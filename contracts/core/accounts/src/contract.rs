@@ -207,16 +207,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::Balance { id } => to_binary(&queriers::query_endowment_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
-        QueryMsg::EndowmentList {
-            proposal_link,
-            start_after,
-            limit,
-        } => to_binary(&queriers::query_endowment_list(
-            deps,
-            proposal_link,
-            start_after,
-            limit,
-        )?),
+        QueryMsg::EndowmentByProposalLink { proposal_link } => to_binary(
+            &queriers::query_endowment_by_proposal_link(deps, proposal_link)?,
+        ),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::Allowances { id, spender } => {
             to_binary(&queriers::query_allowances(deps, id, spender)?)

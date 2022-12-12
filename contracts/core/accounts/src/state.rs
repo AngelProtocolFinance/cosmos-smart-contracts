@@ -2,15 +2,12 @@ use angel_core::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentStatus,
     EndowmentType, OneOffVaults, RebalanceDetails,
 };
-use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
+use cosmwasm_std::{Addr, Env, Timestamp};
 use cw_asset::Asset;
-use cw_storage_plus::{Bound, Item, Map};
+use cw_storage_plus::{Item, Map};
 use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-const DEFAULT_LIMIT: u64 = 15;
-const MAX_LIMIT: u64 = 80;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -52,34 +49,6 @@ impl Endowment {
             }
         }
         false
-    }
-}
-
-pub fn read_endowments(
-    storage: &dyn Storage,
-    proposal_link: Option<u64>,
-    start_after: Option<u32>,
-    limit: Option<u64>,
-) -> StdResult<Vec<(u32, Endowment)>> {
-    let start: Option<Bound<u32>> = start_after.map(Bound::exclusive);
-    match proposal_link {
-        Some(proposal_id) => ENDOWMENTS
-            .range(storage, start, None, Order::Ascending)
-            .filter(|e| e.as_ref().unwrap().1.proposal_link == Some(proposal_id))
-            .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
-            .map(|item| {
-                let (i, e) = item?;
-                Ok((i, e))
-            })
-            .collect(),
-        None => ENDOWMENTS
-            .range(storage, start, None, Order::Ascending)
-            .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
-            .map(|item| {
-                let (i, e) = item?;
-                Ok((i, e))
-            })
-            .collect(),
     }
 }
 

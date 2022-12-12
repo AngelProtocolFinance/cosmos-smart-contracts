@@ -222,25 +222,13 @@ pub enum QueryMsg {
     // Get all Config details for the contract
     Config {},
     // Get the Endowment balance
-    Balance {
-        id: u32,
-    },
+    Balance { id: u32 },
     // Get state details (like total donations received so far)
-    State {
-        id: u32,
-    },
+    State { id: u32 },
     // Get all Endowment details
-    Endowment {
-        id: u32,
-    },
-    // Gets list of all registered Endowments
-    EndowmentList {
-        proposal_link: Option<u64>,
-        start_after: Option<u32>,
-        limit: Option<u64>,
-    },
-    Allowances {
-        id: u32,
-        spender: String,
-    },
+    Endowment { id: u32 },
+    // Gets the Endowment by "proposal_link"
+    EndowmentByProposalLink { proposal_link: u64 },
+    // Get the Allowances for Endowment
+    Allowances { id: u32, spender: String },
 }

@@ -1,10 +1,8 @@
-use crate::state::{
-    read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES,
-};
+use crate::state::{Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
-use angel_core::structs::{EndowmentBalanceResponse, EndowmentEntry, Tier};
+use angel_core::structs::EndowmentBalanceResponse;
 use angel_core::utils::vault_endowment_balance;
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Deps, Order, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -54,37 +52,58 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
     })
 }
 
-pub fn query_endowment_list(
+pub fn query_endowment_by_proposal_link(
     deps: Deps,
-    proposal_link: Option<u64>,
-    start_after: Option<u32>,
-    limit: Option<u64>,
-) -> StdResult<EndowmentListResponse> {
-    let endowments: Vec<(u32, Endowment)> =
-        read_endowments(deps.storage, proposal_link, start_after, limit)?;
-    let entries: Vec<EndowmentEntry> = endowments
-        .iter()
-        .map(|(i, e)| EndowmentEntry {
-            id: *i,
-            owner: e.owner.to_string(),
-            status: e.status.clone(),
-            endow_type: e.endow_type.clone(),
-            name: Some(e.name.clone()),
-            logo: e.logo.clone(),
-            image: e.image.clone(),
-            tier: match e.tier.unwrap_or(0) {
-                1 => Some(Tier::Level1),
-                2 => Some(Tier::Level2),
-                3 => Some(Tier::Level3),
-                _ => None,
-            },
-            categories: e.categories.clone(),
-            proposal_link: e.proposal_link.clone(),
-        })
+    proposal_link: u64,
+) -> StdResult<EndowmentDetailsResponse> {
+    let endowments: Vec<Endowment> = ENDOWMENTS
+        .range(deps.storage, None, None, Order::Ascending)
+        .filter(|e| e.as_ref().unwrap().1.proposal_link == Some(proposal_link))
+        .map(|item| item.unwrap().1)
         .collect();
+    if endowments.len() != 1 {
+        return Err(cosmwasm_std::StdError::NotFound {
+            kind: "endowment".to_string(),
+        });
+    }
+    let Endowment {
+        owner,
+        name,
+        categories,
+        tier,
+        endow_type,
+        logo,
+        image,
+        status,
+        deposit_approved,
+        withdraw_approved,
+        maturity_time,
+        strategies,
+        oneoff_vaults,
+        rebalance,
+        kyc_donors_only,
+        pending_redemptions,
+        proposal_link,
+    } = endowments[0].clone();
 
-    Ok(EndowmentListResponse {
-        endowments: entries,
+    Ok(EndowmentDetailsResponse {
+        owner,
+        name,
+        categories,
+        tier,
+        endow_type,
+        logo,
+        image,
+        status,
+        deposit_approved,
+        withdraw_approved,
+        maturity_time,
+        strategies,
+        oneoff_vaults,
+        rebalance,
+        kyc_donors_only,
+        pending_redemptions,
+        proposal_link,
     })
 }
 
