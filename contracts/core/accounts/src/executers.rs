@@ -10,7 +10,9 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
     VaultListResponse,
 };
-use angel_core::responses::settings_controller::EndowmentSettingsResponse;
+use angel_core::responses::settings_controller::{
+    EndowmentPermissionsResponse, EndowmentSettingsResponse,
+};
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
     EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails,
@@ -434,7 +436,7 @@ pub fn update_endowment_status(
 
 pub fn update_endowment_settings(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
@@ -443,13 +445,20 @@ pub fn update_endowment_settings(
     let registrar_config: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
+    let settings_controller = registrar_config
+        .settings_controller
+        .expect("SettingsController contract not exist yet.");
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config
-            .settings_controller
-            .as_ref()
-            .unwrap()
-            .to_string(),
+        settings_controller.to_string(),
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
+    )?;
+    let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
+        settings_controller.to_string(),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentPermissions {
+            id: msg.id,
+            setting_updater: info.sender.clone(),
+            endowment_owner: endowment.owner.clone(),
+        },
     )?;
 
     let state = STATES.load(deps.storage, msg.id)?;
@@ -497,16 +506,7 @@ pub fn update_endowment_settings(
     if endowment.endow_type != EndowmentType::Charity {
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
-                if endowment_settings
-                    .settings_controller
-                    .maturity_time
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment_settings.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
+                if endowment_permissions.maturity_time {
                     i
                 } else {
                     endowment.maturity_time
@@ -521,16 +521,7 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    if endowment_settings
-        .settings_controller
-        .kyc_donors_only
-        .can_change(
-            &info.sender,
-            &endowment.owner,
-            endowment_settings.dao.as_ref(),
-            env.block.time,
-        )
-    {
+    if endowment_permissions.kyc_donors_only {
         endowment.kyc_donors_only = match msg.kyc_donors_only {
             Some(i) => i,
             None => endowment.kyc_donors_only,
@@ -539,12 +530,7 @@ pub fn update_endowment_settings(
 
     endowment.name = match msg.name.clone() {
         Some(name) => {
-            if endowment_settings.settings_controller.name.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment_settings.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.name {
                 name
             } else {
                 endowment.name
@@ -554,16 +540,7 @@ pub fn update_endowment_settings(
     };
     endowment.categories = match msg.categories {
         Some(categories) => {
-            if endowment_settings
-                .settings_controller
-                .categories
-                .can_change(
-                    &info.sender,
-                    &endowment.owner,
-                    endowment_settings.dao.as_ref(),
-                    env.block.time,
-                )
-            {
+            if endowment_permissions.categories {
                 // check that at least 1 SDG category is set for charity endowments
                 if endowment.endow_type == EndowmentType::Charity {
                     if endowment.categories.sdgs.is_empty() {
@@ -593,12 +570,7 @@ pub fn update_endowment_settings(
     };
     endowment.logo = match msg.logo.clone() {
         Some(logo) => {
-            if endowment_settings.settings_controller.logo.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment_settings.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.logo {
                 Some(logo)
             } else {
                 endowment.logo
@@ -608,12 +580,7 @@ pub fn update_endowment_settings(
     };
     endowment.image = match msg.image.clone() {
         Some(image) => {
-            if endowment_settings.settings_controller.image.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment_settings.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.image {
                 Some(image)
             } else {
                 endowment.image
@@ -625,11 +592,7 @@ pub fn update_endowment_settings(
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     let message = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: registrar_config
-            .settings_controller
-            .as_ref()
-            .unwrap()
-            .to_string(),
+        contract_addr: settings_controller.to_string(),
         msg: to_binary(
             &angel_core::messages::settings_controller::ExecuteMsg::UpdateEndowmentSettings(
                 angel_core::messages::settings_controller::UpdateEndowmentSettingsMsg {
