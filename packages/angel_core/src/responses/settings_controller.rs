@@ -28,3 +28,22 @@ pub struct EndowmentSettingsResponse {
     pub split_to_liquid: Option<SplitDetails>,
     pub ignore_user_splits: bool,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct EndowmentPermissionsResponse {
+    pub settings_controller: bool,
+    pub strategies: bool,
+    pub whitelisted_beneficiaries: bool,
+    pub whitelisted_contributors: bool,
+    pub maturity_time: bool,
+    pub profile: bool,
+    pub earnings_fee: bool,
+    pub withdraw_fee: bool,
+    pub deposit_fee: bool,
+    pub aum_fee: bool,
+    pub kyc_donors_only: bool,
+    pub name: bool,
+    pub image: bool,
+    pub logo: bool,
+    pub categories: bool,
+}

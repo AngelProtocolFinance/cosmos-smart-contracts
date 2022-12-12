@@ -81,12 +81,23 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::EndowmentSettings { id } => {
             to_binary(&queriers::query_endowment_settings(deps, id)?)
         }
+        QueryMsg::EndowmentPermissions {
+            id,
+            setting_updater,
+            endowment_owner,
+        } => to_binary(&queriers::query_endowment_permissions(
+            deps,
+            env,
+            id,
+            setting_updater,
+            endowment_owner,
+        )?),
     }
 }
 

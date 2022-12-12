@@ -95,5 +95,12 @@ pub struct UpdateMaturityWhitelist {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    EndowmentSettings { id: u32 },
+    EndowmentSettings {
+        id: u32,
+    },
+    EndowmentPermissions {
+        id: u32,
+        setting_updater: Addr,
+        endowment_owner: Addr,
+    },
 }
