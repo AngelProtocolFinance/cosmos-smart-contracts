@@ -5,7 +5,7 @@ use crate::structs::{
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo, AssetUnchecked};
+use cw_asset::{Asset, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
