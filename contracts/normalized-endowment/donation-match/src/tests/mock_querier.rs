@@ -258,7 +258,6 @@ impl WasmMockQuerier {
                                 registrar_contract: "registrar-contract".to_string(),
                                 next_account_id: 2,
                                 max_general_category_id: 1,
-                                settings_controller: "settings-controller-contract".to_string(),
                             }).unwrap())),
                         "registrar-contract" => SystemResult::Ok(ContractResult::Ok(
                             to_binary(&ConfigResponse {
@@ -294,6 +293,7 @@ impl WasmMockQuerier {
                                     cw20: vec![],
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
+                                settings_controller: Some("settings-controller".to_string()),
                             })
                             .unwrap()
                         )),

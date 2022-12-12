@@ -130,16 +130,16 @@ fn execute_donor_match(
         }
         None => return Err(ContractError::AccountDoesNotExist {}),
     }
+    let settings_controller = registrar_config
+        .settings_controller
+        .expect("SettingsController contract not exist yet.");
 
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
         accounts_contract.to_string(),
         &AccountQueryMsg::Endowment { id: endowment_id },
     )?;
-    let accounts_config: angel_core::responses::accounts::ConfigResponse = deps
-        .querier
-        .query_wasm_smart(accounts_contract.to_string(), &AccountQueryMsg::Config {})?;
     let endow_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        accounts_config.settings_controller,
+        settings_controller,
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings {
             id: endowment_id,
         },

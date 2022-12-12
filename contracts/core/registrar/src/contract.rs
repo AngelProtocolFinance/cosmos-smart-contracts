@@ -169,7 +169,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         .map(|addr| deps.api.addr_validate(&addr).unwrap());
     let settings_controller = msg
         .settings_controller_contract
-        .map(|addr| deps.api.addr_validate(&addr));
+        .map(|addr| deps.api.addr_validate(&addr).unwrap());
 
     // setup the new config struct and save to storage
     let data = deps
