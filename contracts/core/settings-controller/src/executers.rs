@@ -421,12 +421,15 @@ pub fn setup_dao(
         config.registrar_contract.to_string(),
         &angel_core::messages::registrar::QueryMsg::Config {},
     )?;
+    let accounts_contract = registrar_config
+        .accounts_contract
+        .expect("Cannot get the accounts contract address");
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_contract.unwrap(),
+        accounts_contract.to_string(),
         &angel_core::messages::accounts::QueryMsg::Endowment { id: endowment_id },
     )?;
 
-    if info.sender != endow_detail.owner {
+    if !(info.sender == endow_detail.owner || info.sender == accounts_contract) {
         return Err(ContractError::Unauthorized {});
     }
 
