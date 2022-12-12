@@ -447,7 +447,11 @@ pub fn update_endowment_settings(
     }
 
     if !(info.sender == config.owner || info.sender == endowment.owner) {
-        return Err(ContractError::Unauthorized {});
+        if endowment_settings.dao.is_none()
+            || info.sender != *endowment_settings.dao.as_ref().unwrap()
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // Only config.owner can update owner, tier and endowment_type fields
@@ -465,13 +469,6 @@ pub fn update_endowment_settings(
         }
         ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
         return Ok(Response::new().add_attribute("action", "update_endowment_settings"));
-    }
-
-    if info.sender.ne(&endowment.owner)
-        && (endowment_settings.dao.is_some()
-            && info.sender != *endowment_settings.dao.as_ref().unwrap())
-    {
-        return Err(ContractError::Unauthorized {});
     }
 
     endowment.owner = match msg.owner {
