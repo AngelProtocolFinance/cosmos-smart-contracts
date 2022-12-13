@@ -7,8 +7,7 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::settings_controller::CreateEndowSettingsMsg;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
-    VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::responses::settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
@@ -1107,38 +1106,7 @@ pub fn reinvest_to_locked(
             })));
         }
         // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-        VaultType::Ibc { ica } => {
-            // look up Registrar network information on the given IBC Vault
-            let network_info: NetworkConnectionResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::NetworkConnection {
-                        chain_id: vault_config.vault.network,
-                    })?,
-                }))?;
-            // build message
-            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.ibc_controller.to_string(),
-                msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                    channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                    msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: ica.to_string(),
-                        msg: to_binary(
-                            &angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
-                                endowment_id: id,
-                                amount,
-                            },
-                        )
-                        .unwrap(),
-                        funds: vec![],
-                    })],
-                    // callback_id: Some("ibc-vault-reinvest".to_string()),
-                    callback_id: None,
-                })
-                .unwrap(),
-                funds: vec![],
-            }));
-        }
+        VaultType::Ibc { ica: _ } => unimplemented!(),
         VaultType::Evm => unimplemented!(),
     }
     Ok(res)
@@ -1519,67 +1487,7 @@ pub fn vaults_invest(
                 });
             }
             // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-            VaultType::Ibc { ica } => {
-                // look up Registrar network information on the given IBC Vault
-                let network_info: NetworkConnectionResponse =
-                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
-                            chain_id: vault_config.vault.network,
-                        })?,
-                    }))?;
-                // build message
-                res = res.add_messages(match &asset.info {
-                    AssetInfoBase::Native(ref denom) => [
-                        CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: config.ibc_controller.to_string(),
-                            msg: to_binary(
-                                &ica_vaults::ica_controller_msg::ExecuteMsg::SendFunds {
-                                    reflect_channel_id: network_info
-                                        .network_connection
-                                        .ibc_channel
-                                        .clone()
-                                        .unwrap(),
-                                    transfer_channel_id: network_info
-                                        .network_connection
-                                        .transfer_channel
-                                        .unwrap(),
-                                },
-                            )
-                            .unwrap(),
-                            funds: vec![Coin {
-                                denom: denom.clone(),
-                                amount: asset.amount,
-                            }],
-                        }),
-                        CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: config.ibc_controller.to_string(),
-                            msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                                channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                                    contract_addr: ica.to_string(),
-                                    msg: to_binary(
-                                        &angel_core::messages::vault::ExecuteMsg::Deposit {
-                                            endowment_id: id,
-                                        },
-                                    )
-                                    .unwrap(),
-                                    funds: vec![Coin {
-                                        denom: denom.clone(),
-                                        amount: asset.amount,
-                                    }],
-                                })],
-                                // callback_id: Some("ibc-deposit-native".to_string()),
-                                callback_id: None,
-                            })
-                            .unwrap(),
-                            funds: vec![],
-                        }),
-                    ],
-                    AssetInfo::Cw20(ref _contract_addr) => unimplemented!(),
-                    _ => unreachable!(),
-                });
-            }
+            VaultType::Ibc { ica: _ } => unimplemented!(),
             VaultType::Evm => unimplemented!(),
         }
     }
@@ -1692,36 +1600,7 @@ pub fn vaults_redeem(
                 })));
             }
             // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-            VaultType::Ibc { ica } => {
-                // look up Registrar network information on the given IBC Vault
-                let network_info: NetworkConnectionResponse =
-                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
-                            chain_id: vault_config.vault.network,
-                        })?,
-                    }))?;
-                // build message
-                res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: config.ibc_controller.to_string(),
-                    msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                        channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: ica.to_string(),
-                            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
-                                endowment_id: id,
-                                amount: *amount,
-                            })
-                            .unwrap(),
-                            funds: vec![],
-                        })],
-                        // callback_id: Some("ibc-vault-redeem".to_string()),
-                        callback_id: None,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }));
-            }
+            VaultType::Ibc { ica: _ } => unimplemented!(),
             VaultType::Evm => unimplemented!(),
         }
     }
