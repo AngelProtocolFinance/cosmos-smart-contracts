@@ -2045,7 +2045,9 @@ pub fn manage_allowances(
 
     if let Some(exp) = expires {
         if exp.is_expired(&env.block) {
-            return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "allowance is expired".to_string(),
+            }));
         }
     }
 
@@ -2123,7 +2125,9 @@ pub fn spend_allowance(
             match id {
                 Some(id) => {
                     if allowances.expires[id].is_expired(&env.block) {
-                        return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: "allowance is expired".to_string(),
+                        }));
                     }
                     allowances.assets[id].amount.checked_sub(asset.amount)?;
                     allowances.assets[id].amount -= asset.amount;
