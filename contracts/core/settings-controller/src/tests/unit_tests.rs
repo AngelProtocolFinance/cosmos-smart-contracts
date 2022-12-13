@@ -1,23 +1,17 @@
-use super::mock_querier::{mock_dependencies, WasmMockQuerier};
-use crate::contract::{execute, instantiate, query};
+use super::mock_querier::mock_dependencies;
+use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 
 use angel_core::messages::settings_controller::{
-    CreateEndowSettingsMsg, ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg,
+    CreateEndowSettingsMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
     UpdateEndowmentFeesMsg, UpdateEndowmentSettingsMsg, UpdateMaturityWhitelist,
 };
-use angel_core::responses::settings_controller::{ConfigResponse, EndowmentSettingsResponse};
-use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentFee, EndowmentType, SettingsController,
-    SettingsPermissions, SplitDetails, StrategyComponent, SwapOperation,
+use angel_core::responses::settings_controller::{
+    ConfigResponse, EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
-use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
-};
-use cw20::Cw20ReceiveMsg;
-use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
-use cw_utils::{Expiration, Threshold};
+use angel_core::structs::{EndowmentFee, SettingsController};
+use cosmwasm_std::testing::{mock_env, mock_info};
+use cosmwasm_std::{from_binary, Addr, Decimal, Event, Reply, StdError, SubMsgResponse, Uint128};
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ID: u32 = 1;
@@ -42,6 +36,22 @@ fn test_proper_initialization() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(config.owner, AP_TEAM.to_string());
     assert_eq!(config.registrar_contract, REGISTRAR_CONTRACT.to_string());
+
+    // Check the endowment permissions
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentPermissions {
+            id: 1,
+            setting_updater: Addr::unchecked("anyone"),
+            endowment_owner: Addr::unchecked("endowment-owner"),
+        },
+    )
+    .unwrap();
+    let permission: EndowmentPermissionsResponse = from_binary(&res).unwrap();
+    assert!(!permission.aum_fee);
+    assert!(!permission.settings_controller);
+    assert!(!permission.maturity_time);
 }
 
 #[test]
@@ -650,4 +660,255 @@ fn test_setup_donation_match() {
     )
     .unwrap();
     assert_eq!(1, res.messages.len());
+
+    let info = mock_info("endowment-owner", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SetupDonationMatch {
+            endowment_id: 1,
+            setup: angel_core::structs::DonationMatch::HaloTokenReserve {},
+        },
+    )
+    .unwrap();
+    assert_eq!(1, res.messages.len());
+}
+
+#[test]
+fn test_setup_dao_reply() {
+    // Instantiate the contract
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Succeed to create EndowmentSettings
+    let info = mock_info("accounts-contract", &[]);
+    let msg = CreateEndowSettingsMsg {
+        id: 1,
+        donation_match_active: false,
+        donation_match_contract: None,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        maturity_whitelist: vec![],
+        settings_controller: SettingsController::default(),
+        parent: None,
+        split_to_liquid: None,
+        ignore_user_splits: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CreateEndowmentSettings(msg),
+    )
+    .unwrap();
+
+    // Only reply id "1" is acceptable.
+    let reply_msg = Reply {
+        id: 0,
+        result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: None,
+        }),
+    };
+    let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // SubMsgResult should be Ok
+    let reply_msg = Reply {
+        id: 1,
+        result: cosmwasm_std::SubMsgResult::Err("error".to_string()),
+    };
+    let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "error".to_string()
+        })
+    );
+
+    // SubMsgResult should have results in "events"
+    let reply_msg = Reply {
+        id: 1,
+        result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: None,
+        }),
+    };
+    let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
+    assert_eq!(err, ContractError::AccountNotCreated {});
+
+    // Succeed to save Dao info in EndowmentSettings
+    let reply_msg = Reply {
+        id: 1,
+        result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
+            events: vec![Event::new("wasm")
+                .add_attribute("endow_id", "1")
+                .add_attribute("dao_addr", "dao_addr")
+                .add_attribute("dao_token_addr", "dao_token_addr")],
+            data: None,
+        }),
+    };
+    let _res = reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
+
+    // Check the result
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentSettings { id: 1 },
+    )
+    .unwrap();
+    let endow_settings: EndowmentSettingsResponse = from_binary(&res).unwrap();
+    assert_eq!(endow_settings.dao, Some(Addr::unchecked("dao_addr")));
+    assert_eq!(
+        endow_settings.dao_token,
+        Some(Addr::unchecked("dao_token_addr"))
+    );
+}
+
+#[test]
+fn test_donation_match_reply() {
+    // Instantiate the contract
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Succeed to create EndowmentSettings
+    let info = mock_info("accounts-contract", &[]);
+    let msg = CreateEndowSettingsMsg {
+        id: 1,
+        donation_match_active: false,
+        donation_match_contract: None,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        maturity_whitelist: vec![],
+        settings_controller: SettingsController::default(),
+        parent: None,
+        split_to_liquid: None,
+        ignore_user_splits: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CreateEndowmentSettings(msg),
+    )
+    .unwrap();
+
+    // Only reply id "2" is acceptable.
+    let reply_msg = Reply {
+        id: 0,
+        result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: None,
+        }),
+    };
+    let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // SubMsgResult should be Ok
+    let reply_msg = Reply {
+        id: 2,
+        result: cosmwasm_std::SubMsgResult::Err("error".to_string()),
+    };
+    let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "error".to_string()
+        })
+    );
+
+    // SubMsgResult should have results in "events"
+    let reply_msg = Reply {
+        id: 2,
+        result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
+            events: vec![],
+            data: None,
+        }),
+    };
+    let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
+    assert_eq!(err, ContractError::AccountNotCreated {});
+
+    // Succeed to save Dao info in EndowmentSettings
+    let reply_msg = Reply {
+        id: 2,
+        result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
+            events: vec![Event::new("wasm")
+                .add_attribute("endow_id", "1")
+                .add_attribute("donation_match_addr", "donation_match_addr")],
+            data: None,
+        }),
+    };
+    let _res = reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
+
+    // Check the result
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentSettings { id: 1 },
+    )
+    .unwrap();
+    let endow_settings: EndowmentSettingsResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        endow_settings.donation_match_contract,
+        Some(Addr::unchecked("donation_match_addr"))
+    );
+}
+
+#[test]
+fn test_migrate() {
+    // Instantiate the contract
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Succeed to create EndowmentSettings
+    let info = mock_info("accounts-contract", &[]);
+    let msg = CreateEndowSettingsMsg {
+        id: 1,
+        donation_match_active: false,
+        donation_match_contract: None,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        maturity_whitelist: vec![],
+        settings_controller: SettingsController::default(),
+        parent: None,
+        split_to_liquid: None,
+        ignore_user_splits: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CreateEndowmentSettings(msg),
+    )
+    .unwrap();
+
+    let _err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
 }
