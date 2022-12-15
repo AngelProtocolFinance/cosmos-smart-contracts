@@ -748,23 +748,3 @@ export async function testQueryAccountsProfile(
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
-
-export async function testQueryAccountsTokenAmount(
-  juno: SigningCosmWasmClient,
-  accountsContract: string,
-  endowmentId: number,
-  asset_info: any,
-  acct_type: any,
-): Promise<void> {
-  process.stdout.write("Test - Query Accounts Token Amount");
-  const result = await juno.queryContractSmart(accountsContract, {
-    token_amount: {
-      id: endowmentId,
-      asset_info,
-      acct_type,
-    },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
