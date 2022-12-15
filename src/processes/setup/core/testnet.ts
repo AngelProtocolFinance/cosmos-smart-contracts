@@ -378,16 +378,6 @@ async function setup(
 			subdao_bonding_token_code: subdaoBondingToken,
 			donation_match_code: subdaoDonationMatch,
 			donation_match_charites_contract: donationMatchCharities,
-		},
-	});
-	console.log(chalk.green(" Done!"));
-
-	process.stdout.write("Update Accounts's config with various contracts");
-	await sendTransaction(juno, apTeamAddr, accounts, {
-		update_config: {
-			new_registrar: registrar,
-			max_general_category_id: 1,
-			ibc_controller: undefined,
 			settings_controller: settingsController,
 		},
 	});
