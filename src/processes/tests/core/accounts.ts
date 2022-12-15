@@ -698,17 +698,15 @@ export async function testQueryAccountsConfig(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsEndowmentList(
+export async function testQueryAccountsEndowmentByProposalLink(
   juno: SigningCosmWasmClient,
   accounts: string,
-  start_after: number | undefined,
-  limit: number | undefined,
+  proposal_link: number,
 ): Promise<void> {
-  process.stdout.write("Test - Query Accounts Endowment List");
+  process.stdout.write("Test - Query Accounts Endowment By Proposal Link");
   const result: any = await juno.queryContractSmart(accounts, {
-    endowment_list: {
-      start_after,
-      limit
+    endowment_by_proposal_link: {
+      proposal_link,
     },
   });
 

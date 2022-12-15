@@ -23,7 +23,7 @@ import {
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
-  testQueryAccountsEndowmentList,
+  testQueryAccountsEndowmentByProposalLink,
   testEndowmentVaultsRedeem,
   testSendRestitutionFundsToEndowments,
 } from "./core/accounts";
@@ -574,7 +574,7 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
