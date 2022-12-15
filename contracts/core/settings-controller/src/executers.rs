@@ -439,12 +439,6 @@ pub fn setup_dao(
         )));
     }
 
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
     Ok(Response::new().add_submessage(SubMsg {
         id: 1,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
@@ -505,12 +499,6 @@ pub fn setup_donation_match(
             "A Donation Match contract already exists for this Endowment",
         )));
     }
-
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
 
     let mut res = Response::default();
     let match_code = match registrar_config.donation_match_code {
