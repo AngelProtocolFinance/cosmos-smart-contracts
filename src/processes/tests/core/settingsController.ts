@@ -140,7 +140,6 @@ export async function testQuerySettingsControllerConfig(
     console.log(chalk.green(" Passed!"));
 }
 
-
 export async function testQuerySettingsControllerEndowSettings(
     juno: SigningCosmWasmClient,
     settingsControllerContract: string,
@@ -151,6 +150,27 @@ export async function testQuerySettingsControllerEndowSettings(
     const endowmentSettings = await juno.queryContractSmart(settingsControllerContract, {
         endowment_settings: {
             id: endowmentId,
+        },
+    });
+
+    console.log(endowmentSettings);
+    console.log(chalk.green(" Passed!"));
+}
+
+export async function testQuerySettingsControllerEndowPermissions(
+    juno: SigningCosmWasmClient,
+    settingsControllerContract: string,
+    endowmentId: number,
+    settingUpdater: string,
+    endowmentOwner: string,
+): Promise<void> {
+    process.stdout.write("Test - Query SettingsController EndowmentPermissions for ");
+    console.log(endowmentId);
+    const endowmentSettings = await juno.queryContractSmart(settingsControllerContract, {
+        endowment_permissions: {
+            id: endowmentId,
+            setting_updater: settingUpdater,
+            endowment_owner: endowmentOwner,
         },
     });
 

@@ -35,6 +35,7 @@ import {
   testSetupDao,
   testSetupDonationMatch,
   testUpdateDelegate,
+  testQuerySettingsControllerEndowPermissions,
 } from "./core/settingsController";
 import {
   testDonorSendsToIndexFund,
@@ -581,6 +582,7 @@ export async function testExecute(
 
   // await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
   // await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, 1); // endowment ID
+  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, 1, actors.apTeam.addr, actors.apTeam.addr); // endowment ID, setting_updater, endowment_owner
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
