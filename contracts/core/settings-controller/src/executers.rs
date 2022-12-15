@@ -7,8 +7,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{DaoSetup, DonationMatch, EndowmentSettings, EndowmentType};
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn, Response,
-    StdError, SubMsg, SubMsgResult, WasmMsg, WasmQuery,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError, SubMsg,
+    SubMsgResult, WasmMsg,
 };
 
 pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {

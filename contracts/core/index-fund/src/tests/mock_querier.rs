@@ -9,8 +9,8 @@ use angel_core::structs::{
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
-    Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult,
-    Uint128, WasmQuery,
+    Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError, SystemResult, Uint128,
+    WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
@@ -52,7 +52,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
     oracle_price_querier: OraclePriceQuerier,
     oracle_prices_querier: OraclePricesQuerier,
 }
@@ -86,16 +85,9 @@ pub(crate) fn balances_to_map(
     balances_map
 }
 
-pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint128> {
-    let mut owner_map: HashMap<String, Uint128> = HashMap::new();
-    for (denom, cap) in caps.iter() {
-        owner_map.insert(denom.to_string(), **cap);
-    }
-    owner_map
-}
-
 #[derive(Clone, Default)]
 pub struct OraclePriceQuerier {
+    #[allow(dead_code)]
     // this lets us iterate over all pairs that match the first string
     oracle_price: HashMap<(String, String), (Decimal, u64, u64)>,
 }
@@ -132,6 +124,7 @@ pub struct PriceStruct {
 
 #[derive(Clone, Default)]
 pub struct OraclePricesQuerier {
+    #[allow(dead_code)]
     // this lets us iterate over all pairs
     oracle_prices: Vec<PriceStruct>,
 }
@@ -160,27 +153,6 @@ pub(crate) fn oracle_prices_to_map(
     }
 
     oracle_prices_map
-}
-
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
-}
-
-pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
-    let mut pairs_map: HashMap<String, String> = HashMap::new();
-    for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), pair.to_string());
-    }
-    pairs_map
 }
 
 impl Querier for WasmMockQuerier {
@@ -319,20 +291,9 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
             oracle_price_querier: OraclePriceQuerier::default(),
             oracle_prices_querier: OraclePricesQuerier::default(),
         }
-    }
-
-    // configure the mint whitelist mock querier
-    pub fn with_token_balances(&mut self, balances: &[(&String, &[(&String, &Uint128)])]) {
-        self.token_querier = TokenQuerier::new(balances);
-    }
-
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
     }
 
     //  Configure oracle price
@@ -351,24 +312,5 @@ impl WasmMockQuerier {
         oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
     ) {
         self.oracle_prices_querier = OraclePricesQuerier::new(oracle_prices);
-    }
-    pub fn query_all_balances(&mut self, address: String) -> StdResult<Vec<Coin>> {
-        let mut res = vec![];
-        for contract_addr in self.token_querier.balances.keys() {
-            let balances = self
-                .token_querier
-                .balances
-                .get(&contract_addr.clone())
-                .unwrap();
-            for account_addr in balances.keys() {
-                if (*account_addr.clone()).to_string() == address {
-                    res.push(Coin {
-                        denom: contract_addr.clone().to_string(),
-                        amount: *balances.get(account_addr).unwrap(),
-                    })
-                }
-            }
-        }
-        Ok(res)
     }
 }
