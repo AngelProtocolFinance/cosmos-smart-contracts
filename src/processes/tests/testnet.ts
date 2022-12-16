@@ -508,10 +508,19 @@ export async function testExecute(
   //     proposal_deposit: "1000", // Uint128
   //     snapshot_period: 300,
   //     token: {
-  //       new_cw20: {
-  //         initial_supply: "1000000000",
+  //       bonding_curve: {
+  //         curve_type: {
+  //           constant: {
+  //             value: "1000000",
+  //             scale: 1
+  //           }
+  //         },
   //         name: "DaoToken",
   //         symbol: "DAOTOKEN",
+  //         decimals: 6,
+  //         reserve_denom: "ujuno",
+  //         reserve_decimals: 6,
+  //         unbonding_period: 1000000,
   //       }
   //     },
   //   }
