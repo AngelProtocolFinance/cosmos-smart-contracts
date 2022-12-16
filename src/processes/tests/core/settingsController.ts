@@ -13,6 +13,7 @@ import {
     clientSetup,
     getWalletAddress,
     instantiateContract,
+    sendMessageViaCw3Endowment,
 } from "../../../utils/juno/helpers";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
@@ -47,7 +48,7 @@ export async function testUpdateEndowmentFees(
     const res = await juno.queryContractSmart(accountsContract, { endowment: { id: update_fees_msg.id } });
     const cw3 = res.owner as string;
 
-    await sendMessageViaCw3Proposal(juno, charity, cw3, settingsControllerContract, {
+    await sendMessageViaCw3Endowment(juno, charity, cw3, settingsControllerContract, {
         update_endowment_fees: {
             id: update_fees_msg.id,
             earnings_fee: update_fees_msg.earnings_fee,
@@ -72,7 +73,7 @@ export async function testSetupDao(
     const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
     const cw3 = res.owner as string;
 
-    await sendMessageViaCw3Proposal(juno, charity, cw3, settingsControllerContract, {
+    await sendMessageViaCw3Endowment(juno, charity, cw3, settingsControllerContract, {
         setup_dao: {
             endowment_id: endowmentId,
             setup: setupDaoMsg,
@@ -94,7 +95,7 @@ export async function testSetupDonationMatch(
     const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
     const cw3 = res.owner as string;
 
-    await sendMessageViaCw3Proposal(juno, charity, cw3, settingsControllerContract, {
+    await sendMessageViaCw3Endowment(juno, charity, cw3, settingsControllerContract, {
         setup_donation_match: {
             endowment_id: endowmentId,
             setup: setupMsg,
