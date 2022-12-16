@@ -4,15 +4,7 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import {
-    toEncodedBinary,
     sendTransaction,
-    sendTransactionWithFunds,
-    sendMessageViaCw3Proposal,
-    sendMessagesViaCw3Proposal,
-    sendApplicationViaCw3Proposal,
-    clientSetup,
-    getWalletAddress,
-    instantiateContract,
     sendMessageViaCw3Endowment,
 } from "../../../utils/juno/helpers";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
@@ -111,12 +103,12 @@ export async function testUpdateDelegate(
     settingsControllerContract: string,
     update_delegate_msg: any,
 ): Promise<void> {
-    process.stdout.write("Test - Endowment owner can setup the DonationMatch");
+    process.stdout.write("Test - Endowment owner can update the delegate");
 
     const res = await juno.queryContractSmart(accountsContract, { endowment: { id: update_delegate_msg.id } });
     const cw3 = res.owner as string;
 
-    await sendMessageViaCw3Proposal(juno, charity, cw3, settingsControllerContract, {
+    await sendMessageViaCw3Endowment(juno, charity, cw3, settingsControllerContract, {
         update_delegate: {
             endowment_id: update_delegate_msg.id,
             setting: update_delegate_msg.setting,

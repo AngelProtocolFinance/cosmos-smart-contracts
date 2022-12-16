@@ -544,7 +544,7 @@ export async function testExecute(
   //   settingsController,
   //   {
   //     id: 1, // endowment ID
-  //     setting: "vaults_harvest",
+  //     setting: "maturity_time",
   //     action: "set", // "set" or "revoke"
   //     delegate_address: actors.apTeam.addr,
   //     delegate_expiry: undefined,
