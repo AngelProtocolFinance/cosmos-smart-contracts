@@ -18,9 +18,7 @@ import {
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
-  testQueryAccountsEndowmentList,
   testEndowmentVaultsRedeem,
-  testQueryAccountsTokenAmount,
   testSendRestitutionFundsToEndowments,
   // buildNewEndowmentCw3sAndChangeOwner,
 } from "./core/accounts";
