@@ -190,25 +190,29 @@ pub fn create_endowment(
             .as_ref()
             .unwrap()
             .to_string(),
-        msg: to_binary(&CreateEndowSettingsMsg {
-            id: config.next_account_id,
-            donation_match_active: false,
-            donation_match_contract,
-            whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
-            whitelisted_contributors: msg.whitelisted_contributors.clone(),
-            maturity_whitelist: vec![],
-            settings_controller: msg
-                .settings_controller
-                .clone()
-                .unwrap_or(SettingsController::default()),
-            parent: msg.parent,
-            split_to_liquid: split_settings.0,
-            ignore_user_splits: split_settings.1,
-            earnings_fee: msg.earnings_fee.clone(),
-            deposit_fee: msg.deposit_fee.clone(),
-            withdraw_fee: msg.withdraw_fee.clone(),
-            aum_fee: msg.aum_fee.clone(),
-        })
+        msg: to_binary(
+            &angel_core::messages::settings_controller::ExecuteMsg::CreateEndowmentSettings(
+                CreateEndowSettingsMsg {
+                    id: config.next_account_id,
+                    donation_match_active: false,
+                    donation_match_contract,
+                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
+                    whitelisted_contributors: msg.whitelisted_contributors.clone(),
+                    maturity_whitelist: vec![],
+                    settings_controller: msg
+                        .settings_controller
+                        .clone()
+                        .unwrap_or(SettingsController::default()),
+                    parent: msg.parent,
+                    split_to_liquid: split_settings.0,
+                    ignore_user_splits: split_settings.1,
+                    earnings_fee: msg.earnings_fee.clone(),
+                    deposit_fee: msg.deposit_fee.clone(),
+                    withdraw_fee: msg.withdraw_fee.clone(),
+                    aum_fee: msg.aum_fee.clone(),
+                },
+            ),
+        )
         .unwrap(),
         funds: vec![],
     }));
