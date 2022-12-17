@@ -18,9 +18,7 @@ import {
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
-  testQueryAccountsEndowmentList,
   testEndowmentVaultsRedeem,
-  testQueryAccountsTokenAmount,
   testSendRestitutionFundsToEndowments,
   // buildNewEndowmentCw3sAndChangeOwner,
 } from "./core/accounts";
@@ -128,6 +126,7 @@ export async function testExecute(
   registrar: string,
   indexFund: string,
   accounts: string,
+  settingsController: string,
   donationMatching: string,
   endowmentID: number,
   cw4GrpApTeam: string,

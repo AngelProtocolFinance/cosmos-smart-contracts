@@ -698,17 +698,15 @@ export async function testQueryAccountsConfig(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsEndowmentList(
+export async function testQueryAccountsEndowmentByProposalLink(
   juno: SigningCosmWasmClient,
   accounts: string,
-  start_after: number | undefined,
-  limit: number | undefined,
+  proposal_link: number,
 ): Promise<void> {
-  process.stdout.write("Test - Query Accounts Endowment List");
+  process.stdout.write("Test - Query Accounts Endowment By Proposal Link");
   const result: any = await juno.queryContractSmart(accounts, {
-    endowment_list: {
-      start_after,
-      limit
+    endowment_by_proposal_link: {
+      proposal_link,
     },
   });
 
@@ -743,26 +741,6 @@ export async function testQueryAccountsProfile(
   process.stdout.write("Test - Query Accounts Profile");
   const result = await juno.queryContractSmart(accountsContract, {
     get_profile: { id: endowmentId },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsTokenAmount(
-  juno: SigningCosmWasmClient,
-  accountsContract: string,
-  endowmentId: number,
-  asset_info: any,
-  acct_type: any,
-): Promise<void> {
-  process.stdout.write("Test - Query Accounts Token Amount");
-  const result = await juno.queryContractSmart(accountsContract, {
-    token_amount: {
-      id: endowmentId,
-      asset_info,
-      acct_type,
-    },
   });
 
   console.log(result);

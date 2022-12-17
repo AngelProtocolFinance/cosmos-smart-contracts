@@ -58,6 +58,7 @@ let indexFund: string;
 let accounts: string;
 let donationMatching: string;
 let swapRouter: string;
+let settingsController: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -152,6 +153,7 @@ async function initialize() {
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
   swapRouter = config.contracts.swapRouter;
+  settingsController = config.contracts.settingsController;
   vaultLocked1 = config.contracts.vaultLocked1;
   vaultLiquid1 = config.contracts.vaultLiquid1;
   vaultLocked2 = config.contracts.vaultLocked2;
@@ -173,6 +175,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
   console.log(`Using ${chalk.cyan(swapRouter)} as SwapRouter`);
+  console.log(`Using ${chalk.cyan(settingsController)} as SettingsController`);
   console.log(`Using ${chalk.cyan(vaultLocked1)} as Vault_Locked_1`);
   console.log(`Using ${chalk.cyan(vaultLiquid1)} as Vault_Liquid_1`);
   console.log(`Using ${chalk.cyan(vaultLocked2)} as Vault_Locked_2`);
@@ -528,6 +531,7 @@ export async function startMigrateCore(): Promise<void> {
     cw3ApTeam,
     cw3ReviewTeam,
     swapRouter,
+    settingsController,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
@@ -595,6 +599,7 @@ export async function startTests(): Promise<void> {
     vaultLocked2,
     vaultLiquid2,
     accounts,
+    settingsController,
     donationMatching,
     endowId1,
     endowId2,

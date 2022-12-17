@@ -40,6 +40,7 @@ let accounts: string;
 let donationMatching: string;
 let endowmentIDs: number[];
 let swapRouter: string;  // FIXME: Add the scripts to initialize this variable.
+let settingsController: string;  // FIXME: Add the scripts to initialize this variable.
 let apTreasury: string;
 
 // Angel/HALO contracts
@@ -240,6 +241,7 @@ export async function startMigrateCore(): Promise<void> {
     cw3ApTeam,
     cw3ReviewTeam,
     swapRouter,
+    settingsController,
     [],
   );
 }
@@ -288,6 +290,7 @@ export async function startTests(): Promise<void> {
     registrar,
     indexFund,
     accounts,
+    settingsController,
     donationMatching,
     endowmentIDs[0],
     cw4GrpApTeam,

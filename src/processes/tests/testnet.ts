@@ -23,11 +23,20 @@ import {
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
-  testQueryAccountsEndowmentList,
+  testQueryAccountsEndowmentByProposalLink,
   testEndowmentVaultsRedeem,
-  testQueryAccountsTokenAmount,
   testSendRestitutionFundsToEndowments,
 } from "./core/accounts";
+import {
+  testQuerySettingsControllerConfig,
+  testQuerySettingsControllerEndowSettings,
+  testUpdateSettingsControllerConfig,
+  testUpdateEndowmentFees,
+  testSetupDao,
+  testSetupDonationMatch,
+  testUpdateDelegate,
+  testQuerySettingsControllerEndowPermissions,
+} from "./core/settingsController";
 import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -186,6 +195,7 @@ export async function testExecute(
   vaultLocked2: string,
   vaultLiquid2: string,
   accounts: string,
+  settingsController: string,
   donationMatching: string,
   endowId1: number,
   endowId2: number,
@@ -458,6 +468,89 @@ export async function testExecute(
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 3, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr } } });
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId2, "10000000"); // possible query registrar error
 
+  /* --- Settings-Controller --- */
+  // await testUpdateSettingsControllerConfig(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   settingsController,
+  //   {
+  //     owner: actors.apTeam.addr,
+  //     registrar_contract: registrar
+  //   }
+  // );
+
+  // await testUpdateEndowmentFees(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   settingsController,
+  //   {
+  //     id: 1,
+  //     earnings_fee: undefined, // Option<EndowmentFee>,
+  //     deposit_fee: undefined,  //       //
+  //     withdraw_fee: undefined, //       //
+  //     aum_fee: undefined,      //       //
+  //   }
+  // );
+
+  // await testSetupDao(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   settingsController,
+  //   1,  // endowment ID
+  //   {
+  //     quorum: "0.5",
+  //     threshold: "0.50",
+  //     voting_period: 3600,
+  //     timelock_period: 300,
+  //     expiration_period: 300,
+  //     proposal_deposit: "1000", // Uint128
+  //     snapshot_period: 300,
+  //     token: {
+  //       bonding_curve: {
+  //         curve_type: {
+  //           constant: {
+  //             value: "1000000",
+  //             scale: 1
+  //           }
+  //         },
+  //         name: "DaoToken",
+  //         symbol: "DAOTOKEN",
+  //         decimals: 6,
+  //         reserve_denom: "ujuno",
+  //         reserve_decimals: 6,
+  //         unbonding_period: 1000000,
+  //       }
+  //     },
+  //   }
+  // );
+
+  // await testSetupDonationMatch(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   settingsController,
+  //   1,  // endowment ID
+  //   {
+  //     halo_token_reserve: {},
+  //   }
+  // );
+
+  // await testUpdateDelegate(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   settingsController,
+  //   {
+  //     id: 1, // endowment ID
+  //     setting: "maturity_time",
+  //     action: "set", // "set" or "revoke"
+  //     delegate_address: actors.apTeam.addr,
+  //     delegate_expiry: undefined,
+  //   }
+  // );
+
   /* --- LOOP VAULT(s) --- */
   // await testVaultUpdateConfig(actors.apTeam.client, apTeamAddr, vaultLocked1, {
   //   sibling_vault: undefined,
@@ -490,12 +583,15 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
-  // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: config.networkInfo.nativeToken }, "locked");
+
+  // await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
+  // await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, 1); // endowment ID
+  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, 1, actors.apTeam.addr, actors.apTeam.addr); // endowment ID, setting_updater, endowment_owner
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);

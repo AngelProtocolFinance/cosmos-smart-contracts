@@ -270,6 +270,67 @@ export async function sendMessageViaCw3Proposal(
   console.log(chalk.yellow(`> Proposal ID: ${proposal_id}; Status: ${proposal_status}; Auto-Executed: ${proposal_auto_executed}`));
 }
 
+//----------------------------------------------------------------------------------------
+// Abstract away steps to send a message to another contract via a CW3 Endowment poll:
+// 1. Create a proposal on a CW3 to execute some msg on a target contract
+// 2. Capture the Proposal ID and other important info
+// 3. Proposal needs to be executed
+//----------------------------------------------------------------------------------------
+export async function sendMessageViaCw3Endowment(
+  juno: SigningCosmWasmClient,
+  proposor: string,
+  cw3: string,
+  target_contract: string,
+  msg: Record<string, unknown>,
+  // members: (SigningCosmWasmClient, string)[], // only needed if more votes required than initial proposor
+): Promise<void> {
+  console.log(chalk.yellow("\n> Creating CW3 Proposal"));
+  const info_text = `CW3 Member proposes to send msg to: ${target_contract}`;
+
+  // 1. Create the new proposal
+  const proposal = await sendTransaction(juno, proposor, cw3, {
+    propose: {
+      title: info_text,
+      description: info_text,
+      msgs: [
+        {
+          wasm: {
+            execute: {
+              contract_addr: target_contract,
+              msg: toEncodedBinary(msg),
+              funds: [],
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  // 2. Parse out the proposal ID
+  const proposal_id = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+  const proposal_status = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "status";
+    })?.value as string;
+
+  // 3. Execute the proposal with ID
+  const res = await sendTransaction(juno, proposor, cw3, {
+    execute: {
+      proposal_id: parseInt(proposal_id),
+    }
+  });
+  console.log(chalk.yellow(`> Proposal ID: ${proposal_id}; Status: ${proposal_status}; Auto-Executed: ${true}`));
+}
+
 export async function sendMessagesViaCw3Proposal(
   juno: SigningCosmWasmClient,
   proposor: string,
