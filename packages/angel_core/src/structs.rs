@@ -122,6 +122,47 @@ impl fmt::Display for AccountType {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct EndowmentSettings {
+    pub dao: Option<Addr>,                     // subdao governance contract address
+    pub dao_token: Option<Addr>,               // dao gov token contract address
+    pub donation_match_active: bool, // donation matching contract address (None set for Charity Endowments as they just phone home to Registrar to get the addr)
+    pub donation_match_contract: Option<Addr>, // contract for donation matching
+    pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
+    pub earnings_fee: Option<EndowmentFee>, // Earnings Fee
+    pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
+    pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
+    pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
+    pub settings_controller: SettingsController,
+    pub parent: Option<u64>,
+    pub split_to_liquid: Option<SplitDetails>, // set of max, min, and default Split paramenters to check user defined split input against
+    pub ignore_user_splits: bool, // ignore user-submitted splits in favor of the default splits
+}
+
+impl EndowmentSettings {
+    pub fn default() -> Self {
+        EndowmentSettings {
+            dao: None,
+            dao_token: None,
+            donation_match_active: false,
+            donation_match_contract: None,
+            whitelisted_beneficiaries: vec![],
+            whitelisted_contributors: vec![],
+            maturity_whitelist: vec![],
+            earnings_fee: None,
+            withdraw_fee: None,
+            deposit_fee: None,
+            aum_fee: None,
+            settings_controller: SettingsController::default(),
+            parent: None,
+            split_to_liquid: None,
+            ignore_user_splits: false,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SettingsController {
     pub settings_controller: SettingsPermissions,
     pub strategies: SettingsPermissions,
@@ -391,21 +432,6 @@ impl RebalanceDetails {
             principle_distribution: Decimal::zero(),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct EndowmentEntry {
-    pub id: u32,
-    pub owner: String,
-    pub status: EndowmentStatus,
-    pub endow_type: EndowmentType,
-    pub name: Option<String>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub tier: Option<Tier>,
-    pub categories: Categories,
-    pub proposal_link: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

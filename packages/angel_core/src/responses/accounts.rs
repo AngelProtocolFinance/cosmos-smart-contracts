@@ -1,7 +1,6 @@
 use crate::structs::{
-    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentEntry,
-    EndowmentFee, EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
-    SettingsController,
+    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee,
+    EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
 };
 use cosmwasm_std::Addr;
 use schemars::JsonSchema;
@@ -23,38 +22,25 @@ pub struct ConfigResponse {
     pub max_general_category_id: u8,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct EndowmentListResponse {
-    pub endowments: Vec<EndowmentEntry>,
-}
-
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
-    pub dao: Option<Addr>,
-    pub dao_token: Option<Addr>,
-    pub description: String,
-    pub strategies: AccountStrategies,
-    pub status: EndowmentStatus,
-    pub endow_type: EndowmentType,
-    pub maturity_time: Option<u64>,
-    pub oneoff_vaults: OneOffVaults,
-    pub rebalance: RebalanceDetails,
-    pub donation_match_contract: String,
-    pub kyc_donors_only: bool,
-    pub maturity_whitelist: Vec<String>,
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
-    pub pending_redemptions: u8,
-    pub logo: Option<String>,
-    pub image: Option<String>,
     pub name: String,
     pub categories: Categories,
     pub tier: Option<u8>,
-    pub copycat_strategy: Option<u32>,
+    pub endow_type: EndowmentType,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub status: EndowmentStatus,
+    pub deposit_approved: bool,
+    pub withdraw_approved: bool,
+    pub maturity_time: Option<u64>,
+    pub strategies: AccountStrategies,
+    pub oneoff_vaults: OneOffVaults,
+    pub rebalance: RebalanceDetails,
+    pub kyc_donors_only: bool,
+    pub pending_redemptions: u8,
     pub proposal_link: Option<u64>,
-    pub parent: Option<u64>,
-    pub settings_controller: SettingsController,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

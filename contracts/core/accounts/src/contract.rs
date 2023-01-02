@@ -1,13 +1,8 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::Endowment;
-use crate::state::OldEndowment;
-use crate::state::ENDOWMENTS;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::structs::SettingsController;
-use cosmwasm_std::from_slice;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdError, StdResult,
@@ -54,9 +49,6 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::ReceiveIbcResponse(resp) => {
-            executers::execute_receive_ibc_response(deps, env, info, resp)
-        }
         ExecuteMsg::Deposit(msg) => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -128,25 +120,9 @@ pub fn execute(
             acct_type,
             strategies,
         } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
-        ExecuteMsg::CopycatStrategies {
-            id,
-            acct_type,
-            id_to_copy,
-        } => executers::copycat_strategies(deps, info, id, acct_type, id_to_copy),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
-        ExecuteMsg::UpdateEndowmentFees(msg) => {
-            executers::update_endowment_fees(deps, env, info, msg)
-        }
-        ExecuteMsg::SetupDao {
-            endowment_id,
-            setup,
-        } => executers::setup_dao(deps, env, info, endowment_id, setup),
-        ExecuteMsg::SetupDonationMatch {
-            endowment_id,
-            setup,
-        } => executers::setup_donation_match(deps, env, info, endowment_id, setup),
         // Manage the allowances for the 3rd_party wallet to withdraw
         // the endowment TOH liquid balances without the proposal
         ExecuteMsg::Allowance {
@@ -219,8 +195,8 @@ pub fn receive_cw20(
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         0 => executers::cw3_reply(deps, env, msg.result),
-        1 => executers::dao_reply(deps, env, msg.result),
-        2 => executers::donation_match_reply(deps, env, msg.result),
+        // 1 => executers::dao_reply(deps, env, msg.result),
+        // 2 => executers::donation_match_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -231,24 +207,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::Balance { id } => to_binary(&queriers::query_endowment_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
-        QueryMsg::EndowmentList {
-            proposal_link,
-            start_after,
-            limit,
-        } => to_binary(&queriers::query_endowment_list(
-            deps,
-            proposal_link,
-            start_after,
-            limit,
-        )?),
+        QueryMsg::EndowmentByProposalLink { proposal_link } => to_binary(
+            &queriers::query_endowment_by_proposal_link(deps, proposal_link)?,
+        ),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
-        QueryMsg::TokenAmount {
-            id,
-            asset_info,
-            acct_type,
-        } => to_binary(&queriers::query_token_amount(
-            deps, id, asset_info, acct_type,
-        )?),
         QueryMsg::Allowances { id, spender } => {
             to_binary(&queriers::query_allowances(deps, id, spender)?)
         }
@@ -273,63 +235,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new Endowment struct and save to storage
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let config: Config = from_slice(&data)?;
-
-    for endow_id in 1..config.next_account_id {
-        let key = ENDOWMENTS.key(endow_id);
-        let data = deps.storage.get(&key).ok_or_else(|| {
-            StdError::not_found(format!("Endowment not found for ID {}", endow_id))
-        })?;
-        let old_endow: OldEndowment = from_slice(&data)?;
-        ENDOWMENTS.save(
-            deps.storage,
-            endow_id,
-            &Endowment {
-                owner: old_endow.owner,
-                name: old_endow.name,
-                categories: old_endow.categories,
-                tier: old_endow.tier,
-                endow_type: old_endow.endow_type,
-                logo: old_endow.logo,
-                image: old_endow.image,
-                status: old_endow.status,
-                deposit_approved: old_endow.deposit_approved,
-                withdraw_approved: old_endow.withdraw_approved,
-                maturity_time: old_endow.maturity_time,
-                strategies: old_endow.strategies,
-                oneoff_vaults: old_endow.oneoff_vaults,
-                rebalance: old_endow.rebalance,
-                kyc_donors_only: old_endow.kyc_donors_only,
-                pending_redemptions: old_endow.pending_redemptions,
-                copycat_strategy: None,
-                dao: None,
-                dao_token: None,
-                donation_match_active: false,
-                donation_match_contract: None,
-                whitelisted_beneficiaries: vec![],
-                whitelisted_contributors: vec![],
-                maturity_whitelist: vec![],
-                earnings_fee: None,
-                withdraw_fee: None,
-                deposit_fee: None,
-                aum_fee: None,
-                proposal_link: old_endow.proposal_link,
-                settings_controller: SettingsController::default(),
-                parent: None,
-                split_to_liquid: None,
-                ignore_user_splits: false,
-            },
-        )?;
-    }
-
-    // Remove the "PROFILES" map
-    deps.storage.remove("profiles".as_bytes());
 
     Ok(Response::default())
 }

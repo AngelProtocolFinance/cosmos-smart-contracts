@@ -1,20 +1,19 @@
 use crate::structs::{
-    AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
-    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, DaoSetup, EndowmentFee, EndowmentType, RebalanceDetails,
+    SettingsController, SplitDetails, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo, AssetUnchecked};
+use cw_asset::{Asset, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use super::settings_controller::UpdateMaturityWhitelist;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {
-    pub last_earnings_harvest: u64,
-}
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
@@ -26,8 +25,6 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    // catch ICA msg responses from ICA Controller
-    ReceiveIbcResponse(ReceiveIbcResponseMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     /// reinvest vault assets from Liquid to Locked
@@ -74,12 +71,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         vaults: Vec<(String, Uint128)>,
     },
-    // set another endowment's strategy to "copycat" as your own
-    CopycatStrategies {
-        id: u32,
-        acct_type: AccountType,
-        id_to_copy: u32,
-    },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
@@ -109,18 +100,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
-    // Update various "EndowmentFee"s
-    UpdateEndowmentFees(UpdateEndowmentFeesMsg),
-    // Set up dao token for "Endowment"
-    SetupDao {
-        endowment_id: u32,
-        setup: DaoSetup,
-    },
-    // Setup Donation match contract for the Endowment
-    SetupDonationMatch {
-        endowment_id: u32,
-        setup: DonationMatch,
-    },
     // Manage the allowances for the 3rd_party wallet to withdraw
     // the endowment TOH liquid balances without the proposal
     Allowance {
@@ -139,10 +118,10 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub settings_controller: Option<SettingsController>,
     pub new_registrar: String,
     pub max_general_category_id: u8,
     pub ibc_controller: Option<String>,
+    pub settings_controller: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -190,22 +169,13 @@ pub struct Strategy {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateMaturityWhitelist {
-    pub add: Vec<String>,
-    pub remove: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: Option<String>,
-    pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub maturity_time: Option<Option<u64>>,            // datetime int of endowment maturity
+    pub maturity_time: Option<Option<u64>>, // datetime int of endowment maturity
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,
-    pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
     pub kyc_donors_only: Option<bool>,
     pub endow_type: Option<String>,
     pub name: Option<String>,
@@ -213,6 +183,11 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
+
+    pub donation_match_active: Option<bool>,
+    pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
     pub settings_controller: Option<SettingsController>,
 }
 
@@ -242,45 +217,18 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentFeesMsg {
-    pub id: u32,
-    pub earnings_fee: Option<EndowmentFee>,
-    pub deposit_fee: Option<EndowmentFee>,
-    pub withdraw_fee: Option<EndowmentFee>,
-    pub aum_fee: Option<EndowmentFee>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get all Config details for the contract
     Config {},
-    // Get the balance of available UST and the invested portion balances
-    Balance {
-        id: u32,
-    },
+    // Get the Endowment balance
+    Balance { id: u32 },
     // Get state details (like total donations received so far)
-    State {
-        id: u32,
-    },
+    State { id: u32 },
     // Get all Endowment details
-    Endowment {
-        id: u32,
-    },
-    // Gets list of all registered Endowments
-    EndowmentList {
-        proposal_link: Option<u64>,
-        start_after: Option<u32>,
-        limit: Option<u64>,
-    },
-    // Get endowment token balance
-    TokenAmount {
-        id: u32,
-        asset_info: AssetInfo,
-        acct_type: AccountType,
-    },
-    Allowances {
-        id: u32,
-        spender: String,
-    },
+    Endowment { id: u32 },
+    // Gets the Endowment by "proposal_link"
+    EndowmentByProposalLink { proposal_link: u64 },
+    // Get the Allowances for Endowment
+    Allowances { id: u32, spender: String },
 }

@@ -2,8 +2,8 @@
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
-    ContractResult, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult,
-    SystemError, SystemResult, Uint128, WasmQuery,
+    ContractResult, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, SystemError,
+    SystemResult, Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
@@ -14,8 +14,7 @@ use std::marker::PhantomData;
 
 use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails,
-    SettingsController, SplitDetails,
+    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
 };
 
 use astroport::{
@@ -135,7 +134,6 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
                 QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentDetailsResponse {
                         owner: Addr::unchecked("owner"),
@@ -149,20 +147,12 @@ impl WasmMockQuerier {
                         deposit_approved: true,
                         withdraw_approved: true,
                         pending_redemptions: 0,
-                        copycat_strategy: None,
                         proposal_link: None,
                         name: "Test Endowment".to_string(),
                         categories: Categories::default(),
                         tier: Some(3),
                         logo: Some("Some fancy logo".to_string()),
                         image: Some("Nice banner image".to_string()),
-                        dao: todo!(),
-                        dao_token: todo!(),
-                        description: todo!(),
-                        donation_match_contract: todo!(),
-                        maturity_whitelist: todo!(),
-                        settings_controller: SettingsController::default(),
-                        parent: None,
                     })
                     .unwrap(),
                 )),
@@ -198,17 +188,18 @@ impl WasmMockQuerier {
                         },
                         applications_review: "applications-review".to_string(),
                         swaps_router: None,
-                        subdao_gov_code: todo!(),
-                        subdao_cw20_token_code: todo!(),
-                        subdao_bonding_token_code: todo!(),
-                        subdao_cw900_code: todo!(),
-                        subdao_distributor_code: todo!(),
-                        donation_match_code: todo!(),
-                        halo_token_lp_contract: todo!(),
-                        donation_match_charites_contract: todo!(),
-                        collector_addr: todo!(),
-                        collector_share: todo!(),
-                        swap_factory: todo!(),
+                        settings_controller: Some("settings-controller".to_string()),
+                        subdao_gov_code: None,
+                        subdao_cw20_token_code: None,
+                        subdao_bonding_token_code: None,
+                        subdao_cw900_code: None,
+                        subdao_distributor_code: None,
+                        donation_match_code: None,
+                        halo_token_lp_contract: None,
+                        donation_match_charites_contract: None,
+                        collector_addr: "collector-addr".to_string(),
+                        collector_share: Decimal::zero(),
+                        swap_factory: None,
                     })
                     .unwrap(),
                 )),
@@ -293,30 +284,5 @@ impl WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
         }
-    }
-
-    // configure the mint whitelist mock querier
-    pub fn with_token_balances(&mut self, balances: &[(&String, &[(&String, &Uint128)])]) {
-        self.token_querier = TokenQuerier::new(balances);
-    }
-
-    pub fn query_all_balances(&mut self, address: String) -> StdResult<Vec<Coin>> {
-        let mut res = vec![];
-        for contract_addr in self.token_querier.balances.keys() {
-            let balances = self
-                .token_querier
-                .balances
-                .get(&contract_addr.clone())
-                .unwrap();
-            for account_addr in balances.keys() {
-                if (*account_addr.clone()).to_string() == address {
-                    res.push(Coin {
-                        denom: contract_addr.clone().to_string(),
-                        amount: *balances.get(account_addr).unwrap(),
-                    })
-                }
-            }
-        }
-        Ok(res)
     }
 }

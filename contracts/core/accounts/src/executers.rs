@@ -5,16 +5,17 @@ use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3Instantiat
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
-use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
+use angel_core::messages::settings_controller::CreateEndowSettingsMsg;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
-    VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
+};
+use angel_core::responses::settings_controller::{
+    EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
-    DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
-    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
-    VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
+    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails,
+    SettingsController, SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -27,7 +28,6 @@ use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::{Duration, Expiration};
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -60,98 +60,6 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
-}
-
-pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut id: u32 = 0;
-            let mut dao: Addr = Addr::unchecked("");
-            let mut dao_token: Addr = Addr::unchecked("");
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    for attrb in event.attributes {
-                        // This value comes from the custom attrbiute
-                        match attrb.key.as_str() {
-                            "endow_id" => id = attrb.value.parse().unwrap(),
-                            "dao_addr" => dao = deps.api.addr_validate(&attrb.value)?,
-                            "dao_token_addr" => dao_token = deps.api.addr_validate(&attrb.value)?,
-                            _ => (),
-                        }
-                    }
-                }
-            }
-            if id == 0 || dao == Addr::unchecked("") || dao_token == Addr::unchecked("") {
-                return Err(ContractError::AccountNotCreated {});
-            }
-            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-            endowment.dao = Some(dao);
-            endowment.dao_token = Some(dao_token);
-            ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
-            Ok(Response::default()
-                .add_attribute("endow_dao", endowment.dao.unwrap())
-                .add_attribute("endow_dao_token", endowment.dao_token.unwrap()))
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
-}
-
-pub fn donation_match_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut id: u32 = 0;
-            let mut donation_match_contract: Addr = Addr::unchecked("");
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    for attrb in event.attributes {
-                        // This value comes from the custom attrbiute
-                        match attrb.key.as_str() {
-                            "donation_match_addr" => {
-                                donation_match_contract = deps.api.addr_validate(&attrb.value)?
-                            }
-                            "endow_id" => id = attrb.value.parse().unwrap(),
-                            _ => (),
-                        }
-                    }
-                }
-            }
-            if id == 0 || donation_match_contract == Addr::unchecked("") {
-                return Err(ContractError::AccountNotCreated {});
-            }
-            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-            endowment.donation_match_contract = Some(donation_match_contract);
-            ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
-            Ok(Response::default().add_attribute(
-                "endow_donation_match_contract",
-                endowment.donation_match_contract.unwrap(),
-            ))
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
-}
-
-pub fn execute_receive_ibc_response(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    resp: ReceiveIbcResponseMsg,
-) -> Result<Response, ContractError> {
-    // only the ibc controller can send this type message as callback
-    let config = CONFIG.load(deps.storage)?;
-    if !config.ibc_controller.eq(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
-    Ok(Response::new()
-        .add_attribute("action", "receive_ibc_callback")
-        .add_attribute("id", resp.id))
 }
 
 pub fn create_endowment(
@@ -216,29 +124,10 @@ pub fn create_endowment(
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
-                copycat_strategy: None,
-                dao: None,
-                dao_token: None,
-                donation_match_active: false,
-                donation_match_contract,
-                whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
-                whitelisted_contributors: msg.whitelisted_contributors.clone(),
-                earnings_fee: msg.earnings_fee.clone(),
-                withdraw_fee: msg.withdraw_fee.clone(),
-                deposit_fee: msg.deposit_fee.clone(),
-                aum_fee: msg.aum_fee.clone(),
-                maturity_whitelist: vec![],
                 tier: msg.tier.clone(),
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
-                settings_controller: msg
-                    .settings_controller
-                    .clone()
-                    .unwrap_or(SettingsController::default()),
-                parent: msg.parent,
-                split_to_liquid: split_settings.0,
-                ignore_user_splits: split_settings.1,
             }),
         },
     )?;
@@ -294,38 +183,67 @@ pub fn create_endowment(
         reply_on: ReplyOn::Success,
     });
 
+    // Create the Endowment settings in "settings_controller" contract
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: registrar_config
+            .settings_controller
+            .as_ref()
+            .unwrap()
+            .to_string(),
+        msg: to_binary(
+            &angel_core::messages::settings_controller::ExecuteMsg::CreateEndowmentSettings(
+                CreateEndowSettingsMsg {
+                    id: config.next_account_id,
+                    donation_match_active: false,
+                    donation_match_contract,
+                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
+                    whitelisted_contributors: msg.whitelisted_contributors.clone(),
+                    maturity_whitelist: vec![],
+                    settings_controller: msg
+                        .settings_controller
+                        .clone()
+                        .unwrap_or(SettingsController::default()),
+                    parent: msg.parent,
+                    split_to_liquid: split_settings.0,
+                    ignore_user_splits: split_settings.1,
+                    earnings_fee: msg.earnings_fee.clone(),
+                    deposit_fee: msg.deposit_fee.clone(),
+                    withdraw_fee: msg.withdraw_fee.clone(),
+                    aum_fee: msg.aum_fee.clone(),
+                },
+            ),
+        )
+        .unwrap(),
+        funds: vec![],
+    }));
+
     // check if a dao needs to be setup along with a dao token contract
     match (
         msg.dao,
         registrar_config.subdao_bonding_token_code,
         registrar_config.subdao_gov_code,
     ) {
-        (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
-            res = res.add_submessage(SubMsg {
-                id: 1,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: gov_code,
-                    admin: None,
-                    label: "new endowment dao contract".to_string(),
-                    msg: to_binary(&DaoInstantiateMsg {
-                        id: config.next_account_id,
-                        quorum: dao_setup.quorum,
-                        threshold: dao_setup.threshold,
-                        voting_period: dao_setup.voting_period,
-                        timelock_period: dao_setup.timelock_period,
-                        expiration_period: dao_setup.expiration_period,
-                        proposal_deposit: dao_setup.proposal_deposit,
-                        snapshot_period: dao_setup.snapshot_period,
-                        endow_type: msg.endow_type.clone(),
-                        endow_owner: msg.owner.to_string(),
-                        registrar_contract: config.registrar_contract.to_string(),
-                        token: dao_setup.token,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            });
+        (Some(dao_setup), Some(_token_code), Some(_gov_code)) => {
+            if registrar_config.settings_controller.is_none() {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: format!("Settings_controller contract not exist yet."),
+                }));
+            }
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: registrar_config
+                    .settings_controller
+                    .as_ref()
+                    .unwrap()
+                    .to_string(),
+                msg: to_binary(
+                    &angel_core::messages::settings_controller::ExecuteMsg::SetupDao {
+                        endowment_id: config.next_account_id,
+                        setup: dao_setup,
+                    },
+                )
+                .unwrap(),
+                funds: vec![],
+            }))
         }
         (Some(_dao_setup), None, _) | (Some(_dao_setup), _, None) => {
             return Err(ContractError::Std(StdError::GenericErr {
@@ -521,12 +439,30 @@ pub fn update_endowment_status(
 
 pub fn update_endowment_settings(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
+    let settings_controller = registrar_config
+        .settings_controller
+        .expect("SettingsController contract not exist yet.");
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        settings_controller.to_string(),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
+    )?;
+    let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
+        settings_controller.to_string(),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentPermissions {
+            id: msg.id,
+            setting_updater: info.sender.clone(),
+            endowment_owner: endowment.owner.clone(),
+        },
+    )?;
 
     let state = STATES.load(deps.storage, msg.id)?;
     if state.closing_endowment {
@@ -534,7 +470,11 @@ pub fn update_endowment_settings(
     }
 
     if !(info.sender == config.owner || info.sender == endowment.owner) {
-        return Err(ContractError::Unauthorized {});
+        if endowment_settings.dao.is_none()
+            || info.sender != *endowment_settings.dao.as_ref().unwrap()
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // Only config.owner can update owner, tier and endowment_type fields
@@ -554,12 +494,6 @@ pub fn update_endowment_settings(
         return Ok(Response::new().add_attribute("action", "update_endowment_settings"));
     }
 
-    if info.sender.ne(&endowment.owner)
-        && (endowment.dao.is_some() && info.sender != *endowment.dao.as_ref().unwrap())
-    {
-        return Err(ContractError::Unauthorized {});
-    }
-
     endowment.owner = match msg.owner {
         Some(i) => {
             // only the endowment owner can update these configs
@@ -573,48 +507,9 @@ pub fn update_endowment_settings(
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
-        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
-            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-            if env.block.time.seconds() < endow_mature_time {
-                if endowment
-                    .settings_controller
-                    .whitelisted_beneficiaries
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
-                    endowment.whitelisted_beneficiaries = whitelisted_beneficiaries;
-                }
-            }
-        }
-        if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
-            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-            if env.block.time.seconds() < endow_mature_time {
-                if endowment
-                    .settings_controller
-                    .whitelisted_contributors
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
-                    endowment.whitelisted_contributors = whitelisted_contributors;
-                }
-            }
-        }
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
-                if endowment.settings_controller.maturity_time.can_change(
-                    &info.sender,
-                    &endowment.owner,
-                    endowment.dao.as_ref(),
-                    env.block.time,
-                ) {
+                if endowment_permissions.maturity_time {
                     i
                 } else {
                     endowment.maturity_time
@@ -629,47 +524,16 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    if endowment.settings_controller.kyc_donors_only.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
+    if endowment_permissions.kyc_donors_only {
         endowment.kyc_donors_only = match msg.kyc_donors_only {
             Some(i) => i,
             None => endowment.kyc_donors_only,
         };
     }
 
-    if let Some(whitelist) = msg.maturity_whitelist {
-        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-        if env.block.time.seconds() < endow_mature_time {
-            let UpdateMaturityWhitelist { add, remove } = whitelist;
-            for addr in add {
-                let validated_addr = deps.api.addr_validate(&addr)?;
-                endowment.maturity_whitelist.push(validated_addr);
-            }
-            for addr in remove {
-                let validated_addr = deps.api.addr_validate(&addr)?;
-                let id = endowment
-                    .maturity_whitelist
-                    .iter()
-                    .position(|v| *v == validated_addr);
-                if let Some(id) = id {
-                    endowment.maturity_whitelist.swap_remove(id);
-                }
-            }
-        }
-    }
-
     endowment.name = match msg.name.clone() {
         Some(name) => {
-            if endowment.settings_controller.name.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.name {
                 name
             } else {
                 endowment.name
@@ -679,12 +543,7 @@ pub fn update_endowment_settings(
     };
     endowment.categories = match msg.categories {
         Some(categories) => {
-            if endowment.settings_controller.categories.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.categories {
                 // check that at least 1 SDG category is set for charity endowments
                 if endowment.endow_type == EndowmentType::Charity {
                     if endowment.categories.sdgs.is_empty() {
@@ -714,12 +573,7 @@ pub fn update_endowment_settings(
     };
     endowment.logo = match msg.logo.clone() {
         Some(logo) => {
-            if endowment.settings_controller.logo.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.logo {
                 Some(logo)
             } else {
                 endowment.logo
@@ -729,12 +583,7 @@ pub fn update_endowment_settings(
     };
     endowment.image = match msg.image.clone() {
         Some(image) => {
-            if endowment.settings_controller.image.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
+            if endowment_permissions.image {
                 Some(image)
             } else {
                 endowment.image
@@ -743,72 +592,30 @@ pub fn update_endowment_settings(
         None => endowment.image,
     };
 
-    endowment.settings_controller = match msg.settings_controller.clone() {
-        Some(controller) => {
-            if endowment.settings_controller.image.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            ) {
-                controller
-            } else {
-                endowment.settings_controller
-            }
-        }
-        None => endowment.settings_controller,
-    };
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
-    Ok(Response::new().add_attribute("action", "update_endowment_settings"))
-}
+    let message = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: settings_controller.to_string(),
+        msg: to_binary(
+            &angel_core::messages::settings_controller::ExecuteMsg::UpdateEndowmentSettings(
+                angel_core::messages::settings_controller::UpdateEndowmentSettingsMsg {
+                    setting_updater: info.sender,
+                    id: msg.id,
+                    donation_match_active: msg.donation_match_active,
+                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
+                    whitelisted_contributors: msg.whitelisted_contributors,
+                    maturity_whitelist: msg.maturity_whitelist,
+                    settings_controller: msg.settings_controller,
+                },
+            ),
+        )
+        .unwrap(),
+        funds: vec![],
+    });
 
-pub fn update_delegate(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    id: u32,
-    setting: String,
-    action: String,
-    delegate_address: String,
-    delegate_expiry: Option<u64>,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-
-    // grab a setting's permissions from SettingsController
-    let mut permissions = endowment
-        .settings_controller
-        .get_permissions(setting.clone())?;
-
-    // update the delegate field appropraitely based on action
-    match action.as_str() {
-        "set" => {
-            permissions.set_delegate(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                deps.api.addr_validate(&delegate_address)?,
-                delegate_expiry,
-            );
-        }
-        "revoke" => {
-            permissions.revoke_delegate(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-                env.block.time,
-            );
-        }
-        _ => unimplemented!(),
-    }
-
-    // save mutated permissions back to SettingsController
-    endowment
-        .settings_controller
-        .set_permissions(setting, permissions)?;
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::default().add_attribute("action", "update_delegate"))
+    Ok(Response::new()
+        .add_attribute("action", "update_endowment_settings")
+        .add_message(message))
 }
 
 pub fn update_strategies(
@@ -893,39 +700,6 @@ pub fn update_strategies(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_strategies"))
-}
-
-pub fn copycat_strategies(
-    deps: DepsMut,
-    info: MessageInfo,
-    id: u32,
-    acct_type: AccountType,
-    id_to_copy: u32,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    if endowment.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment.strategies.get(acct_type).is_empty() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        }));
-    }
-
-    if endowment.copycat_strategy == Some(id_to_copy) {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting re-set the same copycat endowment ID".to_string(),
-        }));
-    }
-
-    // set new copycat id
-    endowment.copycat_strategy = Some(id_to_copy);
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::new())
 }
 
 pub fn swap_token(
@@ -1336,38 +1110,7 @@ pub fn reinvest_to_locked(
             })));
         }
         // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-        VaultType::Ibc { ica } => {
-            // look up Registrar network information on the given IBC Vault
-            let network_info: NetworkConnectionResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::NetworkConnection {
-                        chain_id: vault_config.vault.network,
-                    })?,
-                }))?;
-            // build message
-            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.ibc_controller.to_string(),
-                msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                    channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                    msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: ica.to_string(),
-                        msg: to_binary(
-                            &angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
-                                endowment_id: id,
-                                amount,
-                            },
-                        )
-                        .unwrap(),
-                        funds: vec![],
-                    })],
-                    // callback_id: Some("ibc-vault-reinvest".to_string()),
-                    callback_id: None,
-                })
-                .unwrap(),
-                funds: vec![],
-            }));
-        }
+        VaultType::Ibc { ica: _ } => unimplemented!(),
         VaultType::Evm => unimplemented!(),
     }
     Ok(res)
@@ -1383,7 +1126,17 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     let mut res = Response::default();
     let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQuerier::Config {},
+    )?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        registrar_config
+            .settings_controller
+            .expect("Settings-controller contract not exist yet."),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
+    )?;
 
     // check that the Endowment has been approved to receive deposits
     if !endowment.deposit_approved {
@@ -1404,12 +1157,12 @@ pub fn deposit(
 
     // Deduct the `deposit_fee` from `deposit_amount` if configured.
     // Send the `deposit_fee` to `payout_address` if any.
-    if endowment.deposit_fee.is_some() {
+    if endowment_settings.deposit_fee.is_some() {
         let EndowmentFee {
             payout_address,
             fee_percentage,
             active,
-        } = endowment.deposit_fee.clone().unwrap();
+        } = endowment_settings.deposit_fee.clone().unwrap();
         if active {
             let deposit_fee_amount = deposit_amount * fee_percentage;
 
@@ -1466,19 +1219,19 @@ pub fn deposit(
         // Non-Charity Endowments also have the ability to override user split suggestions and use their defaults.
         let new_splits = match (
             endowment.endow_type.clone(),
-            endowment.split_to_liquid.clone(),
+            endowment_settings.split_to_liquid.clone(),
         ) {
             (EndowmentType::Charity, _) | (_, None) => check_splits(
                 registrar_split_configs,
                 locked_split,
                 liquid_split,
-                endowment.ignore_user_splits,
+                endowment_settings.ignore_user_splits,
             ),
             (_, Some(endow_split_configs)) => check_splits(
                 endow_split_configs,
                 locked_split,
                 liquid_split,
-                endowment.ignore_user_splits,
+                endowment_settings.ignore_user_splits,
             ),
         };
         locked_split = new_splits.0;
@@ -1738,67 +1491,7 @@ pub fn vaults_invest(
                 });
             }
             // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-            VaultType::Ibc { ica } => {
-                // look up Registrar network information on the given IBC Vault
-                let network_info: NetworkConnectionResponse =
-                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
-                            chain_id: vault_config.vault.network,
-                        })?,
-                    }))?;
-                // build message
-                res = res.add_messages(match &asset.info {
-                    AssetInfoBase::Native(ref denom) => [
-                        CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: config.ibc_controller.to_string(),
-                            msg: to_binary(
-                                &ica_vaults::ica_controller_msg::ExecuteMsg::SendFunds {
-                                    reflect_channel_id: network_info
-                                        .network_connection
-                                        .ibc_channel
-                                        .clone()
-                                        .unwrap(),
-                                    transfer_channel_id: network_info
-                                        .network_connection
-                                        .transfer_channel
-                                        .unwrap(),
-                                },
-                            )
-                            .unwrap(),
-                            funds: vec![Coin {
-                                denom: denom.clone(),
-                                amount: asset.amount,
-                            }],
-                        }),
-                        CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: config.ibc_controller.to_string(),
-                            msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                                channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                                    contract_addr: ica.to_string(),
-                                    msg: to_binary(
-                                        &angel_core::messages::vault::ExecuteMsg::Deposit {
-                                            endowment_id: id,
-                                        },
-                                    )
-                                    .unwrap(),
-                                    funds: vec![Coin {
-                                        denom: denom.clone(),
-                                        amount: asset.amount,
-                                    }],
-                                })],
-                                // callback_id: Some("ibc-deposit-native".to_string()),
-                                callback_id: None,
-                            })
-                            .unwrap(),
-                            funds: vec![],
-                        }),
-                    ],
-                    AssetInfo::Cw20(ref _contract_addr) => unimplemented!(),
-                    _ => unreachable!(),
-                });
-            }
+            VaultType::Ibc { ica: _ } => unimplemented!(),
             VaultType::Evm => unimplemented!(),
         }
     }
@@ -1911,36 +1604,7 @@ pub fn vaults_redeem(
                 })));
             }
             // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-            VaultType::Ibc { ica } => {
-                // look up Registrar network information on the given IBC Vault
-                let network_info: NetworkConnectionResponse =
-                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
-                            chain_id: vault_config.vault.network,
-                        })?,
-                    }))?;
-                // build message
-                res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: config.ibc_controller.to_string(),
-                    msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                        channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: ica.to_string(),
-                            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
-                                endowment_id: id,
-                                amount: *amount,
-                            })
-                            .unwrap(),
-                            funds: vec![],
-                        })],
-                        // callback_id: Some("ibc-vault-redeem".to_string()),
-                        callback_id: None,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }));
-            }
+            VaultType::Ibc { ica: _ } => unimplemented!(),
             VaultType::Evm => unimplemented!(),
         }
     }
@@ -1958,13 +1622,25 @@ pub fn withdraw(
     beneficiary: String,
     assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let config = CONFIG.load(deps.storage)?;
-    let mut state = STATES.load(deps.storage, id)?;
-    let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
     let mut native_coins_fees: Vec<Coin> = vec![];
+
+    let mut state = STATES.load(deps.storage, id)?;
+    let mut state_bal: GenericBalance = state.balances.get(&acct_type);
+
+    let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQuerier::Config {},
+    )?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        registrar_config
+            .settings_controller
+            .expect("Settings-controller contract not exist yet."),
+        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id },
+    )?;
 
     if !endowment.withdraw_approved {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -2001,7 +1677,7 @@ pub fn withdraw(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
             }
-            if !endowment.maturity_whitelist.contains(&info.sender) {
+            if !endowment_settings.maturity_whitelist.contains(&info.sender) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Sender address is not listed in maturity_whitelist.",
                 )));
@@ -2009,7 +1685,7 @@ pub fn withdraw(
         }
         (EndowmentType::Normal, AccountType::Liquid) => {
             if !(info.sender == endowment.owner
-                || endowment
+                || endowment_settings
                     .whitelisted_beneficiaries
                     .contains(&info.sender.to_string()))
             {
@@ -2204,65 +1880,6 @@ pub fn close_endowment(
         .add_submessages(redeem_messages))
 }
 
-pub fn update_endowment_fees(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: UpdateEndowmentFeesMsg,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-
-    // only normalized endowments can update the additional fees
-    if endowment.endow_type != EndowmentType::Charity {
-        return Err(ContractError::Std(StdError::generic_err(
-            "Charity Endowments may not change endowment fees",
-        )));
-    }
-
-    // Update the "EndowmentFee"s
-    if endowment.settings_controller.earnings_fee.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
-        endowment.earnings_fee = msg.earnings_fee;
-    }
-
-    if endowment.settings_controller.deposit_fee.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
-        endowment.deposit_fee = msg.deposit_fee;
-    }
-
-    if endowment.settings_controller.withdraw_fee.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
-        endowment.withdraw_fee = msg.withdraw_fee;
-    }
-
-    if endowment.settings_controller.aum_fee.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-        env.block.time,
-    ) {
-        endowment.aum_fee = msg.aum_fee;
-    }
-
-    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
-
-    Ok(Response::new()
-        .add_attribute("action", "update_endowment_fees")
-        .add_attribute("sender", info.sender.to_string()))
-}
-
 pub fn harvest(
     deps: DepsMut,
     _env: Env,
@@ -2290,161 +1907,6 @@ pub fn harvest(
         .add_attribute("action", "harvest"))
 }
 
-pub fn setup_dao(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    endowment_id: u32,
-    msg: DaoSetup,
-) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    if endowment.dao.is_some() {
-        return Err(ContractError::Std(StdError::generic_err(
-            "A DAO already exists for this Endowment",
-        )));
-    }
-
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
-    Ok(Response::new().add_submessage(SubMsg {
-        id: 1,
-        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.subdao_gov_code.unwrap(),
-            admin: None,
-            label: "new endowment dao contract".to_string(),
-            msg: to_binary(&DaoInstantiateMsg {
-                id: endowment_id,
-                quorum: msg.quorum,
-                threshold: msg.threshold,
-                voting_period: msg.voting_period,
-                timelock_period: msg.timelock_period,
-                expiration_period: msg.expiration_period,
-                proposal_deposit: msg.proposal_deposit,
-                snapshot_period: msg.snapshot_period,
-                token: msg.token,
-                endow_type: endowment.endow_type,
-                endow_owner: endowment.owner.to_string(),
-                registrar_contract: config.registrar_contract.to_string(),
-            })?,
-            funds: vec![],
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
-    }))
-}
-
-pub fn setup_donation_match(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    endowment_id: u32,
-    setup: DonationMatch,
-) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    if endowment.dao.is_some() {
-        return Err(ContractError::Std(StdError::generic_err(
-            "A DAO does not exist yet for this Endowment. Please set that up first.",
-        )));
-    }
-
-    if endowment.donation_match_contract.is_some() {
-        return Err(ContractError::Std(StdError::generic_err(
-            "A Donation Match contract already exists for this Endowment",
-        )));
-    }
-
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
-    let mut res = Response::default();
-    let match_code = match registrar_config.donation_match_code {
-        Some(match_code) => match_code,
-        None => {
-            return Err(ContractError::Std(StdError::GenericErr {
-                msg: "No code id for donation matching contract".to_string(),
-            }))
-        }
-    };
-    match setup {
-        DonationMatch::HaloTokenReserve {} => {
-            match (
-                registrar_config.halo_token,
-                registrar_config.halo_token_lp_contract,
-            ) {
-                (Some(reserve_addr), Some(lp_addr)) => {
-                    res = res.add_submessage(SubMsg {
-                        id: 2,
-                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                            code_id: match_code,
-                            admin: None,
-                            label: "new donation match contract".to_string(),
-                            msg: to_binary(
-                                &angel_core::messages::donation_match::InstantiateMsg {
-                                    id: endowment_id,
-                                    reserve_token: reserve_addr,
-                                    lp_pair: lp_addr,
-                                    registrar_contract: config.registrar_contract.to_string(),
-                                },
-                            )?,
-                            funds: vec![],
-                        }),
-                        gas_limit: None,
-                        reply_on: ReplyOn::Success,
-                    });
-                }
-                _ => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "HALO Token is not setup to be a reserve token".to_string(),
-                    }))
-                }
-            }
-        }
-        DonationMatch::Cw20TokenReserve {
-            reserve_addr,
-            lp_addr,
-        } => {
-            res = res.add_submessage(SubMsg {
-                id: 2,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: match_code,
-                    admin: None,
-                    label: "new donation match contract".to_string(),
-                    msg: to_binary(&angel_core::messages::donation_match::InstantiateMsg {
-                        id: endowment_id,
-                        reserve_token: reserve_addr,
-                        lp_pair: lp_addr,
-                        registrar_contract: config.registrar_contract.to_string(),
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            });
-        }
-    }
-
-    Ok(res)
-}
-
 // Endowment owners can manage(add/remove) the allowances for the
 // 3rd_pary wallets to withdraw the free TOH liquid balances of endowment
 // without the proposal.
@@ -2466,7 +1928,9 @@ pub fn manage_allowances(
 
     if let Some(exp) = expires {
         if exp.is_expired(&env.block) {
-            return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "allowance is expired".to_string(),
+            }));
         }
     }
 
@@ -2544,7 +2008,9 @@ pub fn spend_allowance(
             match id {
                 Some(id) => {
                     if allowances.expires[id].is_expired(&env.block) {
-                        return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: "allowance is expired".to_string(),
+                        }));
                     }
                     allowances.assets[id].amount.checked_sub(asset.amount)?;
                     allowances.assets[id].amount -= asset.amount;

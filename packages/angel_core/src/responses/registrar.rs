@@ -41,6 +41,7 @@ pub struct ConfigResponse {
     pub swap_factory: Option<String>,
     pub applications_review: String,
     pub swaps_router: Option<String>,
+    pub settings_controller: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

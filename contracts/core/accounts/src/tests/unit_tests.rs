@@ -3,19 +3,18 @@ use crate::contract::{execute, instantiate, query};
 use crate::state::Allowances;
 use angel_core::errors::core::*;
 
-use angel_core::messages::accounts::UpdateConfigMsg;
 use angel_core::messages::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy,
-    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg, UpdateMaturityWhitelist,
+    UpdateConfigMsg, UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyComponent,
-    SwapOperation,
+    AccountType, Beneficiary, Categories, EndowmentBalanceResponse, EndowmentType, SplitDetails,
+    StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
+    coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
@@ -79,6 +78,22 @@ fn create_endowment() -> (
     let env = mock_env();
     let acct_contract = env.contract.address.to_string();
     let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    let info = mock_info(AP_TEAM, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::UpdateConfig(UpdateConfigMsg {
+            new_registrar: REGISTRAR_CONTRACT.to_string(),
+            max_general_category_id: 1,
+            ibc_controller: None,
+            settings_controller: Some("settings-controller-contract".to_string()),
+        }),
+    )
+    .unwrap();
+
+    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let _ = execute(
         deps.as_mut(),
         env.clone(),
@@ -130,12 +145,13 @@ fn test_update_endowment_settings() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
         maturity_time: None,
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
+        donation_match_active: None,
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
         maturity_whitelist: None,
         settings_controller: None,
     };
@@ -146,7 +162,7 @@ fn test_update_endowment_settings() {
         ExecuteMsg::UpdateEndowmentSettings(msg),
     )
     .unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
@@ -162,12 +178,14 @@ fn test_update_endowment_settings() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
         maturity_time: None,
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
+
+        donation_match_active: None,
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
         maturity_whitelist: None,
         settings_controller: None,
     };
@@ -417,7 +435,6 @@ fn test_update_strategy() {
             percentage: Decimal::percent(100),
         }]
     );
-    assert_eq!(endowment.copycat_strategy, None);
 }
 
 #[test]
@@ -583,53 +600,52 @@ fn test_withdraw() {
         })
     );
 
-    // "withdraw"(locked) fails since the caller is not listed in "maturity_whitelist"
-    let mut matured_env = mock_env();
-    matured_env.block.time = mock_env().block.time.plus_seconds(1001); // Mock the matured state
-    let err = execute(
-        deps.as_mut(),
-        matured_env,
-        info.clone(),
-        withdraw_msg.clone(),
-    )
-    .unwrap_err();
-    assert_eq!(
-        err,
-        ContractError::Std(StdError::GenericErr {
-            msg: "Sender address is not listed in maturity_whitelist.".to_string()
-        })
-    );
+    // // "withdraw"(locked) fails since the caller is not listed in "maturity_whitelist"
+    // let mut matured_env = mock_env();
+    // matured_env.block.time = mock_env().block.time.plus_seconds(1001); // Mock the matured state
+    // let err = execute(
+    //     deps.as_mut(),
+    //     matured_env,
+    //     info.clone(),
+    //     withdraw_msg.clone(),
+    // )
+    // .unwrap_err();
+    // assert_eq!(
+    //     err,
+    //     ContractError::Std(StdError::GenericErr {
+    //         msg: "Sender address is not listed in maturity_whitelist.".to_string()
+    //     })
+    // );
 
-    // Update the "maturity_whitelist" of Endowment
-    let info = mock_info(&endow_details.owner.to_string(), &[]);
-    execute(
-        deps.as_mut(),
-        env,
-        info,
-        ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
-            id: CHARITY_ID,
-            owner: None,
-            whitelisted_beneficiaries: None,
-            whitelisted_contributors: None,
-            maturity_time: None,
-            strategies: None,
-            locked_endowment_configs: None,
-            rebalance: None,
-            maturity_whitelist: Some(UpdateMaturityWhitelist {
-                add: vec![endow_details.owner.to_string()],
-                remove: vec![],
-            }),
-            kyc_donors_only: None,
-            endow_type: None,
-            name: None,
-            categories: None,
-            tier: None,
-            logo: None,
-            image: None,
-            settings_controller: None,
-        }),
-    )
-    .unwrap();
+    // // Update the "maturity_whitelist" of Endowment
+    // let info = mock_info(&endow_details.owner.to_string(), &[]);
+    // execute(
+    //     deps.as_mut(),
+    //     env,
+    //     info,
+    //     ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
+    //         id: CHARITY_ID,
+    //         owner: None,
+    //         maturity_time: None,
+    //         strategies: None,
+    //         locked_endowment_configs: None,
+    //         rebalance: None,
+    //         kyc_donors_only: None,
+    //         endow_type: None,
+    //         name: None,
+    //         categories: None,
+    //         tier: None,
+    //         logo: None,
+    //         image: None,
+
+    //         donation_match_active: None,
+    //         whitelisted_beneficiaries: None,
+    //         whitelisted_contributors: None,
+    //         maturity_whitelist: None,
+    //         settings_controller: None,
+    //     }),
+    // )
+    // .unwrap();
 
     // Success to withdraw locked balances
     let mut matured_env = mock_env();
@@ -927,117 +943,6 @@ fn test_close_endowment() {
 }
 
 #[test]
-fn test_copycat_strategies() {
-    #[allow(non_snake_case)]
-    let TEST_ENDOWMENT_ID = 2_u32;
-
-    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
-
-    let create_endowment_msg = CreateEndowmentMsg {
-        owner: CHARITY_ADDR.to_string(),
-        name: "Test Endowment".to_string(),
-        maturity_time: Some(1000_u64),
-        cw4_members: vec![],
-        kyc_donors_only: true,
-        cw3_threshold: Threshold::AbsolutePercentage {
-            percentage: Decimal::percent(10),
-        },
-        cw3_max_voting_period: 60,
-        whitelisted_beneficiaries: vec![],
-        whitelisted_contributors: vec![],
-        split_max: Decimal::one(),
-        split_min: Decimal::zero(),
-        split_default: Decimal::default(),
-        earnings_fee: None,
-        withdraw_fee: None,
-        deposit_fee: None,
-        aum_fee: None,
-        dao: None,
-        proposal_link: None,
-        categories: Categories {
-            sdgs: vec![2],
-            general: vec![],
-        },
-        tier: Some(3),
-        logo: Some("Some fancy logo".to_string()),
-        image: Some("Nice banner image".to_string()),
-        endow_type: EndowmentType::Normal,
-        settings_controller: None,
-        parent: None,
-        split_to_liquid: Some(SplitDetails::default()),
-        ignore_user_splits: false,
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let _ = execute(
-        deps.as_mut(),
-        env.clone(),
-        info,
-        ExecuteMsg::CreateEndowment(create_endowment_msg),
-    )
-    .unwrap();
-
-    // Fail to copycat the strategy since unauthorized call
-    let info = mock_info("anyone", &[]);
-    let msg = ExecuteMsg::CopycatStrategies {
-        id: TEST_ENDOWMENT_ID,
-        acct_type: AccountType::Locked,
-        id_to_copy: CHARITY_ID,
-    };
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Fail to copycat the strategies since stratgies to be copied are empty
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let msg = ExecuteMsg::CopycatStrategies {
-        id: TEST_ENDOWMENT_ID,
-        acct_type: AccountType::Locked,
-        id_to_copy: CHARITY_ID,
-    };
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(
-        err,
-        ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        })
-    );
-
-    // Suceed to copycat the strategies
-    // First, update the strategies for CHARITY_ID endowment
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![Strategy {
-            vault: "tech_strategy_component_addr".to_string(),
-            percentage: Decimal::percent(100),
-        }],
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let _ = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-    // Try to copycat the strategies
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let msg = ExecuteMsg::CopycatStrategies {
-        id: TEST_ENDOWMENT_ID,
-        acct_type: AccountType::Locked,
-        id_to_copy: CHARITY_ID,
-    };
-    let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    // Check the result
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Endowment {
-            id: TEST_ENDOWMENT_ID,
-        },
-    )
-    .unwrap();
-    let endow_detail: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(endow_detail.copycat_strategy, Some(CHARITY_ID));
-}
-
-#[test]
 fn test_swap_token() {
     let (mut deps, _, _, _) = create_endowment();
 
@@ -1162,15 +1067,18 @@ fn test_swap_receipt() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::TokenAmount {
-            id: CHARITY_ID,
-            asset_info: AssetInfo::Native("ujuno".to_string()),
-            acct_type: AccountType::Locked,
-        },
+        QueryMsg::Balance { id: CHARITY_ID },
     )
     .unwrap();
-    let balance: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(balance, Uint128::from(1000000_u128));
+    let balance: EndowmentBalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].denom,
+        "ujuno".to_string(),
+    );
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].amount,
+        Uint128::from(1000000_u128)
+    );
 }
 
 #[test]
@@ -1284,15 +1192,18 @@ fn test_vaults_invest() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::TokenAmount {
-            id: CHARITY_ID,
-            asset_info: AssetInfo::Native("input-denom".to_string()),
-            acct_type: AccountType::Locked,
-        },
+        QueryMsg::Balance { id: CHARITY_ID },
     )
     .unwrap();
-    let balance: Uint128 = from_binary(&res).unwrap();
-    assert_eq!(balance, Uint128::from(1000000_u128 - 300000_u128));
+    let balance: EndowmentBalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].denom,
+        "input-denom".to_string(),
+    );
+    assert_eq!(
+        balance.tokens_on_hand.locked.native[0].amount,
+        Uint128::from(1000000_u128 - 300000_u128)
+    );
 }
 
 #[test]

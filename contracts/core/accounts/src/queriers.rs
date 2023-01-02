@@ -1,11 +1,8 @@
-use crate::state::{
-    read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES,
-};
+use crate::state::{Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
-use angel_core::structs::{AccountType, EndowmentBalanceResponse, EndowmentEntry, Tier};
+use angel_core::structs::EndowmentBalanceResponse;
 use angel_core::utils::vault_endowment_balance;
-use cosmwasm_std::{Deps, StdResult, Uint128};
-use cw_asset::AssetInfo;
+use cosmwasm_std::{Deps, Order, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -55,63 +52,58 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
     })
 }
 
-pub fn query_token_amount(
+pub fn query_endowment_by_proposal_link(
     deps: Deps,
-    id: u32,
-    asset_info: AssetInfo,
-    acct_type: AccountType,
-) -> StdResult<Uint128> {
-    let _endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let state = STATES.load(deps.storage, id)?;
-    let balance: Uint128 = match (asset_info, acct_type) {
-        (AssetInfo::Native(denom), AccountType::Liquid) => {
-            state.balances.liquid.get_denom_amount(denom).amount
-        }
-        (AssetInfo::Native(denom), AccountType::Locked) => {
-            state.balances.locked.get_denom_amount(denom).amount
-        }
-        (AssetInfo::Cw20(addr), AccountType::Liquid) => {
-            state.balances.liquid.get_token_amount(addr).amount
-        }
-        (AssetInfo::Cw20(addr), AccountType::Locked) => {
-            state.balances.locked.get_token_amount(addr).amount
-        }
-        _ => unreachable!(),
-    };
-    Ok(balance)
-}
-
-pub fn query_endowment_list(
-    deps: Deps,
-    proposal_link: Option<u64>,
-    start_after: Option<u32>,
-    limit: Option<u64>,
-) -> StdResult<EndowmentListResponse> {
-    let endowments: Vec<(u32, Endowment)> =
-        read_endowments(deps.storage, proposal_link, start_after, limit)?;
-    let entries: Vec<EndowmentEntry> = endowments
-        .iter()
-        .map(|(i, e)| EndowmentEntry {
-            id: *i,
-            owner: e.owner.to_string(),
-            status: e.status.clone(),
-            endow_type: e.endow_type.clone(),
-            name: Some(e.name.clone()),
-            logo: e.logo.clone(),
-            image: e.image.clone(),
-            tier: match e.tier.unwrap_or(0) {
-                1 => Some(Tier::Level1),
-                2 => Some(Tier::Level2),
-                3 => Some(Tier::Level3),
-                _ => None,
-            },
-            categories: e.categories.clone(),
-            proposal_link: e.proposal_link.clone(),
-        })
+    proposal_link: u64,
+) -> StdResult<EndowmentDetailsResponse> {
+    let endowments: Vec<Endowment> = ENDOWMENTS
+        .range(deps.storage, None, None, Order::Ascending)
+        .filter(|e| e.as_ref().unwrap().1.proposal_link == Some(proposal_link))
+        .map(|item| item.unwrap().1)
         .collect();
+    if endowments.len() != 1 {
+        return Err(cosmwasm_std::StdError::NotFound {
+            kind: "endowment".to_string(),
+        });
+    }
+    let Endowment {
+        owner,
+        name,
+        categories,
+        tier,
+        endow_type,
+        logo,
+        image,
+        status,
+        deposit_approved,
+        withdraw_approved,
+        maturity_time,
+        strategies,
+        oneoff_vaults,
+        rebalance,
+        kyc_donors_only,
+        pending_redemptions,
+        proposal_link,
+    } = endowments[0].clone();
 
-    Ok(EndowmentListResponse {
-        endowments: entries,
+    Ok(EndowmentDetailsResponse {
+        owner,
+        name,
+        categories,
+        tier,
+        endow_type,
+        logo,
+        image,
+        status,
+        deposit_approved,
+        withdraw_approved,
+        maturity_time,
+        strategies,
+        oneoff_vaults,
+        rebalance,
+        kyc_donors_only,
+        pending_redemptions,
+        proposal_link,
     })
 }
 
@@ -120,37 +112,22 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
+        name: endowment.name,
+        tier: endowment.tier,
+        categories: endowment.categories,
+        logo: endowment.logo,
+        image: endowment.image,
         status: endowment.status,
         endow_type: endowment.endow_type,
         maturity_time: endowment.maturity_time,
         strategies: endowment.strategies,
         oneoff_vaults: endowment.oneoff_vaults,
         rebalance: endowment.rebalance,
-        donation_match_contract: endowment
-            .donation_match_contract
-            .map(|addr| addr.to_string())
-            .unwrap_or_else(|| "".to_string()),
         kyc_donors_only: endowment.kyc_donors_only,
-        maturity_whitelist: endowment
-            .maturity_whitelist
-            .iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>(),
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,
         pending_redemptions: endowment.pending_redemptions,
-        dao: None,
-        dao_token: None,
-        description: "test endowment desc".to_string(),
-        copycat_strategy: endowment.copycat_strategy,
         proposal_link: endowment.proposal_link,
-        name: endowment.name,
-        tier: endowment.tier,
-        categories: endowment.categories,
-        logo: endowment.logo,
-        image: endowment.image,
-        parent: endowment.parent,
-        settings_controller: endowment.settings_controller,
     })
 }
 

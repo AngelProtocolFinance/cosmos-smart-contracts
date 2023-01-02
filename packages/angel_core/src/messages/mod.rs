@@ -8,6 +8,7 @@ pub mod fee_distributor;
 pub mod index_fund;
 pub mod registrar;
 pub mod router;
+pub mod settings_controller;
 pub mod subdao;
 pub mod subdao_bonding_token;
 pub mod vault;

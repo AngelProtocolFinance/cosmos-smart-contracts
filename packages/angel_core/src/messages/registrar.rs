@@ -1,5 +1,5 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails, Tier,
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
     VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
@@ -13,6 +13,8 @@ pub struct MigrateMsg {
     pub endowtype_fees: MigrateEndowTypeFees,
     // collector_addr
     pub collector_addr: Option<String>,
+    // settings_controller contract address
+    pub settings_controller_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -106,6 +108,7 @@ pub struct UpdateConfigMsg {
     pub accepted_tokens_cw20: Option<Vec<String>>,
     pub applications_review: Option<String>,
     pub swaps_router: Option<String>,
+    pub settings_controller: Option<String>,
 }
 
 impl UpdateConfigMsg {
@@ -126,18 +129,6 @@ pub struct VaultAddMsg {
     pub restricted_from: Vec<EndowmentType>,
     pub acct_type: AccountType,
     pub vault_type: VaultType,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentEntryMsg {
-    pub endowment_addr: String,
-    pub name: Option<String>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub owner: Option<String>,
-    pub tier: Option<Option<Tier>>,
-    pub un_sdg: Option<Option<u64>>,
-    pub endow_type: Option<EndowmentType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

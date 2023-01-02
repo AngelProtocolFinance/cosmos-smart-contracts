@@ -7,6 +7,7 @@ members = [
     "contracts/core/accounts",
     "contracts/core/index-fund",
     "contracts/core/registrar",
+    "contracts/core/settings-controller",
     "contracts/core/swap-router",
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/cw900-lv",
@@ -38,7 +39,7 @@ exclude = [
 ]
 
 [profile.release]
-opt-level = 3
+opt-level = 'z'
 debug = false
 rpath = false
 lto = true

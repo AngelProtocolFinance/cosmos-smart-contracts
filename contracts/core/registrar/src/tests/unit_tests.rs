@@ -139,6 +139,7 @@ fn update_config() {
         accepted_tokens_native: None,
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
+        settings_controller: Some("settings-controller".to_string()),
         tax_rate: Some(Decimal::from_ratio(20_u128, 100_u128)),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
@@ -314,6 +315,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         accepted_tokens_native: None,
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
+        settings_controller: Some("settings-controller".to_string()),
         tax_rate: Some(Decimal::from_ratio(20_u128, 100_u128)),
     };
     let res = execute(
