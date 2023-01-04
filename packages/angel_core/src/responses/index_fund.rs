@@ -1,5 +1,5 @@
 use crate::structs::IndexFund;
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -11,17 +11,6 @@ pub struct FundDetailsResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct FundListResponse {
     pub funds: Vec<IndexFund>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct DonationDetailResponse {
-    pub address: String,
-    pub total_ust: Uint128,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct DonationListResponse {
-    pub donors: Vec<DonationDetailResponse>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -39,17 +28,5 @@ pub struct ConfigResponse {
     pub fund_rotation: Option<u64>,
     pub fund_member_limit: u32,
     pub funding_goal: Option<Uint128>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct AllianceMemberResponse {
-    pub wallet: String,
-    pub name: String,
-    pub logo: Option<String>,
-    pub website: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct AllianceMemberListResponse {
-    pub alliance_members: Vec<AllianceMemberResponse>,
+    pub alliance_members: Vec<Addr>,
 }

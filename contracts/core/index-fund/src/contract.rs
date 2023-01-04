@@ -1,11 +1,11 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, State, CONFIG, STATE};
+use crate::state::{Config, OldConfig, State, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128,
+    entry_point, from_binary, from_slice, to_binary, Binary, Deps, DepsMut, Env, MessageInfo,
+    Response, StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -30,6 +30,7 @@ pub fn instantiate(
         fund_rotation: msg.fund_rotation.unwrap_or(None), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
         funding_goal: msg.funding_goal.unwrap_or(None),
+        alliance_members: vec![],
     };
     CONFIG.save(deps.storage, &configs)?;
 
@@ -60,11 +61,9 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateAllianceMemberList {
-            address,
-            member,
-            action,
-        } => executers::update_alliance_member_list(deps, info, address, member, action),
+        ExecuteMsg::UpdateAllianceMemberList { address, action } => {
+            executers::update_alliance_member_list(deps, info, address, action)
+        }
         ExecuteMsg::CreateFund {
             name,
             description,
@@ -103,9 +102,6 @@ pub fn execute(
             };
             executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
         }
-        ExecuteMsg::UpdateAllianceMember { address, member } => {
-            executers::update_alliance_member(deps, env, info, address, member)
-        }
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
     }
 }
@@ -139,15 +135,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::state(deps)?),
-        QueryMsg::FundsList { start_after, limit } => {
-            to_binary(&queriers::funds_list(deps, start_after, limit)?)
-        }
         QueryMsg::FundDetails { fund_id } => to_binary(&queriers::fund_details(deps, fund_id)?),
         QueryMsg::InvolvedFunds { endowment_id } => {
             to_binary(&queriers::involved_funds(deps, endowment_id)?)
         }
         QueryMsg::ActiveFundDetails {} => to_binary(&queriers::active_fund_details(deps)?),
-        QueryMsg::ActiveFundDonations {} => to_binary(&queriers::active_fund_donations(deps)?),
         QueryMsg::Deposit {
             token_denom,
             amount,
@@ -161,17 +153,11 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             fund_id,
             split,
         )?),
-        QueryMsg::AllianceMember { address } => {
-            to_binary(&queriers::alliance_member(deps, address)?)
-        }
-        QueryMsg::AllianceMembers { start_after, limit } => {
-            to_binary(&queriers::alliance_members(deps, start_after, limit)?)
-        }
     }
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -185,6 +171,24 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             msg: "Cannot upgrade from a newer version".to_string(),
         }));
     }
+
+    // setup the new config struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let old_config: OldConfig = from_slice(&data)?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: old_config.owner,
+            registrar_contract: old_config.registrar_contract,
+            fund_rotation: old_config.fund_rotation,
+            fund_member_limit: old_config.fund_member_limit,
+            funding_goal: old_config.funding_goal,
+            alliance_members: msg.alliance_members.unwrap_or(vec![]),
+        },
+    )?;
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
