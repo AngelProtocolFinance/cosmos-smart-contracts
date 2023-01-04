@@ -1,12 +1,12 @@
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::responses::settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SettingsController, SplitDetails,
-    VaultType, YieldVault,
+    AcceptedTokens, AccountType, RebalanceDetails, SettingsController, SplitDetails, VaultType,
+    YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -23,15 +23,6 @@ pub enum QueryMsg {
     Config {},
     Vault {
         vault_addr: String,
-    },
-    VaultList {
-        network: Option<String>,
-        endowment_type: Option<EndowmentType>,
-        acct_type: Option<AccountType>,
-        vault_type: Option<VaultType>,
-        approved: Option<bool>,
-        start_after: Option<String>,
-        limit: Option<u64>,
     },
     // Mock the "vault::balance { endowment_id: u32 }" query
     Balance {
@@ -175,112 +166,6 @@ impl WasmMockQuerier {
                         ))
                     }
                 }
-                QueryMsg::VaultList {
-                    network: _,
-                    endowment_type: _,
-                    acct_type: Some(AccountType::Locked),
-                    vault_type: _,
-                    approved: _,
-                    start_after: _,
-                    limit: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultListResponse {
-                        vaults: vec![
-                            YieldVault {
-                                address: Addr::unchecked("vault").to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
-                            },
-                            YieldVault {
-                                address: Addr::unchecked("tech_strategy_component_addr")
-                                    .to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
-                            },
-                        ],
-                    })
-                    .unwrap(),
-                )),
-                QueryMsg::VaultList {
-                    network: _,
-                    endowment_type: _,
-                    acct_type: Some(AccountType::Liquid),
-                    vault_type: _,
-                    approved: _,
-                    start_after: _,
-                    limit: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultListResponse {
-                        vaults: vec![YieldVault {
-                            address: Addr::unchecked("cash_strategy_component_addr").to_string(),
-                            network: "juno-1".to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Liquid,
-                            vault_type: VaultType::Native,
-                        }],
-                    })
-                    .unwrap(),
-                )),
-                QueryMsg::VaultList {
-                    network: _,
-                    endowment_type: _,
-                    acct_type: _,
-                    vault_type: _,
-                    approved: _,
-                    start_after: _,
-                    limit: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultListResponse {
-                        vaults: vec![
-                            YieldVault {
-                                address: Addr::unchecked("vault").to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
-                            },
-                            YieldVault {
-                                address: Addr::unchecked("cash_strategy_component_addr")
-                                    .to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Liquid,
-                                vault_type: VaultType::Native,
-                            },
-                            YieldVault {
-                                address: Addr::unchecked("tech_strategy_component_addr")
-                                    .to_string(),
-                                network: "juno-1".to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                                vault_type: VaultType::Native,
-                            },
-                        ],
-                    })
-                    .unwrap(),
-                )),
                 QueryMsg::Fee { name: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Decimal::from_ratio(10_u128, 100_u128)).unwrap(),
                 )),

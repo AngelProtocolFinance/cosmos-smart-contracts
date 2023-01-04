@@ -312,26 +312,6 @@ fn test_update_strategy() {
         acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(30),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(50),
-            },
-        ],
-    };
-
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::InvalidInputs {});
-
-    // sum of the invested strategy components percentages is over 100%
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
                 vault: "vault".to_string(),
                 percentage: Decimal::percent(30),
             },
@@ -411,7 +391,7 @@ fn test_update_strategy() {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
         strategies: vec![Strategy {
-            vault: "cash_strategy_component_addr".to_string(),
+            vault: "liquid-vault".to_string(),
             percentage: Decimal::percent(100),
         }],
     };
@@ -431,7 +411,7 @@ fn test_update_strategy() {
     assert_eq!(
         endowment.strategies.liquid,
         vec![StrategyComponent {
-            vault: "cash_strategy_component_addr".to_string(),
+            vault: "liquid-vault".to_string(),
             percentage: Decimal::percent(100),
         }]
     );
@@ -791,11 +771,11 @@ fn test_vault_receipt() {
         acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
-                vault: "cash_strategy_component_addr".to_string(), // THIS IS A LIQUID ACCOUNT VAULT!
+                vault: "liquid-vault".to_string(), // THIS IS A LIQUID ACCOUNT VAULT!
                 percentage: Decimal::percent(40),
             },
             Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
+                vault: "locked-vault".to_string(),
                 percentage: Decimal::percent(60),
             },
         ],
@@ -808,7 +788,7 @@ fn test_vault_receipt() {
         acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
-                vault: "vault".to_string(),
+                vault: "locked-vault".to_string(),
                 percentage: Decimal::percent(40),
             },
             Strategy {
