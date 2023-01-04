@@ -7,7 +7,7 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::settings_controller::CreateEndowSettingsMsg;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::responses::settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
@@ -653,38 +653,32 @@ pub fn update_strategies(
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
-    // Check that all strategies supplied can be invested in by this type of Endowment
-    // ie. There are no restricted or non-approved vaults in the proposed Strategies setup
-    let allowed: VaultListResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: config.registrar_contract.to_string(),
-        msg: to_binary(&RegistrarQuerier::VaultList {
-            approved: Some(true),
-            endowment_type: Some(endowment.endow_type.clone()),
-            acct_type: Some(acct_type.clone()),
-            vault_type: None,
-            network: None,
-            start_after: None,
-            limit: None,
-        })?,
-    }))?;
-
     let mut percentages_sum = Decimal::zero();
     let mut new_strategies = vec![];
     for strategy in strategies.iter() {
-        match allowed
-            .vaults
+        // Check that all strategy can be invested in by this type of Endowment
+        // ie. There is not a restricted nor unapproved vault in the proposed Strategy setup
+        let vault: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: strategy.vault.to_string(),
+                })?,
+            }))?;
+        let pos = vault
+            .vault
+            .restricted_from
             .iter()
-            .position(|v| v.address == strategy.vault)
-        {
-            None => return Err(ContractError::InvalidInputs {}),
-            Some(_) => {
-                percentages_sum += strategy.percentage;
-                // update endowment strategies attribute with all newly passed strategies
-                new_strategies.push(StrategyComponent {
-                    vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
-                    percentage: strategy.percentage,
-                });
-            }
+            .position(|et| et == &endowment.endow_type);
+        if vault.vault.approved == true && vault.vault.acct_type == acct_type && pos == None {
+            percentages_sum += strategy.percentage;
+            // update endowment strategies attribute with all newly passed strategies
+            new_strategies.push(StrategyComponent {
+                vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
+                percentage: strategy.percentage,
+            });
+        } else {
+            return Err(ContractError::InvalidInputs {});
         }
     }
 

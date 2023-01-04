@@ -135,26 +135,10 @@ pub struct VaultAddMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on single vault
-    Vault {
-        vault_addr: String,
-    },
-    // Gets list of all Vaults
-    VaultList {
-        network: Option<String>,
-        endowment_type: Option<EndowmentType>,
-        acct_type: Option<AccountType>,
-        vault_type: Option<VaultType>,
-        approved: Option<bool>,
-        start_after: Option<String>,
-        limit: Option<u64>,
-    },
+    Vault { vault_addr: String },
     // Get all Config details for the contract
     Config {},
     // Get a network connection info
-    NetworkConnection {
-        chain_id: String,
-    },
-    Fee {
-        name: String,
-    },
+    NetworkConnection { chain_id: String },
+    Fee { name: String },
 }

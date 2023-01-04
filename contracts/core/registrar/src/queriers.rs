@@ -1,6 +1,5 @@
-use crate::state::{read_vaults, CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{AccountType, EndowmentType, VaultType};
 use cosmwasm_std::{Decimal, Deps, StdResult};
 use cw2::get_contract_version;
 
@@ -58,35 +57,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
         settings_controller: config.settings_controller.map(|addr| addr.to_string()),
     })
-}
-
-#[allow(clippy::too_many_arguments)]
-pub fn query_vault_list(
-    deps: Deps,
-    network: Option<String>,
-    endowment_type: Option<EndowmentType>,
-    acct_type: Option<AccountType>,
-    vault_type: Option<VaultType>,
-    approved: Option<bool>,
-    start_after: Option<String>,
-    limit: Option<u64>,
-) -> StdResult<VaultListResponse> {
-    // returns a list of all Vaults
-    let addr = match start_after {
-        Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
-        None => None,
-    };
-    let vaults = read_vaults(
-        deps.storage,
-        network,
-        endowment_type,
-        acct_type,
-        vault_type,
-        approved,
-        addr,
-        limit,
-    )?;
-    Ok(VaultListResponse { vaults })
 }
 
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
