@@ -22,7 +22,7 @@ pub enum ContractError {
     AlreadyRefunded {},
 
     #[error(
-        "Only accepts {token_type} tokens that have been whitelisted. Supplied '{given}' is not approved."
+        "Only accepts {token_type} tokens that have been allowed. Supplied '{given}' is not approved."
     )]
     NotInWhitelist { token_type: String, given: String },
 

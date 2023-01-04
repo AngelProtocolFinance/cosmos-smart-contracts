@@ -1,15 +1,14 @@
-use crate::state::{read_funds, ALLIANCE_MEMBERS, CONFIG, FUND, STATE, TCA_DONATIONS};
+use crate::state::{read_funds, CONFIG, FUND, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
+use angel_core::structs::{IndexFund, SplitDetails};
 use angel_core::utils::{percentage_checks, validate_deposit_fund};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
 
 pub fn update_owner(
@@ -58,10 +57,9 @@ pub fn update_alliance_member_list(
     deps: DepsMut,
     info: MessageInfo,
     address: Addr,
-    member: AllianceMember,
     action: String,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
     // only the owner/admin of the contract can update the Alliance Members List
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
@@ -69,31 +67,28 @@ pub fn update_alliance_member_list(
 
     // validate the member address
     let member_addr = deps.api.addr_validate(address.as_str())?;
+    let pos = config
+        .alliance_members
+        .iter()
+        .position(|m| m == &member_addr);
 
     if action == *"add" {
-        ALLIANCE_MEMBERS.update(
-            deps.storage,
-            member_addr.clone(),
-            |_m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
-                Ok(AllianceMember {
-                    name: member.name,
-                    logo: member.logo,
-                    website: member.website,
-                })
-            },
-        )?;
+        if !pos.is_some() {
+            config.alliance_members.push(member_addr);
+        }
     } else if action == *"remove" {
-        ALLIANCE_MEMBERS.remove(deps.storage, member_addr.clone());
+        if pos.is_some() {
+            config.alliance_members.swap_remove(pos.unwrap());
+        }
     } else {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid action".to_string(),
         }));
     }
-
+    CONFIG.save(deps.storage, &config)?;
     Ok(Response::new().add_attributes(vec![
         attr("method", "update_alliance_list"),
         attr("action", action),
-        attr("address", member_addr),
     ]))
 }
 
@@ -284,41 +279,6 @@ pub fn remove_member(
     Ok(Response::default())
 }
 
-pub fn update_alliance_member(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    address: Addr,
-    member: AllianceMember,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update the Alliance Members
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // check the string is proper addr
-    let member_addr = deps.api.addr_validate(address.as_str())?;
-
-    // Update the corresponding Alliance Members.
-    ALLIANCE_MEMBERS.update(
-        deps.storage,
-        member_addr.clone(),
-        |_m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
-            Ok(AllianceMember {
-                name: member.name,
-                logo: member.logo,
-                website: member.website,
-            })
-        },
-    )?;
-
-    Ok(Response::new().add_attributes(vec![
-        attr("method", "update_alliance_member"),
-        attr("member_addr", member_addr.to_string()),
-    ]))
-}
-
 pub fn deposit(
     deps: DepsMut,
     env: Env,
@@ -335,29 +295,14 @@ pub fn deposit(
     let mut deposit_amount = deposit_fund.amount;
 
     // check each of the currenly allowed Alliance member addr
-    let mut alliance_member = false;
-    let is_sender_alliance_member = ALLIANCE_MEMBERS.has(deps.storage, sender_addr.clone());
-    if is_sender_alliance_member {
-        alliance_member = true;
-        // note increased donation amount for the TCA member
-        let mut tca_donor = TCA_DONATIONS
-            .may_load(deps.storage, sender_addr.to_string())?
-            .unwrap_or_default();
-
-        let balance = match deposit_fund.info {
-            AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
-                denom: denom.to_string(),
-                amount: deposit_amount,
-            }]),
-            AssetInfoBase::Cw20(ref contract_addr) => Balance::from(Cw20CoinVerified {
-                address: contract_addr.clone(),
-                amount: deposit_amount,
-            }),
-            _ => unreachable!(),
-        };
-        tca_donor.add_tokens(balance);
-        TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
-    }
+    let alliance_member = match config
+        .alliance_members
+        .iter()
+        .position(|m| *m == sender_addr)
+    {
+        None => false,
+        _ => true,
+    };
 
     // check if block height limit is exceeded
     if let Some(blocks) = config.fund_rotation {

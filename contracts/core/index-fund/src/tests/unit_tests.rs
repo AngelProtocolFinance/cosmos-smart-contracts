@@ -1,7 +1,7 @@
 use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
-use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
+use angel_core::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, to_binary, Addr, Decimal, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -224,26 +224,8 @@ fn only_owner_can_update_alliance_member_list() {
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    // Query the AllianceMembers
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::AllianceMembers {
-            start_after: None,
-            limit: None,
-        },
-    )
-    .unwrap();
-    let alliance_member_list: AllianceMemberListResponse = from_binary(&res).unwrap();
-    assert_eq!(alliance_member_list.alliance_members.len(), 0);
-
     let update_alliance_member_list_msg = ExecuteMsg::UpdateAllianceMemberList {
         address: Addr::unchecked("new-alliance-member"),
-        member: AllianceMember {
-            name: "alliance".to_string(),
-            logo: None,
-            website: None,
-        },
         action: "add".to_string(),
     };
 
@@ -268,29 +250,11 @@ fn only_owner_can_update_alliance_member_list() {
         info.clone(),
         ExecuteMsg::UpdateAllianceMemberList {
             address: Addr::unchecked("address"),
-            member: AllianceMember {
-                name: "new alliance member".to_string(),
-                logo: None,
-                website: None,
-            },
             action: "add".to_string(),
         },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
-
-    // check the result of update
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::AllianceMembers {
-            start_after: None,
-            limit: None,
-        },
-    )
-    .unwrap();
-    let alliance_members: AllianceMemberListResponse = from_binary(&res).unwrap();
-    assert_eq!(alliance_members.alliance_members.len(), 1);
 
     // Cannot update since invalid action
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -301,11 +265,6 @@ fn only_owner_can_update_alliance_member_list() {
         info.clone(),
         ExecuteMsg::UpdateAllianceMemberList {
             address: Addr::unchecked("address"),
-            member: AllianceMember {
-                name: "new alliance member".to_string(),
-                logo: None,
-                website: None,
-            },
             action: "remvoe".to_string(),
         },
     )
@@ -320,29 +279,11 @@ fn only_owner_can_update_alliance_member_list() {
         info.clone(),
         ExecuteMsg::UpdateAllianceMemberList {
             address: Addr::unchecked("address"),
-            member: AllianceMember {
-                name: "new alliance member".to_string(),
-                logo: None,
-                website: None,
-            },
             action: "remove".to_string(),
         },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
-
-    // check the result of update
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::AllianceMembers {
-            start_after: None,
-            limit: None,
-        },
-    )
-    .unwrap();
-    let alliance_members: AllianceMemberListResponse = from_binary(&res).unwrap();
-    assert_eq!(alliance_members.alliance_members.len(), 0);
 }
 
 #[test]
@@ -401,19 +342,6 @@ fn sc_owner_can_add_remove_funds() {
     let _res = execute(deps.as_mut(), mock_env(), info, new_fund_msg1).unwrap();
     assert_eq!(0, res.messages.len());
 
-    // check that the fund can be fetched in a query to FundsList
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::FundsList {
-            start_after: None,
-            limit: None,
-        },
-    )
-    .unwrap();
-    let value: FundListResponse = from_binary(&res).unwrap();
-    assert_eq!(2, value.funds.len());
-
     // pleb cannot remove funds (only SC owner should be able to)
     let info = mock_info(&pleb.clone(), &coins(1000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, remove_fund_msg.clone()).unwrap_err();
@@ -423,21 +351,6 @@ fn sc_owner_can_add_remove_funds() {
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = execute(deps.as_mut(), mock_env(), info, remove_fund_msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
-
-    // check that the fund in FundsList is expired
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::FundsList {
-            start_after: None,
-            limit: None,
-        },
-    )
-    .unwrap();
-    let value: FundListResponse = from_binary(&res).unwrap();
-    assert_eq!(1, value.funds.len());
-    assert_eq!(value.funds[0].expiry_height, None);
-    // assert_eq!(value.funds[0].expiry_height, Some(mock_env().block.height));
 
     // check active fund after remove current fund
     let res = query(deps.as_ref(), mock_env(), QueryMsg::ActiveFundDetails {}).unwrap();
@@ -504,66 +417,6 @@ fn sc_owner_can_update_fund_members() {
     let value: FundDetailsResponse = from_binary(&res).unwrap();
     let f = value.fund.unwrap();
     assert_eq!(2, f.members.len());
-}
-
-#[test]
-fn sc_owner_can_update_alliance_member() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "registrar-account".to_string();
-
-    let msg = InstantiateMsg {
-        registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(Some(1000000u64)),
-        fund_member_limit: Some(20),
-        funding_goal: None,
-    };
-    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
-    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // Try to update the alliance member
-    // Fails since non-owner calls the entry
-    let info = mock_info("anyone", &[]);
-    let update_alliance_member_msg = ExecuteMsg::UpdateAllianceMember {
-        address: Addr::unchecked("address"),
-        member: AllianceMember {
-            name: "new alliance member".to_string(),
-            logo: None,
-            website: None,
-        },
-    };
-    let err = execute(deps.as_mut(), mock_env(), info, update_alliance_member_msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Succeed to update the alliance member
-    let info = mock_info(ap_team.as_ref(), &[]);
-    let update_alliance_member_msg = ExecuteMsg::UpdateAllianceMember {
-        address: Addr::unchecked("address"),
-        member: AllianceMember {
-            name: "new alliance member".to_string(),
-            logo: None,
-            website: None,
-        },
-    };
-    let res = execute(deps.as_mut(), mock_env(), info, update_alliance_member_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // Check the added alliance member
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::AllianceMember {
-            address: Addr::unchecked("address"),
-        },
-    )
-    .unwrap();
-    let alliance_member: AllianceMemberResponse = from_binary(&res).unwrap();
-    assert_eq!(alliance_member.name, "new alliance member");
-    assert_eq!(alliance_member.wallet, "address");
-    assert_eq!(alliance_member.logo, None);
-    assert_eq!(alliance_member.website, None);
 }
 
 #[test]

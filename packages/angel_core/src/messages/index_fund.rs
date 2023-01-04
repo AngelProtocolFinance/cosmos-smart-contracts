@@ -1,4 +1,3 @@
-use crate::structs::AllianceMember;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -24,10 +23,9 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    // Add/remove the Alliance member list
+    // Add/remove the Alliance member from the list/vec
     UpdateAllianceMemberList {
         address: Addr,
-        member: AllianceMember,
         action: String,
     },
     UpdateConfig(UpdateConfigMsg),
@@ -57,12 +55,6 @@ pub enum ExecuteMsg {
     Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     // Receive(Cw20ReceiveMsg),
-
-    // Update the alliance member
-    UpdateAllianceMember {
-        address: Addr,
-        member: AllianceMember,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -110,11 +102,6 @@ pub enum QueryMsg {
         fund_id: Option<u64>,
         split: Option<Decimal>,
     },
-    // returns a list of all funds
-    FundsList {
-        start_after: Option<u64>,
-        limit: Option<u64>,
-    },
     // returns a single fund if the ID is valid
     FundDetails {
         fund_id: u64,
@@ -125,22 +112,13 @@ pub enum QueryMsg {
     },
     // return details on the currently active fund
     ActiveFundDetails {},
-    // get total donations given to Active Fund for a round
-    ActiveFundDonations {},
     // return state details
     State {},
     // return config details
     Config {},
-    // return list of Alliance Members(TCA members)
-    AllianceMembers {
-        start_after: Option<Addr>,
-        limit: Option<u64>,
-    },
-    // return the Alliance member given "wallet" address
-    AllianceMember {
-        address: Addr,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub alliance_members: Option<Vec<Addr>>,
+}

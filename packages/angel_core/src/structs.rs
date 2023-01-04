@@ -127,9 +127,9 @@ pub struct EndowmentSettings {
     pub dao_token: Option<Addr>,               // dao gov token contract address
     pub donation_match_active: bool, // donation matching contract address (None set for Charity Endowments as they just phone home to Registrar to get the addr)
     pub donation_match_contract: Option<Addr>, // contract for donation matching
-    pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
+    pub beneficiaries_allowlist: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub contributors_allowlist: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub maturity_allowlist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
     pub earnings_fee: Option<EndowmentFee>, // Earnings Fee
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
@@ -147,9 +147,9 @@ impl EndowmentSettings {
             dao_token: None,
             donation_match_active: false,
             donation_match_contract: None,
-            whitelisted_beneficiaries: vec![],
-            whitelisted_contributors: vec![],
-            maturity_whitelist: vec![],
+            beneficiaries_allowlist: vec![],
+            contributors_allowlist: vec![],
+            maturity_allowlist: vec![],
             earnings_fee: None,
             withdraw_fee: None,
             deposit_fee: None,
@@ -166,8 +166,8 @@ impl EndowmentSettings {
 pub struct SettingsController {
     pub settings_controller: SettingsPermissions,
     pub strategies: SettingsPermissions,
-    pub whitelisted_beneficiaries: SettingsPermissions,
-    pub whitelisted_contributors: SettingsPermissions,
+    pub beneficiaries_allowlist: SettingsPermissions,
+    pub contributors_allowlist: SettingsPermissions,
     pub maturity_time: SettingsPermissions,
     pub profile: SettingsPermissions,
     pub earnings_fee: SettingsPermissions,
@@ -186,8 +186,8 @@ impl SettingsController {
         SettingsController {
             settings_controller: SettingsPermissions::default(),
             strategies: SettingsPermissions::default(),
-            whitelisted_beneficiaries: SettingsPermissions::default(),
-            whitelisted_contributors: SettingsPermissions::default(),
+            beneficiaries_allowlist: SettingsPermissions::default(),
+            contributors_allowlist: SettingsPermissions::default(),
             maturity_time: SettingsPermissions::default(),
             profile: SettingsPermissions::default(),
             earnings_fee: SettingsPermissions::default(),
@@ -206,8 +206,8 @@ impl SettingsController {
         match name.as_str() {
             "settings_controller" => Ok(self.settings_controller.clone()),
             "strategies" => Ok(self.strategies.clone()),
-            "whitelisted_beneficiaries" => Ok(self.whitelisted_beneficiaries.clone()),
-            "whitelisted_contributors" => Ok(self.whitelisted_contributors.clone()),
+            "beneficiaries_allowlist" => Ok(self.beneficiaries_allowlist.clone()),
+            "contributors_allowlist" => Ok(self.contributors_allowlist.clone()),
             "maturity_time" => Ok(self.maturity_time.clone()),
             "profile" => Ok(self.profile.clone()),
             "earnings_fee" => Ok(self.earnings_fee.clone()),
@@ -230,8 +230,8 @@ impl SettingsController {
     ) -> Result<(), ContractError> {
         match name.as_str() {
             "strategies" => Ok(self.strategies = permissions),
-            "whitelisted_beneficiaries" => Ok(self.whitelisted_beneficiaries = permissions),
-            "whitelisted_contributors" => Ok(self.whitelisted_contributors = permissions),
+            "beneficiaries_allowlist" => Ok(self.beneficiaries_allowlist = permissions),
+            "contributors_allowlist" => Ok(self.contributors_allowlist = permissions),
             "maturity_time" => Ok(self.maturity_time = permissions),
             "profile" => Ok(self.profile = permissions),
             "earnings_fee" => Ok(self.earnings_fee = permissions),
@@ -791,14 +791,6 @@ impl GenericBalance {
             }
         };
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct AllianceMember {
-    pub name: String,
-    pub logo: Option<String>,
-    pub website: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

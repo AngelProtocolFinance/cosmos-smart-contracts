@@ -1,5 +1,4 @@
-use angel_core::responses::index_fund::AllianceMemberResponse;
-use angel_core::structs::{AllianceMember, GenericBalance, IndexFund};
+use angel_core::structs::IndexFund;
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -7,12 +6,20 @@ use serde::{Deserialize, Serialize};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
-pub const TCA_DONATIONS: Map<String, GenericBalance> = Map::new("tca_donation");
-pub const ALLIANCE_MEMBERS: Map<Addr, AllianceMember> = Map::new("alliance_members");
 pub const FUND: Map<&[u8], IndexFund> = Map::new("fund");
 
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct OldConfig {
+    pub owner: Addr,                   // DANO Address
+    pub registrar_contract: Addr,      // Address of Registrar SC
+    pub fund_rotation: Option<u64>, // how many blocks are in a rotation cycle for the active IndexFund
+    pub fund_member_limit: u32,     // limit to number of members an IndexFund can have
+    pub funding_goal: Option<Uint128>, // donation funding limit (in UUSD) to trigger early cycle of the Active IndexFund
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -22,6 +29,7 @@ pub struct Config {
     pub fund_rotation: Option<u64>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32,     // limit to number of members an IndexFund can have
     pub funding_goal: Option<Uint128>, // donation funding limit (in UUSD) to trigger early cycle of the Active IndexFund
+    pub alliance_members: Vec<Addr>,   // angel alliance wallets
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -46,33 +54,6 @@ pub fn read_funds(
         .map(|item| {
             let (_, v) = item?;
             Ok(v)
-        })
-        .collect()
-}
-
-pub fn read_alliance_members(
-    storage: &dyn Storage,
-    start_after: Option<Addr>,
-    limit: Option<u64>,
-) -> StdResult<Vec<AllianceMemberResponse>> {
-    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let end_before: Option<Addr> = None;
-    ALLIANCE_MEMBERS
-        .range(
-            storage,
-            start_after.map(Bound::inclusive),
-            end_before.map(Bound::inclusive),
-            Order::Ascending,
-        )
-        .take(limit)
-        .map(|member| {
-            let (addr, mem) = member?;
-            Ok(AllianceMemberResponse {
-                wallet: std::str::from_utf8(addr.as_bytes()).unwrap().to_string(),
-                name: mem.name,
-                logo: mem.logo,
-                website: mem.website,
-            })
         })
         .collect()
 }

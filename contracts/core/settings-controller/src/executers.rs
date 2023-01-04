@@ -135,9 +135,9 @@ pub fn create_endowment_settings(
             dao_token: None,
             donation_match_active: msg.donation_match_active,
             donation_match_contract: msg.donation_match_contract,
-            whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
-            whitelisted_contributors: msg.whitelisted_contributors.clone(),
-            maturity_whitelist: vec![],
+            beneficiaries_allowlist: msg.beneficiaries_allowlist.clone(),
+            contributors_allowlist: msg.contributors_allowlist.clone(),
+            maturity_allowlist: vec![],
             settings_controller: msg.settings_controller.clone(),
             parent: msg.parent,
             split_to_liquid: msg.split_to_liquid,
@@ -196,14 +196,14 @@ pub fn update_endowment_settings(
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endow_detail.endow_type != EndowmentType::Charity {
-        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
+        if let Some(beneficiaries_allowlist) = msg.beneficiaries_allowlist {
             let endow_mature_time = endow_detail
                 .maturity_time
                 .expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
                 if endowment
                     .settings_controller
-                    .whitelisted_beneficiaries
+                    .beneficiaries_allowlist
                     .can_change(
                         &msg.setting_updater,
                         &endow_detail.owner,
@@ -211,18 +211,18 @@ pub fn update_endowment_settings(
                         env.block.time,
                     )
                 {
-                    endowment.whitelisted_beneficiaries = whitelisted_beneficiaries;
+                    endowment.beneficiaries_allowlist = beneficiaries_allowlist;
                 }
             }
         }
-        if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
+        if let Some(contributors_allowlist) = msg.contributors_allowlist {
             let endow_mature_time = endow_detail
                 .maturity_time
                 .expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
                 if endowment
                     .settings_controller
-                    .whitelisted_contributors
+                    .contributors_allowlist
                     .can_change(
                         &msg.setting_updater,
                         &endow_detail.owner,
@@ -230,13 +230,13 @@ pub fn update_endowment_settings(
                         env.block.time,
                     )
                 {
-                    endowment.whitelisted_contributors = whitelisted_contributors;
+                    endowment.contributors_allowlist = contributors_allowlist;
                 }
             }
         }
     }
 
-    if let Some(whitelist) = msg.maturity_whitelist {
+    if let Some(whitelist) = msg.maturity_allowlist {
         let endow_mature_time = endow_detail
             .maturity_time
             .expect("Cannot get maturity time");
@@ -244,16 +244,16 @@ pub fn update_endowment_settings(
             let UpdateMaturityWhitelist { add, remove } = whitelist;
             for addr in add {
                 let validated_addr = deps.api.addr_validate(&addr)?;
-                endowment.maturity_whitelist.push(validated_addr);
+                endowment.maturity_allowlist.push(validated_addr);
             }
             for addr in remove {
                 let validated_addr = deps.api.addr_validate(&addr)?;
                 let id = endowment
-                    .maturity_whitelist
+                    .maturity_allowlist
                     .iter()
                     .position(|v| *v == validated_addr);
                 if let Some(id) = id {
-                    endowment.maturity_whitelist.swap_remove(id);
+                    endowment.maturity_allowlist.swap_remove(id);
                 }
             }
         }

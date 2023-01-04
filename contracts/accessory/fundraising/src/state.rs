@@ -61,7 +61,7 @@ impl Campaign {
         false
     }
 
-    pub fn human_whitelist(&self) -> Vec<String> {
+    pub fn human_allowlist(&self) -> Vec<String> {
         self.funding_goal
             .cw20
             .iter()
