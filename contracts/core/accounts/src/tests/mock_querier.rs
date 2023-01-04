@@ -290,9 +290,9 @@ impl WasmMockQuerier {
                         dao_token: None,
                         donation_match_active: false,
                         donation_match_contract: Some(Addr::unchecked("donation-match-contract")),
-                        whitelisted_beneficiaries: vec![],
-                        whitelisted_contributors: vec![],
-                        maturity_whitelist: vec![Addr::unchecked(
+                        beneficiaries_allowlist: vec![],
+                        contributors_allowlist: vec![],
+                        maturity_allowlist: vec![Addr::unchecked(
                             "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", // CHARITY_ADDR
                         )],
                         earnings_fee: None,
@@ -314,8 +314,8 @@ impl WasmMockQuerier {
                     to_binary(&EndowmentPermissionsResponse {
                         settings_controller: false,
                         strategies: false,
-                        whitelisted_beneficiaries: false,
-                        whitelisted_contributors: false,
+                        beneficiaries_allowlist: false,
+                        contributors_allowlist: false,
                         maturity_time: false,
                         profile: false,
                         earnings_fee: false,

@@ -138,8 +138,8 @@ pub struct CreateEndowmentMsg {
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
-    pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub beneficiaries_allowlist: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can)
+    pub contributors_allowlist: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub split_max: Decimal,
     pub split_min: Decimal,
     pub split_default: Decimal,
@@ -185,9 +185,9 @@ pub struct UpdateEndowmentSettingsMsg {
     pub image: Option<String>,
 
     pub donation_match_active: Option<bool>,
-    pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
+    pub beneficiaries_allowlist: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub contributors_allowlist: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub maturity_allowlist: Option<UpdateMaturityWhitelist>,
     pub settings_controller: Option<SettingsController>,
 }
 

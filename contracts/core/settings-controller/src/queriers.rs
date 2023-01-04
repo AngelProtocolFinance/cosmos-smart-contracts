@@ -25,9 +25,9 @@ pub fn query_endowment_settings(deps: Deps, id: u32) -> StdResult<EndowmentSetti
         dao_token: endowment.dao_token,
         donation_match_contract: endowment.donation_match_contract,
         donation_match_active: endowment.donation_match_active,
-        whitelisted_beneficiaries: endowment.whitelisted_beneficiaries,
-        whitelisted_contributors: endowment.whitelisted_contributors,
-        maturity_whitelist: endowment.maturity_whitelist,
+        beneficiaries_allowlist: endowment.beneficiaries_allowlist,
+        contributors_allowlist: endowment.contributors_allowlist,
+        maturity_allowlist: endowment.maturity_allowlist,
         earnings_fee: endowment.earnings_fee,
         withdraw_fee: endowment.withdraw_fee,
         deposit_fee: endowment.deposit_fee,
@@ -53,8 +53,8 @@ pub fn query_endowment_permissions(
     let SettingsController {
         settings_controller,
         strategies,
-        whitelisted_beneficiaries,
-        whitelisted_contributors,
+        beneficiaries_allowlist,
+        contributors_allowlist,
         maturity_time,
         profile,
         earnings_fee,
@@ -81,13 +81,13 @@ pub fn query_endowment_permissions(
             dao_ref,
             env.block.time,
         ),
-        whitelisted_beneficiaries: whitelisted_beneficiaries.can_change(
+        beneficiaries_allowlist: beneficiaries_allowlist.can_change(
             &setting_updater,
             &endowment_owner,
             dao_ref,
             env.block.time,
         ),
-        whitelisted_contributors: whitelisted_contributors.can_change(
+        contributors_allowlist: contributors_allowlist.can_change(
             &setting_updater,
             &endowment_owner,
             dao_ref,

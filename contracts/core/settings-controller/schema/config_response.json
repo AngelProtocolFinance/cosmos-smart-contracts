@@ -68,8 +68,8 @@
         "name",
         "profile",
         "strategies",
-        "whitelisted_beneficiaries",
-        "whitelisted_contributors",
+        "beneficiaries_allowlist",
+        "contributors_allowlist",
         "withdraw_fee"
       ],
       "properties": {
@@ -106,10 +106,10 @@
         "strategies": {
           "$ref": "#/definitions/SettingsPermissions"
         },
-        "whitelisted_beneficiaries": {
+        "beneficiaries_allowlist": {
           "$ref": "#/definitions/SettingsPermissions"
         },
-        "whitelisted_contributors": {
+        "contributors_allowlist": {
           "$ref": "#/definitions/SettingsPermissions"
         },
         "withdraw_fee": {

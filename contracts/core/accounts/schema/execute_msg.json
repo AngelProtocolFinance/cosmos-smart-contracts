@@ -841,8 +841,8 @@
         "split_default",
         "split_max",
         "split_min",
-        "whitelisted_beneficiaries",
-        "whitelisted_contributors"
+        "beneficiaries_allowlist",
+        "contributors_allowlist"
       ],
       "properties": {
         "aum_fee": {
@@ -962,13 +962,13 @@
           "format": "uint8",
           "minimum": 0.0
         },
-        "whitelisted_beneficiaries": {
+        "beneficiaries_allowlist": {
           "type": "array",
           "items": {
             "type": "string"
           }
         },
-        "whitelisted_contributors": {
+        "contributors_allowlist": {
           "type": "array",
           "items": {
             "type": "string"
@@ -1476,8 +1476,8 @@
         "name",
         "profile",
         "strategies",
-        "whitelisted_beneficiaries",
-        "whitelisted_contributors",
+        "beneficiaries_allowlist",
+        "contributors_allowlist",
         "withdraw_fee"
       ],
       "properties": {
@@ -1514,10 +1514,10 @@
         "strategies": {
           "$ref": "#/definitions/SettingsPermissions"
         },
-        "whitelisted_beneficiaries": {
+        "beneficiaries_allowlist": {
           "$ref": "#/definitions/SettingsPermissions"
         },
-        "whitelisted_contributors": {
+        "contributors_allowlist": {
           "$ref": "#/definitions/SettingsPermissions"
         },
         "withdraw_fee": {
@@ -1885,7 +1885,7 @@
           "format": "uint64",
           "minimum": 0.0
         },
-        "maturity_whitelist": {
+        "maturity_allowlist": {
           "anyOf": [
             {
               "$ref": "#/definitions/UpdateMaturityWhitelist"
@@ -1934,7 +1934,7 @@
           "format": "uint8",
           "minimum": 0.0
         },
-        "whitelisted_beneficiaries": {
+        "beneficiaries_allowlist": {
           "type": [
             "array",
             "null"
@@ -1943,7 +1943,7 @@
             "type": "string"
           }
         },
-        "whitelisted_contributors": {
+        "contributors_allowlist": {
           "type": [
             "array",
             "null"

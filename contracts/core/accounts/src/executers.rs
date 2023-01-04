@@ -196,9 +196,9 @@ pub fn create_endowment(
                     id: config.next_account_id,
                     donation_match_active: false,
                     donation_match_contract,
-                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
-                    whitelisted_contributors: msg.whitelisted_contributors.clone(),
-                    maturity_whitelist: vec![],
+                    beneficiaries_allowlist: msg.beneficiaries_allowlist.clone(),
+                    contributors_allowlist: msg.contributors_allowlist.clone(),
+                    maturity_allowlist: vec![],
                     settings_controller: msg
                         .settings_controller
                         .clone()
@@ -602,9 +602,9 @@ pub fn update_endowment_settings(
                     setting_updater: info.sender,
                     id: msg.id,
                     donation_match_active: msg.donation_match_active,
-                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
-                    whitelisted_contributors: msg.whitelisted_contributors,
-                    maturity_whitelist: msg.maturity_whitelist,
+                    beneficiaries_allowlist: msg.beneficiaries_allowlist,
+                    contributors_allowlist: msg.contributors_allowlist,
+                    maturity_allowlist: msg.maturity_allowlist,
                     settings_controller: msg.settings_controller,
                 },
             ),
@@ -1648,9 +1648,9 @@ pub fn withdraw(
     //          AccountType::Locked => Only CONFIG owner can withdraw balances
     //          AccountType::Liquid => Only endowment owner can withdraw balances
     // EndowmentType::Normal =>
-    //          AccountType::Locked => Endomwent owner or address in "maturity_whitelist"
+    //          AccountType::Locked => Endomwent owner or address in "maturity_allowlist"
     //                      can withdraw the balances AFTER MATURED
-    //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
+    //          AccountType::Liquid => Endowment owner or address in "beneficiaries_allowlist"
     //                      can withdraw the balances
     match (endowment.endow_type.clone(), acct_type.clone()) {
         (EndowmentType::Charity, AccountType::Locked) => {
@@ -1671,16 +1671,16 @@ pub fn withdraw(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
             }
-            if !endowment_settings.maturity_whitelist.contains(&info.sender) {
+            if !endowment_settings.maturity_allowlist.contains(&info.sender) {
                 return Err(ContractError::Std(StdError::generic_err(
-                    "Sender address is not listed in maturity_whitelist.",
+                    "Sender address is not listed in maturity_allowlist.",
                 )));
             }
         }
         (EndowmentType::Normal, AccountType::Liquid) => {
             if !(info.sender == endowment.owner
                 || endowment_settings
-                    .whitelisted_beneficiaries
+                    .beneficiaries_allowlist
                     .contains(&info.sender.to_string()))
             {
                 return Err(ContractError::Std(StdError::generic_err(

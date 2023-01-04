@@ -53,8 +53,8 @@ fn create_endowment() -> (
             percentage: Decimal::percent(10),
         },
         cw3_max_voting_period: 60,
-        whitelisted_beneficiaries: vec![],
-        whitelisted_contributors: vec![],
+        beneficiaries_allowlist: vec![],
+        contributors_allowlist: vec![],
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::default(),
@@ -150,9 +150,9 @@ fn test_update_endowment_settings() {
         locked_endowment_configs: None,
         rebalance: None,
         donation_match_active: None,
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
-        maturity_whitelist: None,
+        beneficiaries_allowlist: None,
+        contributors_allowlist: None,
+        maturity_allowlist: None,
         settings_controller: None,
     };
     let res = execute(
@@ -184,9 +184,9 @@ fn test_update_endowment_settings() {
         rebalance: None,
 
         donation_match_active: None,
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
-        maturity_whitelist: None,
+        beneficiaries_allowlist: None,
+        contributors_allowlist: None,
+        maturity_allowlist: None,
         settings_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
@@ -600,7 +600,7 @@ fn test_withdraw() {
         })
     );
 
-    // // "withdraw"(locked) fails since the caller is not listed in "maturity_whitelist"
+    // // "withdraw"(locked) fails since the caller is not listed in "maturity_allowlist"
     // let mut matured_env = mock_env();
     // matured_env.block.time = mock_env().block.time.plus_seconds(1001); // Mock the matured state
     // let err = execute(
@@ -613,11 +613,11 @@ fn test_withdraw() {
     // assert_eq!(
     //     err,
     //     ContractError::Std(StdError::GenericErr {
-    //         msg: "Sender address is not listed in maturity_whitelist.".to_string()
+    //         msg: "Sender address is not listed in maturity_allowlist.".to_string()
     //     })
     // );
 
-    // // Update the "maturity_whitelist" of Endowment
+    // // Update the "maturity_allowlist" of Endowment
     // let info = mock_info(&endow_details.owner.to_string(), &[]);
     // execute(
     //     deps.as_mut(),
@@ -639,9 +639,9 @@ fn test_withdraw() {
     //         image: None,
 
     //         donation_match_active: None,
-    //         whitelisted_beneficiaries: None,
-    //         whitelisted_contributors: None,
-    //         maturity_whitelist: None,
+    //         beneficiaries_allowlist: None,
+    //         contributors_allowlist: None,
+    //         maturity_allowlist: None,
     //         settings_controller: None,
     //     }),
     // )
@@ -689,7 +689,7 @@ fn test_withdraw_liquid() {
     });
     let _res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
 
-    // "Withdraw"(liquid) fails since the sender/caller is neither of endowment owner or address in "whitelisted_beneficiaries"
+    // "Withdraw"(liquid) fails since the sender/caller is neither of endowment owner or address in "beneficiaries_allowlist"
     let info = mock_info(&"anyone".to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,

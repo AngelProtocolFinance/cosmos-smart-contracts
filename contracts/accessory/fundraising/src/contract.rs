@@ -315,7 +315,7 @@ pub fn execute_top_up(
     }
 
     if let Balance::Cw20(token) = &balance {
-        // ensure the token is on the whitelist
+        // ensure the token is on the allowed list
         if !campaign
             .funding_goal
             .cw20
@@ -354,7 +354,7 @@ pub fn execute_contribute(
     }
 
     if let Balance::Cw20(token) = &balance {
-        // ensure the token is on the whitelist
+        // ensure the token is on the allowed list
         if !campaign
             .funding_goal
             .cw20

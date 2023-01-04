@@ -9,7 +9,7 @@
     "donation_match_contract",
     "endow_type",
     "kyc_donors_only",
-    "maturity_whitelist",
+    "maturity_allowlist",
     "name",
     "oneoff_vaults",
     "owner",
@@ -86,7 +86,7 @@
       "format": "uint64",
       "minimum": 0.0
     },
-    "maturity_whitelist": {
+    "maturity_allowlist": {
       "type": "array",
       "items": {
         "type": "string"
