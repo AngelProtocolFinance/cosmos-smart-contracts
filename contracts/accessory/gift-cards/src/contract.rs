@@ -1,5 +1,4 @@
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::DepositMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::GenericBalance;
@@ -265,11 +264,13 @@ pub fn execute_spend(
     let message = match &fund.info {
         AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
-            msg: to_binary(&DepositMsg {
-                id: endow_id,
-                locked_percentage,
-                liquid_percentage,
-            })
+            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                angel_core::messages::accounts::DepositMsg {
+                    id: endow_id,
+                    locked_percentage,
+                    liquid_percentage,
+                },
+            ))
             .unwrap(),
             funds: vec![Coin {
                 denom: denom.clone(),
@@ -281,11 +282,13 @@ pub fn execute_spend(
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                 contract: registrar_config.accounts_contract.unwrap().to_string(),
                 amount: fund.amount,
-                msg: to_binary(&DepositMsg {
-                    id: endow_id,
-                    locked_percentage,
-                    liquid_percentage,
-                })
+                msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                    angel_core::messages::accounts::DepositMsg {
+                        id: endow_id,
+                        locked_percentage,
+                        liquid_percentage,
+                    },
+                ))
                 .unwrap(),
             })
             .unwrap(),
