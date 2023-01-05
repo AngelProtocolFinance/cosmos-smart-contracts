@@ -6,8 +6,8 @@ use angel_core::structs::GenericBalance;
 use angel_core::utils::validate_deposit_fund;
 
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
+    entry_point, from_binary, to_binary, Addr, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20CoinVerified, Cw20ReceiveMsg};
@@ -77,7 +77,19 @@ pub fn execute(
             execute_deposit(deps, info.sender, to_address, native_fund)
         }
         ExecuteMsg::Claim { deposit, recipient } => execute_claim(deps, info, deposit, recipient),
-        ExecuteMsg::Spend { asset, deposit_msg } => execute_spend(deps, info, asset, deposit_msg),
+        ExecuteMsg::Spend {
+            asset,
+            endow_id,
+            locked_percentage,
+            liquid_percentage,
+        } => execute_spend(
+            deps,
+            info,
+            asset,
+            endow_id,
+            locked_percentage,
+            liquid_percentage,
+        ),
         ExecuteMsg::UpdateConfig {
             owner,
             keeper,
@@ -205,7 +217,9 @@ pub fn execute_spend(
     deps: DepsMut,
     info: MessageInfo,
     fund: Asset,
-    deposit_msg: DepositMsg,
+    endow_id: u32,
+    locked_percentage: Decimal,
+    liquid_percentage: Decimal,
 ) -> Result<Response, ContractError> {
     // try to load msg sender's balance. Throws an error if not found.
     let mut bal = BALANCES.load(deps.storage, info.sender.clone())?;
@@ -251,7 +265,12 @@ pub fn execute_spend(
     let message = match &fund.info {
         AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
-            msg: to_binary(&deposit_msg).unwrap(),
+            msg: to_binary(&DepositMsg {
+                id: endow_id,
+                locked_percentage,
+                liquid_percentage,
+            })
+            .unwrap(),
             funds: vec![Coin {
                 denom: denom.clone(),
                 amount: fund.amount,
@@ -262,7 +281,12 @@ pub fn execute_spend(
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                 contract: registrar_config.accounts_contract.unwrap().to_string(),
                 amount: fund.amount,
-                msg: to_binary(&deposit_msg).unwrap(),
+                msg: to_binary(&DepositMsg {
+                    id: endow_id,
+                    locked_percentage,
+                    liquid_percentage,
+                })
+                .unwrap(),
             })
             .unwrap(),
             funds: vec![],

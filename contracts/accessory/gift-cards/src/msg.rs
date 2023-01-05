@@ -1,7 +1,7 @@
 use crate::state::{Config, Deposit};
-use angel_core::messages::accounts::DepositMsg;
 use angel_core::structs::GenericBalance;
 use cosmwasm_schema::QueryResponses;
+use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use cw_asset::Asset;
 use schemars::JsonSchema;
@@ -40,7 +40,9 @@ pub enum ExecuteMsg {
     // Spend token/amount specified from sender balance to Endowment
     Spend {
         asset: Asset,
-        deposit_msg: DepositMsg,
+        endow_id: u32,
+        locked_percentage: Decimal,
+        liquid_percentage: Decimal,
     },
     UpdateConfig {
         owner: Option<String>,
