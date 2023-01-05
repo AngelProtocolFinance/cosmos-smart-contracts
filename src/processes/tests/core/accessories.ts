@@ -42,6 +42,28 @@ export async function testClaimGiftcardsDeposit(
   	console.log(chalk.green(" Passed!"));
 }
 
+export async function testSpendGiftcardsBalance(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  giftcards: string,
+  assset_denom: string,
+  asset_amount: string,
+  endow_id: number,
+  locked_percentage: string,
+  liquid_percentage: string,
+): Promise<void> {
+    process.stdout.write("Test - Spend from a balance in Gift Card Contract");
+    let res = await sendTransaction(juno, apTeam, giftcards, {
+      spend: {
+        asset: { info: { native: assset_denom }, amount: asset_amount },
+        endow_id,
+        locked_percentage,
+        liquid_percentage,
+      }
+    });
+    console.log(chalk.green(" Passed!"));
+}
+
 export async function testQueryGiftcardsBalance(
   juno: SigningCosmWasmClient,
   giftcards: string,

@@ -147,6 +147,7 @@ import {
 import {
   testSendDepositToGiftcards,
   testClaimGiftcardsDeposit,
+  testSpendGiftcardsBalance,
   testQueryGiftcardsBalance,
   testQueryGiftcardsConfig,
   testQueryGiftcardsDeposit 
@@ -233,6 +234,7 @@ export async function testExecute(
   /* --- GIFTCARD contract --- */
   // await testSendDepositToGiftcards(actors.apTeam.client, actors.apTeam.addr, giftcards, { denom: "ujunox", amount: "4206900" });
   // await testClaimGiftcardsDeposit(actors.apTeam.client, actors.apTeam.addr, giftcards, 1, actors.apTeam2.addr);
+  // await testSpendGiftcardsBalance(actors.apTeam2.client, actors.apTeam2.addr, giftcards, "ujunox", "100000", 22, "0", "1");
   // await testQueryGiftcardsConfig(actors.apTeam.client, giftcards);
   // await testQueryGiftcardsBalance(actors.apTeam.client, giftcards, actors.apTeam2.addr);
   // await testQueryGiftcardsDeposit(actors.apTeam.client, giftcards, 1);
