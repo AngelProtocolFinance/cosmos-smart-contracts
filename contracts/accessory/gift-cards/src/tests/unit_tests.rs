@@ -476,11 +476,9 @@ fn test_spend() {
                 info: AssetInfoBase::native("ujuno"),
                 amount: Uint128::from(30_u128),
             },
-            deposit_msg: DepositMsg {
-                id: 1_u32,
-                locked_percentage: Decimal::default(),
-                liquid_percentage: Decimal::default(),
-            },
+            endow_id: 1_u32,
+            locked_percentage: Decimal::default(),
+            liquid_percentage: Decimal::default(),
         },
     )
     .unwrap_err();
@@ -514,11 +512,9 @@ fn test_spend() {
                 info: AssetInfoBase::native("uusd"),
                 amount: Uint128::from(30_u128),
             },
-            deposit_msg: DepositMsg {
-                id: 1_u32,
-                locked_percentage: Decimal::default(),
-                liquid_percentage: Decimal::default(),
-            },
+            endow_id: 1_u32,
+            locked_percentage: Decimal::default(),
+            liquid_percentage: Decimal::default(),
         },
     )
     .unwrap_err();
@@ -534,11 +530,9 @@ fn test_spend() {
                 info: AssetInfoBase::native("ujuno"),
                 amount: Uint128::from(300_u128),
             },
-            deposit_msg: DepositMsg {
-                id: 1_u32,
-                locked_percentage: Decimal::default(),
-                liquid_percentage: Decimal::default(),
-            },
+            endow_id: 1_u32,
+            locked_percentage: Decimal::default(),
+            liquid_percentage: Decimal::default(),
         },
     )
     .unwrap_err();
@@ -555,11 +549,9 @@ fn test_spend() {
                 info: AssetInfoBase::native("ujuno"),
                 amount: Uint128::from(30_u128),
             },
-            deposit_msg: DepositMsg {
-                id: 1_u32,
-                locked_percentage: Decimal::default(),
-                liquid_percentage: Decimal::default(),
-            },
+            endow_id: 1_u32,
+            locked_percentage: Decimal::default(),
+            liquid_percentage: Decimal::default(),
         },
     )
     .unwrap();
@@ -607,11 +599,9 @@ fn test_spend() {
                 info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
                 amount: Uint128::from(30_u128),
             },
-            deposit_msg: DepositMsg {
-                id: 1_u32,
-                locked_percentage: Decimal::default(),
-                liquid_percentage: Decimal::default(),
-            },
+            endow_id: 1_u32,
+            locked_percentage: Decimal::default(),
+            liquid_percentage: Decimal::default(),
         },
     )
     .unwrap();
