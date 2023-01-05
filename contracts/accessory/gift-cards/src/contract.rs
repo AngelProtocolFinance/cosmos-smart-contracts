@@ -1,21 +1,19 @@
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::DepositMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::GenericBalance;
 use angel_core::utils::validate_deposit_fund;
 
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
+    entry_point, from_binary, to_binary, Addr, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20CoinVerified, Cw20ReceiveMsg};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
-use crate::state::{Config, CONFIG, GIFT_CARDS};
+use crate::state::{Config, Deposit, BALANCES, CONFIG, DEPOSITS};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "gift-cards";
@@ -32,7 +30,9 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: info.sender,
+            keeper: deps.api.addr_validate(&msg.keeper)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+            next_deposit: 1_u64,
         },
     )?;
     Ok(Response::default())
@@ -48,7 +48,10 @@ pub fn receive_cw20(
         amount: cw20_msg.amount,
     };
     match from_binary(&cw20_msg.msg) {
-        Ok(ReceiveMsg::TopUp { to_address }) => execute_topup(deps, info, to_address, cw20_fund),
+        Ok(ReceiveMsg::Deposit { to_address }) => {
+            let sender = deps.api.addr_validate(&cw20_msg.sender)?;
+            execute_deposit(deps, sender, to_address, cw20_fund)
+        }
         _ => Err(ContractError::InvalidInputs {}),
     }
 }
@@ -62,7 +65,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, info, msg),
-        ExecuteMsg::TopUp { to_address } => {
+        ExecuteMsg::Deposit { to_address } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
             }
@@ -70,70 +73,160 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            execute_topup(deps, info, to_address, native_fund)
+            execute_deposit(deps, info.sender, to_address, native_fund)
         }
-        ExecuteMsg::Spend { asset, deposit_msg } => execute_spend(deps, info, asset, deposit_msg),
+        ExecuteMsg::Claim { deposit, recipient } => execute_claim(deps, info, deposit, recipient),
+        ExecuteMsg::Spend {
+            asset,
+            endow_id,
+            locked_percentage,
+            liquid_percentage,
+        } => execute_spend(
+            deps,
+            info,
+            asset,
+            endow_id,
+            locked_percentage,
+            liquid_percentage,
+        ),
         ExecuteMsg::UpdateConfig {
             owner,
+            keeper,
             registrar_contract,
-        } => execute_update_config(deps, info, owner, registrar_contract),
+        } => execute_update_config(deps, info, owner, keeper, registrar_contract),
     }
 }
 
-pub fn execute_topup(
+pub fn execute_deposit(
     deps: DepsMut,
-    _info: MessageInfo,
-    to_address: String,
+    sender: Addr,
+    to_address: Option<String>,
     fund: Asset,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
 
     // Check if the passed token is in "accepted_tokens"
-    let topup_token =
-        validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
+    let deposit_token = validate_deposit_fund(
+        deps.as_ref(),
+        config.registrar_contract.as_str(),
+        fund.clone(),
+    )?;
 
     // make sure it's a non-zero amount
-    if topup_token.amount.is_zero() {
+    if deposit_token.amount.is_zero() {
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    // try to load to_address user's card balance. Create a new balance if it does not exist.
-    let to_addr = deps.api.addr_validate(&to_address)?;
-    let mut card = GIFT_CARDS
+    let mut deposit = Deposit {
+        sender: sender,
+        token: fund,
+        claimed: false,
+    };
+
+    if to_address != None {
+        let to_addr = deps.api.addr_validate(&to_address.unwrap())?;
+
+        // deposit should be marked as claimed immediately
+        deposit.claimed = true;
+
+        // try to load to_address recipient's balance. Create a new, empty balance if it does not exist.
+        let mut bal = BALANCES
+            .load(deps.storage, to_addr.clone())
+            .unwrap_or(GenericBalance::default());
+
+        // add deposited tokens to the recipient's balance
+        match deposit_token.info {
+            AssetInfoBase::Native(ref denom) => bal.add_tokens(Balance::from(vec![Coin {
+                denom: denom.to_string(),
+                amount: deposit_token.amount,
+            }])),
+            AssetInfoBase::Cw20(contract_addr) => bal.add_tokens(Balance::Cw20(Cw20CoinVerified {
+                address: contract_addr,
+                amount: deposit_token.amount,
+            })),
+            _ => unreachable!(),
+        };
+
+        // save the balance
+        BALANCES.save(deps.storage, to_addr.clone(), &bal)?;
+    }
+
+    // save the deposit
+    DEPOSITS.save(deps.storage, config.next_deposit, &deposit)?;
+
+    // increment next deposit and save
+    config.next_deposit += 1;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::default()
+        .add_attribute("action", "deposit")
+        .add_attribute("deposit_id", format!("{}", config.next_deposit - 1)))
+}
+
+pub fn execute_claim(
+    deps: DepsMut,
+    info: MessageInfo,
+    deposit_id: u64,
+    recipient: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    // only the keeper address can carry out claims (for now)
+    if info.sender.ne(&config.keeper) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // check that the deposit is still unclaimed
+    let mut deposit = DEPOSITS.load(deps.storage, deposit_id)?;
+    if deposit.claimed {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Deposit has already been claimed".to_string(),
+        }));
+    }
+    // mark deposit as claimed & save
+    deposit.claimed = true;
+    DEPOSITS.save(deps.storage, deposit_id, &deposit)?;
+
+    let to_addr = deps.api.addr_validate(&recipient)?;
+    // try to load to_address recipient's balance. Create a new, empty balance if it does not exist.
+    let mut bal = BALANCES
         .load(deps.storage, to_addr.clone())
         .unwrap_or(GenericBalance::default());
 
-    // add tokens to the user's Gift Card balance
-    match topup_token.info {
-        AssetInfoBase::Native(ref denom) => card.add_tokens(Balance::from(vec![Coin {
+    // add deposited tokens to the recipient's balance
+    match deposit.token.info {
+        AssetInfoBase::Native(ref denom) => bal.add_tokens(Balance::from(vec![Coin {
             denom: denom.to_string(),
-            amount: topup_token.amount,
+            amount: deposit.token.amount,
         }])),
-        AssetInfoBase::Cw20(contract_addr) => card.add_tokens(Balance::Cw20(Cw20CoinVerified {
+        AssetInfoBase::Cw20(contract_addr) => bal.add_tokens(Balance::Cw20(Cw20CoinVerified {
             address: contract_addr,
-            amount: topup_token.amount,
+            amount: deposit.token.amount,
         })),
         _ => unreachable!(),
     };
 
-    // save modified card balance
-    GIFT_CARDS.save(deps.storage, to_addr, &card)?;
-    Ok(Response::default().add_attribute("action", "topup"))
+    // save the balance
+    BALANCES.save(deps.storage, to_addr.clone(), &bal)?;
+
+    Ok(Response::default().add_attribute("action", "claim"))
 }
 
 pub fn execute_spend(
     deps: DepsMut,
     info: MessageInfo,
     fund: Asset,
-    deposit_msg: DepositMsg,
+    endow_id: u32,
+    locked_percentage: Decimal,
+    liquid_percentage: Decimal,
 ) -> Result<Response, ContractError> {
-    // try to load msg sender's card balance. Throws an error if not found.
-    let mut card = GIFT_CARDS.load(deps.storage, info.sender.clone())?;
+    // try to load msg sender's balance. Throws an error if not found.
+    let mut bal = BALANCES.load(deps.storage, info.sender.clone())?;
 
     // check that the asset is in the user's balance
     let spendable = match fund.info.clone() {
-        AssetInfoBase::Native(ref denom) => card.get_denom_amount(denom.to_string()),
-        AssetInfoBase::Cw20(contract_addr) => card.get_token_amount(contract_addr),
+        AssetInfoBase::Native(ref denom) => bal.get_denom_amount(denom.to_string()),
+        AssetInfoBase::Cw20(contract_addr) => bal.get_token_amount(contract_addr),
         _ => unreachable!(),
     };
 
@@ -147,19 +240,19 @@ pub fn execute_spend(
 
     // deduct_tokens from user's balance
     match fund.info.clone() {
-        AssetInfoBase::Native(ref denom) => card.deduct_tokens(Balance::from(vec![Coin {
+        AssetInfoBase::Native(ref denom) => bal.deduct_tokens(Balance::from(vec![Coin {
             denom: denom.to_string(),
             amount: fund.amount,
         }])),
-        AssetInfoBase::Cw20(contract_addr) => card.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
+        AssetInfoBase::Cw20(contract_addr) => bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
             address: contract_addr,
             amount: fund.amount,
         })),
         _ => unreachable!(),
     };
 
-    // save modified card balance
-    GIFT_CARDS.save(deps.storage, info.sender, &card)?;
+    // save modified balance
+    BALANCES.save(deps.storage, info.sender, &bal)?;
 
     // build deposit msg to desired Accounts contract Endowment
     let config = CONFIG.load(deps.storage)?;
@@ -171,7 +264,14 @@ pub fn execute_spend(
     let message = match &fund.info {
         AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
-            msg: to_binary(&deposit_msg).unwrap(),
+            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                angel_core::messages::accounts::DepositMsg {
+                    id: endow_id,
+                    locked_percentage,
+                    liquid_percentage,
+                },
+            ))
+            .unwrap(),
             funds: vec![Coin {
                 denom: denom.clone(),
                 amount: fund.amount,
@@ -182,7 +282,14 @@ pub fn execute_spend(
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                 contract: registrar_config.accounts_contract.unwrap().to_string(),
                 amount: fund.amount,
-                msg: to_binary(&deposit_msg).unwrap(),
+                msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                    angel_core::messages::accounts::DepositMsg {
+                        id: endow_id,
+                        locked_percentage,
+                        liquid_percentage,
+                    },
+                ))
+                .unwrap(),
             })
             .unwrap(),
             funds: vec![],
@@ -199,6 +306,7 @@ pub fn execute_update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
+    keeper: Option<String>,
     registrar_contract: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
@@ -211,6 +319,12 @@ pub fn execute_update_config(
         Some(owner) => deps.api.addr_validate(&owner)?,
         None => config.owner,
     };
+
+    config.keeper = match keeper {
+        Some(keeper) => deps.api.addr_validate(&keeper)?,
+        None => config.keeper,
+    };
+
     config.registrar_contract = match registrar_contract {
         Some(contract) => deps.api.addr_validate(&contract)?,
         None => config.registrar_contract,
@@ -225,13 +339,25 @@ pub fn execute_update_config(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Deposit { deposit_id } => to_binary(&query_deposit(deps, deposit_id)?),
     }
 }
 
 pub fn query_balance(deps: Deps, address: String) -> StdResult<GenericBalance> {
-    Ok(GIFT_CARDS
+    Ok(BALANCES
         .load(deps.storage, deps.api.addr_validate(&address).unwrap())
         .unwrap_or(GenericBalance::default()))
+}
+
+pub fn query_config(deps: Deps) -> StdResult<Config> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(config)
+}
+
+pub fn query_deposit(deps: Deps, deposit_id: u64) -> StdResult<Deposit> {
+    let deposit = DEPOSITS.load(deps.storage, deposit_id)?;
+    Ok(deposit)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -254,6 +380,3 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     Ok(Response::default())
 }
-
-#[cfg(test)]
-mod tests {}
