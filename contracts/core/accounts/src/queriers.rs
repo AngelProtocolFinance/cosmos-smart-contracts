@@ -137,5 +137,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         categories: endowment.categories,
         logo: endowment.logo,
         image: endowment.image,
+        referral_id: endowment.referral_id,
     })
 }

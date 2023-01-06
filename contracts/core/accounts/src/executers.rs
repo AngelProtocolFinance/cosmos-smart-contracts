@@ -110,6 +110,7 @@ pub fn create_endowment(
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
+                referral_id: msg.referral_id,
             }),
         },
     )?;

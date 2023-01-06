@@ -270,6 +270,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
                 kyc_donors_only: old_endow.kyc_donors_only,
                 pending_redemptions: old_endow.pending_redemptions,
                 proposal_link: old_endow.proposal_link,
+                referral_id: None,
             },
         )?;
     }

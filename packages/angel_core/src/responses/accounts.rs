@@ -45,4 +45,5 @@ pub struct EndowmentDetailsResponse {
     pub categories: Categories,
     pub tier: Option<u8>,
     pub proposal_link: Option<u64>,
+    pub referral_id: Option<u32>,
 }

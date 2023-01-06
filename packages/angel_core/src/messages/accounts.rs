@@ -111,6 +111,7 @@ pub struct CreateEndowmentMsg {
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
+    pub referral_id: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
