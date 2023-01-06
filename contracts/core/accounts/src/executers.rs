@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -11,8 +11,8 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
-    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
-    StrategyComponent, SwapOperation, VaultType, YieldVault,
+    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SplitDetails, StrategyComponent,
+    SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -25,7 +25,6 @@ use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::Duration;
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -56,22 +55,6 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
-}
-
-pub fn execute_receive_ibc_response(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    resp: ReceiveIbcResponseMsg,
-) -> Result<Response, ContractError> {
-    // only the ibc controller can send this type message as callback
-    let config = CONFIG.load(deps.storage)?;
-    if !config.ibc_controller.eq(&info.sender) {
-        return Err(ContractError::Unauthorized {});
-    }
-    Ok(Response::new()
-        .add_attribute("action", "receive_ibc_callback")
-        .add_attribute("id", resp.id))
 }
 
 pub fn create_endowment(
@@ -130,9 +113,6 @@ pub fn create_endowment(
             }),
         },
     )?;
-
-    // store the profile data
-    PROFILES.save(deps.storage, config.next_account_id, &msg.profile)?;
 
     STATES.save(
         deps.storage,
@@ -1542,7 +1522,8 @@ pub fn withdraw(
         msg: to_binary(&RegistrarQuerier::Fee {
             name: match endowment.endow_type {
                 EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
-                _ => "accounts_withdraw_normal".to_string(),
+                EndowmentType::Impact => "accounts_withdraw_impact".to_string(),
+                EndowmentType::Normal => "accounts_withdraw_normal".to_string(),
             },
         })?,
     }))?;
@@ -1713,48 +1694,4 @@ pub fn close_endowment(
     Ok(Response::new()
         .add_attribute("action", "close_endowment")
         .add_submessages(redeem_messages))
-}
-
-pub fn update_profile(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateProfileMsg,
-) -> Result<Response, ContractError> {
-    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
-    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-    let mut profile = PROFILES.load(deps.storage, msg.id)?;
-
-    // Only endowment.owner can update these fields
-    if !(info.sender == endowment.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let state = STATES.load(deps.storage, msg.id)?;
-    if state.closing_endowment {
-        return Err(ContractError::UpdatesAfterClosed {});
-    }
-
-    if let Some(overview) = msg.overview {
-        profile.overview = overview;
-    }
-    let social_media_urls = SocialMedialUrls {
-        facebook: msg.facebook,
-        twitter: msg.twitter,
-        linkedin: msg.linkedin,
-    };
-    profile.social_media_urls = social_media_urls;
-    profile.url = msg.url;
-    profile.registration_number = msg.registration_number;
-    profile.country_of_origin = msg.country_of_origin;
-    profile.street_address = msg.street_address;
-    profile.contact_email = msg.contact_email;
-    profile.number_of_employees = msg.number_of_employees;
-    profile.average_annual_budget = msg.average_annual_budget;
-    profile.annual_revenue = msg.annual_revenue;
-    profile.charity_navigator_rating = msg.charity_navigator_rating;
-
-    PROFILES.save(deps.storage, msg.id, &profile)?;
-
-    Ok(Response::new().add_attribute("action", "update_profile"))
 }

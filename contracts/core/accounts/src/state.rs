@@ -1,6 +1,6 @@
 use angel_core::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentStatus,
-    EndowmentType, OneOffVaults, Profile, RebalanceDetails,
+    EndowmentType, OneOffVaults, RebalanceDetails,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Bound, Item, Map};
@@ -121,4 +121,3 @@ pub struct State {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATES: Map<u32, State> = Map::new("states");
 pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");
-pub const PROFILES: Map<u32, Profile> = Map::new("profiles");
