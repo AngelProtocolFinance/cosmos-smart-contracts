@@ -11,7 +11,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        version: get_contract_version(deps.storage)?.contract,
+        version: format!(
+            "{}-{}",
+            get_contract_version(deps.storage)?.contract,
+            get_contract_version(deps.storage)?.version
+        ),
         registrar_contract: config.registrar_contract.to_string(),
     })
 }

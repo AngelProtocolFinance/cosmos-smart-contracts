@@ -7,11 +7,17 @@ use angel_core::responses::index_fund::*;
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, Env, StdError, StdResult, Uint128, WasmMsg,
 };
+use cw2::get_contract_version;
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
+        version: format!(
+            "{}-{}",
+            get_contract_version(deps.storage)?.contract,
+            get_contract_version(deps.storage)?.version
+        ),
         registrar_contract: config.registrar_contract.to_string(),
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
