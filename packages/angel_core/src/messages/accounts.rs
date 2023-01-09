@@ -1,10 +1,9 @@
-use crate::structs::{AccountType, Beneficiary, Categories, EndowmentType, Profile, SwapOperation};
+use crate::structs::{AccountType, Beneficiary, Categories, EndowmentType, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetUnchecked};
 use cw_utils::Threshold;
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -21,8 +20,6 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
-    // catch ICA msg responses from ICA Controller
-    ReceiveIbcResponse(ReceiveIbcResponseMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     /// reinvest vault assets from Liquid to Locked
@@ -97,8 +94,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
-    // Update Endowment profile
-    UpdateProfile(UpdateProfileMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -111,12 +106,12 @@ pub struct CreateEndowmentMsg {
     pub endow_type: EndowmentType,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub profile: Profile, // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
+    pub referral_id: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -171,24 +166,6 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateProfileMsg {
-    pub id: u32,
-    pub overview: Option<String>,
-    pub url: Option<String>,
-    pub registration_number: Option<String>,
-    pub country_of_origin: Option<String>,
-    pub street_address: Option<String>,
-    pub contact_email: Option<String>,
-    pub facebook: Option<String>,
-    pub twitter: Option<String>,
-    pub linkedin: Option<String>,
-    pub number_of_employees: Option<u16>,
-    pub average_annual_budget: Option<String>,
-    pub annual_revenue: Option<String>,
-    pub charity_navigator_rating: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get all Config details for the contract
@@ -210,10 +187,6 @@ pub enum QueryMsg {
         proposal_link: Option<u64>,
         start_after: Option<u32>,
         limit: Option<u64>,
-    },
-    // Get the profile info
-    GetProfile {
-        id: u32,
     },
     // Get endowment token balance
     TokenAmount {

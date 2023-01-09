@@ -52,9 +52,6 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::ReceiveIbcResponse(resp) => {
-            executers::execute_receive_ibc_response(deps, env, info, resp)
-        }
         ExecuteMsg::Deposit(msg) => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -139,7 +136,6 @@ pub fn execute(
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
-        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
 
@@ -211,7 +207,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
         )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
-        QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
         QueryMsg::TokenAmount {
             id,
             asset_info,
@@ -275,6 +270,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
                 kyc_donors_only: old_endow.kyc_donors_only,
                 pending_redemptions: old_endow.pending_redemptions,
                 proposal_link: old_endow.proposal_link,
+                referral_id: None,
             },
         )?;
     }
