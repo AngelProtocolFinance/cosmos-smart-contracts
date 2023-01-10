@@ -726,10 +726,6 @@ export async function testQueryAccountsEndowment(
   });
 
   console.log(result);
-  console.log("Locked oneoff:", result.oneoff_vaults.locked);
-  console.log("Liquid oneoff:", result.oneoff_vaults.liquid);
-  console.log("Locked strat:", result.strategies.locked);
-  console.log("Liquid strat:", result.strategies.liquid);
   console.log(chalk.green(" Passed!"));
 }
 

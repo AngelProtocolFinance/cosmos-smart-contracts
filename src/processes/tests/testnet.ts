@@ -590,8 +590,8 @@ export async function testExecute(
   // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
 
   // await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
-  // await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, 1); // endowment ID
-  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, 1, actors.apTeam.addr, actors.apTeam.addr); // endowment ID, setting_updater, endowment_owner
+  // await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, endowId1);
+  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr, actors.apTeam.addr);
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);

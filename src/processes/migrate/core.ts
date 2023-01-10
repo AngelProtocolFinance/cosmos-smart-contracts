@@ -25,7 +25,7 @@ export async function migrateCore(
   // run the migrations desired
   // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 0);
   // await migrateVaults(juno, apTeam, vaultContracts);
-  // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm', { endowtype_fees: { endowtype_charity: undefined, endowtype_normal: undefined }, collector_addr: undefined, settings_controller_contract: undefined });
+  // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm', { fee_charity: '0.2', fee_normal: '0.2', settings_controller_contract: settingsController });
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');

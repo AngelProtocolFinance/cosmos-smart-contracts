@@ -39,6 +39,7 @@ export const localjuno = {
     cw3ReviewTeam: "",
     swapRouter: "",
     settingsController: "",
+    donationMatching: "",
     giftcards: "",
 
     vaultLocked1: "",
