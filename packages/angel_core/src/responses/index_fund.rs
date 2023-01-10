@@ -24,6 +24,7 @@ pub struct StateResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub version: String,
     pub registrar_contract: String,
     pub fund_rotation: Option<u64>,
     pub fund_member_limit: u32,

@@ -145,13 +145,16 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         }));
     }
 
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     // Get the collector addr from user input
     let collector_addr = msg
         .collector_addr
-        .map(|addr| deps.api.addr_validate(&addr).unwrap());
+        .map(|addr| deps.api.addr_validate(&addr.to_string()).unwrap());
     let settings_controller = msg
         .settings_controller_contract
-        .map(|addr| deps.api.addr_validate(&addr).unwrap());
+        .map(|addr| deps.api.addr_validate(&addr.to_string()).unwrap());
 
     // setup the new config struct and save to storage
     let data = deps
@@ -203,9 +206,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         &"endowtype_normal",
         &msg.endowtype_fees.endowtype_normal.unwrap_or_default(),
     )?;
-
-    // set the new version
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     Ok(Response::default())
 }

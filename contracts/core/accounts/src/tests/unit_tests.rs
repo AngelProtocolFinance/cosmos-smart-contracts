@@ -1,11 +1,10 @@
 use super::mock_querier::{mock_dependencies, WasmMockQuerier};
-use crate::contract::{execute, instantiate, query};
+use crate::contract::{execute, instantiate, migrate, query};
 use crate::state::Allowances;
 use angel_core::errors::core::*;
-
 use angel_core::messages::accounts::{
-    CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy,
-    UpdateConfigMsg, UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
+    CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg,
+    Strategy, UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
@@ -68,6 +67,7 @@ fn create_endowment() -> (
         parent: None,
         split_to_liquid: Some(SplitDetails::default()),
         ignore_user_splits: false,
+        referral_id: None,
     };
 
     let instantiate_msg = InstantiateMsg {
@@ -84,12 +84,12 @@ fn create_endowment() -> (
         deps.as_mut(),
         env.clone(),
         info,
-        ExecuteMsg::UpdateConfig(UpdateConfigMsg {
-            new_registrar: REGISTRAR_CONTRACT.to_string(),
-            max_general_category_id: 1,
+        ExecuteMsg::UpdateConfig {
+            new_owner: None,
+            new_registrar: Some(REGISTRAR_CONTRACT.to_string()),
+            max_general_category_id: Some(1),
             ibc_controller: None,
-            settings_controller: Some("settings-controller-contract".to_string()),
-        }),
+        },
     )
     .unwrap();
 
@@ -249,17 +249,16 @@ fn test_change_configs_() {
 
     // change the owner to some pleb
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
-    let msg = UpdateConfigMsg {
-        settings_controller: None,
-        new_registrar: PLEB.to_string(),
-        max_general_category_id: 2 as u8,
-        ibc_controller: None,
-    };
     let res = execute(
         deps.as_mut(),
         env.clone(),
-        info,
-        ExecuteMsg::UpdateConfig(msg),
+        info.clone(),
+        ExecuteMsg::UpdateConfig {
+            new_owner: None,
+            new_registrar: Some(PLEB.to_string()),
+            max_general_category_id: Some(2),
+            ibc_controller: None,
+        },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
@@ -268,6 +267,18 @@ fn test_change_configs_() {
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let value: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(PLEB, value.registrar_contract);
+
+    // Check that the "PLEB" registrar contract should not be able to affect/update the configs
+    let msg = ExecuteMsg::UpdateConfig {
+        new_owner: None,
+        new_registrar: Some(PLEB.to_string()),
+        max_general_category_id: Some(100),
+        ibc_controller: None,
+    };
+    let info = mock_info(PLEB, &coins(100000, "earth "));
+    // This should fail with an error!
+    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 }
 
 #[test]
@@ -280,8 +291,11 @@ fn test_change_admin() {
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateOwner {
-            new_owner: PLEB.to_string(),
+        ExecuteMsg::UpdateConfig {
+            new_owner: Some(PLEB.to_string()),
+            new_registrar: None,
+            max_general_category_id: None,
+            ibc_controller: None,
         },
     )
     .unwrap();
@@ -293,8 +307,11 @@ fn test_change_admin() {
     assert_eq!(PLEB, value.owner);
 
     // Original owner should not be able to update the configs now
-    let msg = ExecuteMsg::UpdateOwner {
-        new_owner: CHARITY_ADDR.to_string(),
+    let msg = ExecuteMsg::UpdateConfig {
+        new_owner: Some(CHARITY_ADDR.to_string()),
+        new_registrar: None,
+        max_general_category_id: None,
+        ibc_controller: None,
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth "));
     // This should fail with an error!
@@ -487,6 +504,28 @@ fn test_donate() {
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(2, endow.strategies.locked.len());
 
+    // Cannot deposit several tokens at once.
+    let info = mock_info(
+        DEPOSITOR,
+        &[
+            Coin {
+                denom: "ujuno".to_string(),
+                amount: Uint128::from(100_u128),
+            },
+            Coin {
+                denom: "uusd".to_string(),
+                amount: Uint128::from(100_u128),
+            },
+        ],
+    );
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let err = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap_err();
+    assert_eq!(err, ContractError::InvalidCoinsDeposited {});
+
     // Try the "Deposit" w/ "Auto Invest" turned on. Two Vault deposits should now take place.
     let donation_amt = 200_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
@@ -644,6 +683,48 @@ fn test_withdraw() {
     // assert_eq!(res.messages.len(), 1);
     let res = execute(deps.as_mut(), matured_env, info, withdraw_msg).unwrap();
     assert_eq!(2, res.messages.len());
+
+    // Try to "withdraw" cw20 tokens
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    let withdraw_msg = ExecuteMsg::Withdraw {
+        id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
+        beneficiary: "beneficiary".to_string(),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
+            amount: Uint128::from(100_u128),
+        }],
+    };
+    let err = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap_err();
+    assert_eq!(err, ContractError::InsufficientFunds {});
+
+    // Deposit cw20 token first & withdraw
+    let donation_amt = 200_u128;
+    let info = mock_info("test-cw20", &[]);
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: DEPOSITOR.to_string(),
+        amount: Uint128::from(donation_amt),
+        msg: to_binary(&deposit_msg).unwrap(),
+    });
+    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    let withdraw_msg = ExecuteMsg::Withdraw {
+        id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
+        beneficiary: "beneficiary".to_string(),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
+            amount: Uint128::from(100_u128),
+        }],
+    };
+    let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
+    assert_eq!(res.messages.len(), 2);
 }
 
 #[test]
@@ -836,6 +917,25 @@ fn test_vault_receipt() {
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(0, endow.pending_redemptions);
+
+    // Same logic applies to the cw20 token vault_receipt
+    let info = mock_info("test-cw20", &[]);
+    let msg = ReceiveMsg::VaultReceipt {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+    };
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::Receive(cw20::Cw20ReceiveMsg {
+            sender: "vault".to_string(),
+            msg: to_binary(&msg).unwrap(),
+            amount: Uint128::from(100_u128),
+        }),
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
 }
 
 #[test]
@@ -1008,57 +1108,6 @@ fn test_swap_token() {
     )
     .unwrap();
     assert_eq!(res.messages.len(), 1);
-}
-
-#[test]
-fn test_swap_receipt() {
-    let (mut deps, _, _, _) = create_endowment();
-
-    // Fail to swap receipt since non-authorized call
-    let info = mock_info("anyone", &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::SwapReceipt {
-            id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            final_asset: Asset::native("ujuno", 1000000_u128),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Succeed to swap receipt & update the state
-    let info = mock_info("swaps_router_addr", &[]);
-    let _res = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::SwapReceipt {
-            id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            final_asset: Asset::native("ujuno", 1000000_u128),
-        },
-    )
-    .unwrap();
-
-    // Check the result(state.balances)
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Balance { id: CHARITY_ID },
-    )
-    .unwrap();
-    let balance: EndowmentBalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        balance.tokens_on_hand.locked.native[0].denom,
-        "ujuno".to_string(),
-    );
-    assert_eq!(
-        balance.tokens_on_hand.locked.native[0].amount,
-        Uint128::from(1000000_u128)
-    );
 }
 
 #[test]
@@ -1734,5 +1783,18 @@ fn test_spend_allowance() {
     assert_eq!(
         state.balances.liquid.native,
         coins(liquid_amt - spend_amt, "ujuno")
+    );
+}
+
+#[test]
+fn test_migrate() {
+    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
+
+    let err = migrate(deps.as_mut(), env, MigrateMsg {}).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        })
     );
 }

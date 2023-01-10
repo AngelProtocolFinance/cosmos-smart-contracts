@@ -95,7 +95,7 @@ impl WasmMockQuerier {
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
-                        version: "0.1.0".to_string(),
+                        version: "registrar-0.1.0".to_string(),
                         accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         rebalance: RebalanceDetails::default(),

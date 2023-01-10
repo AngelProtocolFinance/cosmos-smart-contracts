@@ -17,6 +17,7 @@ pub struct StateResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub version: String,
     pub registrar_contract: String,
     pub next_account_id: u32,
     pub max_general_category_id: u8,
@@ -41,6 +42,7 @@ pub struct EndowmentDetailsResponse {
     pub kyc_donors_only: bool,
     pub pending_redemptions: u8,
     pub proposal_link: Option<u64>,
+    pub referral_id: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

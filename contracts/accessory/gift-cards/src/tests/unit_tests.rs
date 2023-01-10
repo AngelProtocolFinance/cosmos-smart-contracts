@@ -1,6 +1,4 @@
-use angel_core::{
-    errors::core::ContractError, messages::accounts::DepositMsg, structs::GenericBalance,
-};
+use angel_core::{errors::core::ContractError, structs::GenericBalance};
 use cosmwasm_std::{
     from_binary,
     testing::{mock_env, mock_info},

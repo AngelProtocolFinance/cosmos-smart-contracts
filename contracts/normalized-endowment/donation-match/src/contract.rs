@@ -165,6 +165,7 @@ fn execute_donor_match(
                 return Err(ContractError::Unauthorized {});
             }
         }
+        EndowmentType::Impact => todo!(),
     };
 
     // Validation 2. Check if the correct amount of UST is sent.

@@ -235,6 +235,7 @@ impl WasmMockQuerier {
                             kyc_donors_only: false,
                             pending_redemptions: 0,
                             proposal_link: None,
+                            referral_id: None,
                         })
                         .unwrap(),
                     )),
@@ -257,6 +258,7 @@ impl WasmMockQuerier {
                             kyc_donors_only: false,
                             pending_redemptions: 0,
                             proposal_link: None,
+                            referral_id: None,
                         })
                         .unwrap(),
                     )),

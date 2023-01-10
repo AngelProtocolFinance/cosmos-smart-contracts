@@ -9,7 +9,6 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
-
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 // version info for future migration info
@@ -111,10 +110,20 @@ pub fn execute(
             acct_type,
             vaults,
         } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
-        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateOwner { new_owner } => {
-            executers::update_owner(deps, env, info, new_owner)
-        }
+        ExecuteMsg::UpdateConfig {
+            new_owner,
+            new_registrar,
+            max_general_category_id,
+            ibc_controller,
+        } => executers::update_config(
+            deps,
+            env,
+            info,
+            new_owner,
+            new_registrar,
+            max_general_category_id,
+            ibc_controller,
+        ),
         ExecuteMsg::UpdateStrategies {
             id,
             acct_type,

@@ -7,7 +7,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        version: get_contract_version(deps.storage)?.contract,
+        version: format!(
+            "{}-{}",
+            get_contract_version(deps.storage)?.contract,
+            get_contract_version(deps.storage)?.version
+        ),
         accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
         rebalance: config.rebalance,

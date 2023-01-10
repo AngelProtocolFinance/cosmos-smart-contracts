@@ -128,6 +128,7 @@ pub fn create_endowment(
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
+                referral_id: msg.referral_id,
             }),
         },
     )?;
@@ -278,30 +279,6 @@ pub fn update_owner(
     Ok(Response::default())
 }
 
-pub fn update_config(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateConfigMsg,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    // only the accounts owner can update the config
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.registrar_contract = deps.api.addr_validate(&msg.new_registrar)?;
-    config.max_general_category_id = msg.max_general_category_id;
-    config.ibc_controller = match msg.ibc_controller {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.ibc_controller,
-    };
-
-    CONFIG.save(deps.storage, &config)?;
-    Ok(Response::default())
-}
-
 pub fn update_endowment_status(
     deps: DepsMut,
     env: Env,
@@ -435,6 +412,45 @@ pub fn update_endowment_status(
     Ok(Response::new()
         .add_submessages(sub_messages)
         .add_attribute("action", "update_endowment_status"))
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_owner: Option<String>,
+    new_registrar: Option<String>,
+    max_general_category_id: Option<u8>,
+    ibc_controller: Option<String>,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the accounts owner can update the config
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the config
+    config.owner = match new_owner {
+        Some(new_owner) => deps.api.addr_validate(&new_owner)?,
+        None => config.owner,
+    };
+    config.registrar_contract = match new_registrar {
+        Some(registrar) => deps.api.addr_validate(&registrar)?,
+        None => config.registrar_contract,
+    };
+    config.max_general_category_id = match max_general_category_id {
+        Some(id) => id,
+        None => config.max_general_category_id,
+    };
+    config.ibc_controller = match ibc_controller {
+        Some(ibc_controller) => deps.api.addr_validate(&ibc_controller)?,
+        None => config.ibc_controller,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::default())
 }
 
 pub fn update_endowment_settings(
@@ -1688,6 +1704,7 @@ pub fn withdraw(
                 )));
             }
         }
+        (EndowmentType::Impact, _) => todo!(),
     }
 
     let registrar_config: RegistrarConfigResponse =
@@ -1701,7 +1718,8 @@ pub fn withdraw(
         msg: to_binary(&RegistrarQuerier::Fee {
             name: match endowment.endow_type {
                 EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
-                _ => "accounts_withdraw_normal".to_string(),
+                EndowmentType::Impact => "accounts_withdraw_impact".to_string(),
+                EndowmentType::Normal => "accounts_withdraw_normal".to_string(),
             },
         })?,
     }))?;
