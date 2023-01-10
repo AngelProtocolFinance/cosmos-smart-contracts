@@ -116,16 +116,15 @@ pub fn application_reply(
                     msg: to_binary(&RegistrarConfig {})?,
                 }))?;
             let accounts_contract = registrar_config.accounts_contract.unwrap();
-
+            let endow: EndowmentDetailsResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: accounts_contract.to_string(),
+                    msg: to_binary(&EndowmentDetails { id: endow_id })?,
+                }))?;
             // Dust the Endowment CW3's first member wallet with some amount of native token to cover first few TXs gas
             match cfg.new_endow_gas_money {
                 Some(gas_money) => {
                     if !gas_money.amount.is_zero() {
-                        let endow: EndowmentDetailsResponse =
-                            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                                contract_addr: accounts_contract.to_string(),
-                                msg: to_binary(&EndowmentDetails { id: endow_id })?,
-                            }))?;
                         let voters: VoterListResponse =
                             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                                 contract_addr: endow.owner.to_string(),
@@ -145,9 +144,9 @@ pub fn application_reply(
                 None => (),
             }
 
-            // Add the seed money deposit to new endowment
-            match cfg.seed_asset {
-                Some(asset) => {
+            // Add the seed money deposit to new endowment, only if it is a Tier Level 3
+            match (cfg.seed_asset, endow.tier) {
+                (Some(asset), Some(3)) => {
                     // build the responce with correct message based on Asset type
                     res = res.add_message(match &asset.info {
                         // execute of deposit w/ funds attached
@@ -183,7 +182,7 @@ pub fn application_reply(
                         _ => unreachable!(),
                     })
                 }
-                None => (),
+                _ => (),
             }
 
             Ok(res)
