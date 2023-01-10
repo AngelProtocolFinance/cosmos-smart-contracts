@@ -1,5 +1,8 @@
 use angel_core::messages::dexs::InfoResponse;
-use angel_core::structs::{AccountType, EndowmentType};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::structs::{
+    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails,
+};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -65,7 +68,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
     oracle_price_querier: OraclePriceQuerier,
     oracle_prices_querier: OraclePricesQuerier,
 }
@@ -175,19 +177,6 @@ pub(crate) fn oracle_prices_to_map(
     oracle_prices_map
 }
 
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
-}
-
 pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
     let mut pairs_map: HashMap<String, String> = HashMap::new();
     for (key, pair) in pairs.iter() {
@@ -254,8 +243,41 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Uint128::from(1000000_u128)).unwrap(),
                 )),
-                QueryMsg::Config {} => unimplemented!(),
-                QueryMsg::Vault { vault_addr } => unimplemented!(),
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&ConfigResponse {
+                        owner: "registrar-owner".to_string(),
+                        version: "v1.0".to_string(),
+                        accounts_contract: None,
+                        treasury: "treasury".to_string(),
+                        rebalance: RebalanceDetails::default(),
+                        index_fund: None,
+                        split_to_liquid: SplitDetails::default(),
+                        halo_token: None,
+                        gov_contract: None,
+                        charity_shares_contract: None,
+                        cw3_code: None,
+                        cw4_code: None,
+                        accepted_tokens: AcceptedTokens::default(),
+                        applications_review: "applications_review".to_string(),
+                        swaps_router: None,
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&VaultDetailResponse {
+                        vault: angel_core::structs::YieldVault {
+                            address: "vault-1".to_string(),
+                            network: "juno-1".to_string(),
+                            input_denom: "ujuno".to_string(),
+                            yield_token: "yield-token-contract".to_string(),
+                            approved: true,
+                            restricted_from: vec![],
+                            acct_type: AccountType::Locked,
+                            vault_type: angel_core::structs::VaultType::Native,
+                        },
+                    })
+                    .unwrap(),
+                )),
                 QueryMsg::VaultList {
                     network,
                     endowment_type,
@@ -274,7 +296,6 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
             oracle_price_querier: OraclePriceQuerier::default(),
             oracle_prices_querier: OraclePricesQuerier::default(),
         }
@@ -283,11 +304,6 @@ impl WasmMockQuerier {
     // configure the mint whitelist mock querier
     pub fn with_token_balances(&mut self, balances: &[(&String, &[(&String, &Uint128)])]) {
         self.token_querier = TokenQuerier::new(balances);
-    }
-
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
     }
 
     //  Configure oracle price

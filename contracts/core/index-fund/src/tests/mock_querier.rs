@@ -52,7 +52,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
     oracle_price_querier: OraclePriceQuerier,
     oracle_prices_querier: OraclePricesQuerier,
 }
@@ -162,19 +161,6 @@ pub(crate) fn oracle_prices_to_map(
     oracle_prices_map
 }
 
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
-}
-
 pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
     let mut pairs_map: HashMap<String, String> = HashMap::new();
     for (key, pair) in pairs.iter() {
@@ -212,7 +198,6 @@ impl WasmMockQuerier {
                         version: "0.1.0".to_string(),
                         accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
-                        tax_rate: Decimal::one(),
                         rebalance: RebalanceDetails::default(),
                         index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
@@ -226,7 +211,7 @@ impl WasmMockQuerier {
                         cw3_code: Some(2),
                         cw4_code: Some(3),
                         accepted_tokens: AcceptedTokens {
-                            native: vec!["uluna".to_string()],
+                            native: vec!["ujuno".to_string()],
                             cw20: vec!["test-cw20".to_string()],
                         },
                         applications_review: "applications-review".to_string(),
@@ -308,7 +293,6 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
             oracle_price_querier: OraclePriceQuerier::default(),
             oracle_prices_querier: OraclePricesQuerier::default(),
         }
@@ -317,11 +301,6 @@ impl WasmMockQuerier {
     // configure the mint whitelist mock querier
     pub fn with_token_balances(&mut self, balances: &[(&String, &[(&String, &Uint128)])]) {
         self.token_querier = TokenQuerier::new(balances);
-    }
-
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
     }
 
     //  Configure oracle price

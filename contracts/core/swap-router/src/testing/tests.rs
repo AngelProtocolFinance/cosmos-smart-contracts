@@ -1,4 +1,4 @@
-use crate::contract::{execute, instantiate, query};
+use crate::contract::{execute, instantiate, migrate, query};
 use crate::testing::mock_querier::mock_dependencies;
 use angel_core::errors::core::ContractError;
 use angel_core::messages::router::{
@@ -6,6 +6,7 @@ use angel_core::messages::router::{
     Cw20HookMsg,
     ExecuteMsg,
     InstantiateMsg, // JunoSwapExecuteMsg, JunoSwapQueryMsg,
+    MigrateMsg,
     QueryMsg,
     SimulateSwapOperationsResponse,
 };
@@ -37,8 +38,7 @@ fn proper_initialization() {
     assert_eq!("apaccountscontract", config.accounts_contract.as_str());
 }
 
-// FIXME!: Update the test afterwards
-// #[test]
+#[test]
 fn execute_swap_operations() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
@@ -117,11 +117,10 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Native("usdc".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                    operation: SwapOperation::Loop {
+                        offer_asset_info: AssetInfo::Native("usdt".to_string()),
+                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -130,22 +129,9 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Native("usdc".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
-                    },
-                    to: None,
-                })
-                .unwrap(),
-            })),
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: MOCK_CONTRACT_ADDR.into(),
-                funds: vec![],
-                msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                        offer_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                         ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -157,7 +143,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("ujuno".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
                     },
-                    to: Some(Addr::unchecked("addr0000")),
                 })
                 .unwrap(),
             })),
@@ -166,9 +151,20 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::AssertMinimumReceive {
                     asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
-                    prev_balance: Uint128::zero(),
+                    prev_balance: Uint128::from(1000000_u128),
                     minimum_receive: Uint128::from(1000000u128),
-                    receiver: Addr::unchecked("addr0000"),
+                })
+                .unwrap(),
+            })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: MOCK_CONTRACT_ADDR.into(),
+                funds: vec![],
+                msg: to_binary(&ExecuteMsg::SendSwapReceipt {
+                    asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                    prev_balance: Uint128::from(1000000_u128),
+                    endowment_id: 1,
+                    acct_type: AccountType::Locked,
+                    vault_addr: None,
                 })
                 .unwrap(),
             })),
@@ -176,7 +172,7 @@ fn execute_swap_operations() {
     );
 
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
-        sender: "addr0000".into(),
+        sender: "vault-1".into(),
         amount: Uint128::from(1000000u128),
         msg: to_binary(&Cw20HookMsg::ExecuteSwapOperations {
             operations: vec![
@@ -214,7 +210,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("usdc".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -226,7 +221,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                         ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -234,16 +228,119 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::JunoSwap {
+                    operation: SwapOperation::Loop {
                         offer_asset_info: AssetInfo::Native("ujuno".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
                     },
-                    to: Some(Addr::unchecked("addr0002")),
                 })
                 .unwrap(),
-            }))
+            })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: MOCK_CONTRACT_ADDR.into(),
+                funds: vec![],
+                msg: to_binary(&ExecuteMsg::SendSwapReceipt {
+                    asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
+                    prev_balance: Uint128::from(1000000_u128),
+                    endowment_id: 1,
+                    acct_type: AccountType::Locked,
+                    vault_addr: Some(Addr::unchecked("vault-1")),
+                })
+                .unwrap(),
+            })),
         ]
     );
+}
+
+#[test]
+fn test_execute_swap_operation() {
+    let mut deps = mock_dependencies(&[]);
+
+    // Instantiate the contract
+    let msg = InstantiateMsg {
+        accounts_contract: Addr::unchecked("apaccountscontract"),
+        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![
+            Pair {
+                assets: [
+                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                ],
+                contract_address: Addr::unchecked("loopswap-contract"),
+            },
+            Pair {
+                assets: [
+                    AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                    AssetInfo::Native("ujuno".to_string()),
+                ],
+                contract_address: Addr::unchecked("contract-2"),
+            },
+            Pair {
+                assets: [
+                    AssetInfo::Native("ujuno".to_string()),
+                    AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                ],
+                contract_address: Addr::unchecked("junoswap-contract"),
+            },
+            Pair {
+                assets: [
+                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Cw20(Addr::unchecked("asset0000")),
+                ],
+                contract_address: Addr::unchecked("junoswap-contract"),
+            },
+        ],
+    };
+
+    let env = mock_env();
+    let info = mock_info("apaccountscontract", &[]);
+    let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
+
+    // This operation should be called by contract itself
+    let info = mock_info("non-mock-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ExecuteSwapOperation {
+            operation: SwapOperation::Loop {
+                offer_asset_info: cw_asset::AssetInfoBase::Native("usdc".to_string()),
+                ask_asset_info: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("asset0001")),
+            },
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to "swap_operation"
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ExecuteSwapOperation {
+            operation: SwapOperation::Loop {
+                offer_asset_info: cw_asset::AssetInfoBase::Native("usdc".to_string()),
+                ask_asset_info: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("asset0001")),
+            },
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ExecuteSwapOperation {
+            operation: SwapOperation::JunoSwap {
+                offer_asset_info: cw_asset::AssetInfoBase::Native("usdc".to_string()),
+                ask_asset_info: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("asset0000")),
+            },
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
 }
 
 #[test]
@@ -276,6 +373,18 @@ fn query_buy_with_routes() {
 
     // we can just call .unwrap() to assert this was a success
     let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    // Routes should NOT be empty.
+    let err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::SimulateSwapOperations {
+            offer_amount: Uint128::from(1000000_u128),
+            operations: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, StdError::generic_err("must provide operations"));
 
     let msg = QueryMsg::SimulateSwapOperations {
         offer_amount: Uint128::from(1000000_u128),
@@ -312,7 +421,6 @@ fn assert_minimum_receive_native_token() {
         asset_info: AssetInfo::Native("ujuno".to_string()),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000000u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let _res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
@@ -321,7 +429,6 @@ fn assert_minimum_receive_native_token() {
         asset_info: AssetInfo::Native("ujuno".to_string()),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000001u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
     assert_eq!(
@@ -343,7 +450,6 @@ fn assert_minimum_receive_token() {
         asset_info: AssetInfo::Cw20(Addr::unchecked("token0000")),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000000u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let _res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
@@ -352,7 +458,6 @@ fn assert_minimum_receive_token() {
         asset_info: AssetInfo::Cw20(Addr::unchecked("token0000")),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000001u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
     assert_eq!(
@@ -361,4 +466,164 @@ fn assert_minimum_receive_token() {
             msg: "assertion failed; minimum receive amount: 1000001, swap amount: 1000000".into()
         })
     )
+}
+
+#[test]
+fn test_update_pairs() {
+    let mut deps = mock_dependencies(&[]);
+
+    // Instantiate the contract
+    let msg = InstantiateMsg {
+        accounts_contract: Addr::unchecked("apaccountscontract"),
+        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![],
+    };
+    let env = mock_env();
+    let info = mock_info("apaccountscontract", &[]);
+    let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    // Only registrar_config.owner can update the pairs
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdatePairs {
+            add: vec![],
+            remove: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+}
+
+#[test]
+fn test_migrate() {
+    let mut deps = mock_dependencies(&[]);
+
+    // Instantiate the contract
+    let msg = InstantiateMsg {
+        accounts_contract: Addr::unchecked("apaccountscontract"),
+        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![],
+    };
+    let env = mock_env();
+    let info = mock_info("apaccountscontract", &[]);
+    let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    // Try to migrate
+    let res = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap();
+    assert_eq!(res.messages.len(), 0);
+}
+
+#[test]
+fn test_send_swap_receipt() {
+    let mut deps = mock_dependencies(&[]);
+
+    // Instantiate the contract
+    let msg = InstantiateMsg {
+        accounts_contract: Addr::unchecked("apaccountscontract"),
+        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![
+            Pair {
+                assets: [
+                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                ],
+                contract_address: Addr::unchecked("loopswap-contract"),
+            },
+            Pair {
+                assets: [
+                    AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                    AssetInfo::Native("ujuno".to_string()),
+                ],
+                contract_address: Addr::unchecked("contract-2"),
+            },
+            Pair {
+                assets: [
+                    AssetInfo::Native("ujuno".to_string()),
+                    AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                ],
+                contract_address: Addr::unchecked("junoswap-contract"),
+            },
+            Pair {
+                assets: [
+                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Cw20(Addr::unchecked("asset0000")),
+                ],
+                contract_address: Addr::unchecked("junoswap-contract"),
+            },
+        ],
+    };
+
+    let env = mock_env();
+    let info = mock_info("apaccountscontract", &[]);
+    let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
+
+    // This operation should be called by contract itself
+    let info = mock_info("non-mock-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SendSwapReceipt {
+            asset_info: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
+            prev_balance: Uint128::zero(),
+            endowment_id: 1_u32,
+            acct_type: AccountType::Locked,
+            vault_addr: None,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // The "swap_amount" should NOT be zero.
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SendSwapReceipt {
+            asset_info: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
+            prev_balance: Uint128::from(1000000_u128),
+            endowment_id: 1_u32,
+            acct_type: AccountType::Locked,
+            vault_addr: None,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidZeroAmount {});
+
+    // Succeed to "send_swap_receipt"
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SendSwapReceipt {
+            asset_info: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
+            prev_balance: Uint128::zero(),
+            endowment_id: 1_u32,
+            acct_type: AccountType::Locked,
+            vault_addr: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SendSwapReceipt {
+            asset_info: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
+            prev_balance: Uint128::zero(),
+            endowment_id: 1_u32,
+            acct_type: AccountType::Locked,
+            vault_addr: Some(Addr::unchecked("vault")),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
 }

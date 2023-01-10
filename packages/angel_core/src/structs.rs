@@ -63,6 +63,25 @@ impl SwapOperation {
             SwapOperation::Loop { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
+
+    pub fn reverse_operation(&self) -> Self {
+        match self {
+            SwapOperation::JunoSwap {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::JunoSwap {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+            SwapOperation::Loop {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::Loop {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -263,6 +282,7 @@ pub enum Beneficiary {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentType {
     Charity,
+    Impact,
     Normal,
 }
 
@@ -273,6 +293,7 @@ impl fmt::Display for EndowmentType {
             "{}",
             match self {
                 EndowmentType::Charity => "charity",
+                EndowmentType::Impact => "impact",
                 EndowmentType::Normal => "normal",
             }
         )
@@ -568,14 +589,6 @@ impl GenericBalance {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct SocialMedialUrls {
-    pub facebook: Option<String>,
-    pub twitter: Option<String>,
-    pub linkedin: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub struct AllianceMember {
     pub name: String,
     pub logo: Option<String>,
@@ -609,48 +622,11 @@ impl Categories {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct Profile {
-    pub overview: String,
-    pub url: Option<String>,
-    pub registration_number: Option<String>,
-    pub country_of_origin: Option<String>,
-    pub street_address: Option<String>,
-    pub contact_email: Option<String>,
-    pub social_media_urls: SocialMedialUrls,
-    pub number_of_employees: Option<u16>,
-    pub average_annual_budget: Option<String>,
-    pub annual_revenue: Option<String>,
-    pub charity_navigator_rating: Option<String>,
-}
-
-impl Default for Profile {
-    fn default() -> Self {
-        Profile {
-            url: None,
-            registration_number: None,
-            country_of_origin: None,
-            street_address: None,
-            contact_email: None,
-            social_media_urls: SocialMedialUrls {
-                facebook: None,
-                twitter: None,
-                linkedin: None,
-            },
-            number_of_employees: None,
-            average_annual_budget: None,
-            annual_revenue: None,
-            charity_navigator_rating: None,
-            overview: "".to_string(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub struct NetworkInfo {
     pub name: String,
     pub chain_id: String,
     pub ibc_channel: Option<String>,
+    pub transfer_channel: Option<String>,
     pub ibc_host_contract: Option<Addr>,
     pub gas_limit: Option<u64>,
 }

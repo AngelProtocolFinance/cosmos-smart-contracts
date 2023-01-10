@@ -56,9 +56,9 @@ pub enum ExecuteMsg {
         proposal_id: u64,
     },
     UpdateConfig {
-        require_execution: bool,
         threshold: Threshold,
         max_voting_period: Duration,
+        require_execution: bool,
         seed_asset: Option<Asset>,
         seed_split_to_liquid: Decimal,
         new_endow_gas_money: Option<Coin>,

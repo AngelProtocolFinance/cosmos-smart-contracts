@@ -1,9 +1,9 @@
-use crate::state::{CONFIG, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{AcceptedTokens, EndowmentType, NetworkInfo, VaultType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -24,6 +24,25 @@ pub fn update_owner(
     })?;
 
     Ok(Response::new().add_attribute("action", "update_owner"))
+}
+
+pub fn update_fees(
+    deps: DepsMut,
+    info: MessageInfo,
+    fees: Vec<(String, Decimal)>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    for fee in fees.iter() {
+        // check percentage is valid
+        percentage_checks(fee.1)?;
+        // save|update fee set in storage
+        FEES.save(deps.storage, &fee.0, &fee.1)?;
+    }
+    Ok(Response::new().add_attribute("action", "update_fees"))
 }
 
 pub fn update_config(
@@ -70,11 +89,6 @@ pub fn update_config(
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
-    config.tax_rate = match msg.tax_rate {
-        Some(tax_rate) => percentage_checks(tax_rate),
-        None => Ok(config.tax_rate),
-    }
-    .unwrap();
     config.rebalance = match msg.rebalance {
         Some(details) => details,
         None => config.rebalance,
@@ -131,7 +145,7 @@ pub fn vault_add(
     let network = NETWORK_CONNECTIONS.load(deps.storage, &vault_network)?;
 
     // if non-native vault type, ensure the NetworkInfo has IBC configured
-    if msg.vault_type != VaultType::Native && network.ibc_channel == None {
+    if msg.vault_type != VaultType::Native && network.ibc_channel.is_none() {
         return Err(ContractError::Std(StdError::generic_err(
             "IBC Channel must be configured before adding a non-Native Vault",
         )));

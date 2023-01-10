@@ -4,8 +4,9 @@ This folder contains the source code for the Vault smart contracts. These contra
 
 ## Contracts
 
-| Contract                                   | Reference | Description                                                           |
-| ------------------------------------------ | --------- | --------------------------------------------------------------------- |
-| [`anchor`](../contracts/vaults/anchor)     | [doc]()   | Handles deposits and withdrawals from Anchor Protocol's earn platform |
-| [`junoswap`](../contracts/vaults/junoswap) | [doc]()   | Handles deposits and withdrawals from Junoswap platform               |
-| [`loop`](../contracts/vaults/loop)         | [doc]()   | Handles deposits and withdrawals from Loop platform                   |
+| Contract                                    | Reference | Description                                                           |
+| ------------------------------------------- | --------- | --------------------------------------------------------------------- |
+| [`anchor`](../contracts/vaults/anchor)      | [doc]()   | Handles deposits and withdrawals from Anchor Protocol's earn platform |
+| [`junoswap`](../contracts/vaults/junoswap)  | [doc]()   | Handles deposits and withdrawals from Junoswap platform               |
+| [`loop`](../contracts/vaults/loop)          | [doc]()   | Handles deposits and withdrawals from Loop platform                   |
+| [`astroport`](../contracts/vaults/astroport)| [doc]()   | Handles deposits and withdrawals from Astroport platform              |

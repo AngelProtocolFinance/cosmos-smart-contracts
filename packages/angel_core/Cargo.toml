@@ -1,6 +1,6 @@
 [package]
 name = "angel-core"
-version = "1.8.0"
+version = "1.9.1"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -10,6 +10,7 @@ edition = "2018"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
+ica-vaults = { path = "../ica_vaults" }
 cosmwasm-std = { version = "1.0.0",  features = ["abort"] } 
 cw20 = "0.13.4"
 cw3 = "0.13.4"

@@ -4,7 +4,8 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
-use terraswap::asset::AssetInfo;
+use cw_asset::AssetInfoBase as CwAssetInfoBase;
+use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
@@ -12,7 +13,7 @@ use terraswap::querier::query_pair_info_from_pair;
 
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, MinterData, TokenInfo, APTAX, CONFIG, TOKEN_INFO};
+use crate::state::{Config, MinterData, State, TokenInfo, APTAX, CONFIG, STATE, TOKEN_INFO};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "loopswap_vault";
@@ -33,7 +34,7 @@ pub fn instantiate(
         None => env.contract.address.clone(), // can set later with update_config
     };
     let pair_contract = deps.api.addr_validate(&msg.pair_contract)?;
-    let pair_info = query_pair_info_from_pair(&deps.querier, pair_contract.clone())?;
+    let pair_info: PairInfo = query_pair_info_from_pair(&deps.querier, pair_contract.clone())?;
 
     let config = Config {
         owner: info.sender,
@@ -42,19 +43,40 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
         tax_collector: deps.api.addr_validate(&msg.tax_collector)?,
+        swap_router: deps.api.addr_validate(&msg.swap_router)?,
+
+        lp_token: deps.api.addr_validate(&pair_info.liquidity_token)?,
+        lp_pair_token0: pair_info.asset_infos[0].clone(),
+        lp_pair_token1: pair_info.asset_infos[1].clone(),
+        lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
+
+        native_token: match msg.native_token {
+            CwAssetInfoBase::Native(denom) => AssetInfo::NativeToken { denom },
+            CwAssetInfoBase::Cw20(contract_addr) => AssetInfo::Token {
+                contract_addr: contract_addr.to_string(),
+            },
+            _ => unreachable!(),
+        },
+        reward_to_native_route: msg.reward_to_native_route,
+        native_to_lp0_route: msg.native_to_lp0_route,
+        native_to_lp1_route: msg.native_to_lp1_route,
 
         lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
         lp_pair_contract: pair_contract,
-        lp_pair_asset_infos: pair_info.asset_infos,
-        lp_token_contract: deps.api.addr_validate(&pair_info.liquidity_token)?,
-        lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
 
+        minimum_initial_deposit: msg.minimum_initial_deposit,
+        pending_owner: None,
+        pending_owner_deadline: None,
+    };
+    CONFIG.save(deps.storage, &config)?;
+
+    // Initialize the contract state
+    let state = State {
         total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
     };
-
-    CONFIG.save(deps.storage, &config)?;
+    STATE.save(deps.storage, &state)?;
 
     APTAX.save(deps.storage, &Uint128::zero())?;
 
@@ -84,7 +106,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateOwner { new_owner } => {
+            executers::update_owner(deps, env, info, new_owner)
+        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
@@ -125,25 +149,21 @@ pub fn execute(
             amount,
         } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
 
-        // Entries which are used internally
+        /* --- INTERNAL ENTRIES --- */
         ExecuteMsg::RestakeClaimReward {
             reward_token_bal_before,
         } => executers::restake_claim_reward(deps, env, info, reward_token_bal_before),
         ExecuteMsg::AddLiquidity {
             endowment_id,
-            in_asset_info,
-            out_asset_info,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
         } => executers::add_liquidity(
             deps,
             env,
             info,
             endowment_id,
-            in_asset_info,
-            out_asset_info,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
         ),
         ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before,
@@ -157,21 +177,18 @@ pub fn execute(
         ExecuteMsg::SendAsset {
             beneficiary,
             id,
-            asset_info,
-            asset_bal_before,
-        } => executers::send_asset(
+            native_token_bal_before,
+        } => executers::send_asset(deps, env, info, beneficiary, id, native_token_bal_before),
+        ExecuteMsg::SwapBack {
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
+        } => executers::swap_back(
             deps,
             env,
             info,
-            beneficiary,
-            id,
-            asset_info,
-            asset_bal_before,
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
         ),
-        ExecuteMsg::Swap {
-            asset_info,
-            asset_bal_before,
-        } => executers::swap(deps, env, info, asset_info, asset_bal_before),
     }
 }
 
@@ -202,7 +219,7 @@ fn receive_cw20(
             endowment_id,
             amount,
         }) => {
-            executers::reinvest_to_locked_recieve(deps, env, info, endowment_id, amount, cw20_msg)
+            executers::reinvest_to_locked_receive(deps, env, info, endowment_id, amount, cw20_msg)
         }
         Ok(ReceiveMsg::HarvestToLiquid {}) => {
             executers::harvest_to_liquid(deps, env, info, cw20_msg)
@@ -217,6 +234,7 @@ fn receive_cw20(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
+        QueryMsg::State {} => to_binary(&queriers::query_state(deps)),
         QueryMsg::Balance { endowment_id } => {
             to_binary(&queriers::query_balance(deps, endowment_id))
         }

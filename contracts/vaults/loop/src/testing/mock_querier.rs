@@ -27,6 +27,7 @@ pub enum QueryMsg {
     Config {},
     Pair {},
     QueryFlpTokenFromPoolAddress { pool_address: String },
+    Fee { name: String },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -127,94 +128,148 @@ impl WasmMockQuerier {
                     .unwrap(),
                 ))
             }
-            QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: _,
-                msg,
-            }) => match from_binary(&msg).unwrap() {
-                // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
-                QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&EndowmentDetailsResponse {
-                        owner: Addr::unchecked("owner"),
-                        status: angel_core::structs::EndowmentStatus::Approved,
-                        endow_type: angel_core::structs::EndowmentType::Charity,
-                        withdraw_before_maturity: false,
-                        maturity_time: None,
-                        maturity_height: None,
-                        strategies: AccountStrategies::default(),
-                        oneoff_vaults: OneOffVaults::default(),
-                        rebalance: RebalanceDetails::default(),
-                        kyc_donors_only: false,
-                        deposit_approved: true,
-                        withdraw_approved: true,
-                        pending_redemptions: 0,
-                        copycat_strategy: None,
-                        proposal_link: None,
-                        name: "Test Endowment".to_string(),
-                        categories: Categories::default(),
-                        tier: Some(3),
-                        logo: Some("Some fancy logo".to_string()),
-                        image: Some("Nice banner image".to_string()),
-                    })
-                    .unwrap(),
-                )),
-                // Simulating the `cw20::QueryMsg::Balance { address: [account_address]}`
-                QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&cw20::BalanceResponse {
-                        balance: Uint128::from(100_u128),
-                    })
-                    .unwrap(),
-                )),
-                // Simulating the `registrar::QueryMsg::Config {}`
-                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&ConfigResponse {
-                        owner: "registrar-owner".to_string(),
-                        version: "1.0.0".to_string(),
-                        accounts_contract: Some("accounts-contract".to_string()),
-                        treasury: "treasury".to_string(),
-                        tax_rate: Decimal::from_ratio(5_u128, 100_u128),
-                        rebalance: RebalanceDetails::default(),
-                        index_fund: None,
-                        split_to_liquid: SplitDetails {
-                            max: Decimal::one(),
-                            min: Decimal::zero(),
-                            default: Decimal::default(),
-                        },
-                        halo_token: None,
-                        gov_contract: None,
-                        charity_shares_contract: None,
-                        cw3_code: Some(3_u64),
-                        cw4_code: Some(4_u64),
-                        accepted_tokens: AcceptedTokens {
-                            native: vec![],
-                            cw20: vec![],
-                        },
-                        applications_review: "applications-review".to_string(),
-                        swaps_router: None,
-                    })
-                    .unwrap(),
-                )),
-                // Simulating the `loopswap::pair::Pair {}` query
-                QueryMsg::Pair {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&PairInfo {
-                        asset_infos: [
-                            AssetInfo::NativeToken {
-                                denom: "ujuno".to_string(),
-                            },
-                            AssetInfo::Token {
-                                contract_addr: "halo-token".to_string(),
-                            },
-                        ],
-                        contract_addr: "loop-pair".to_string(),
-                        liquidity_token: "loop-lp-token".to_string(),
-                        asset_decimals: [6_u8, 6_u8],
-                    })
-                    .unwrap(),
-                )),
-                // Simulating the `loopswap::farming::QueryFlpTokenFromPoolAddress { pool_address: String }` query
-                QueryMsg::QueryFlpTokenFromPoolAddress { pool_address: _ } => SystemResult::Ok(
-                    ContractResult::Ok(to_binary(&"flp-token-contract").unwrap()),
-                ),
-            },
+            QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => {
+                match from_binary(&msg).unwrap() {
+                    // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
+                    QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&EndowmentDetailsResponse {
+                            owner: Addr::unchecked("owner"),
+                            status: angel_core::structs::EndowmentStatus::Approved,
+                            endow_type: angel_core::structs::EndowmentType::Charity,
+                            maturity_time: None,
+                            strategies: AccountStrategies::default(),
+                            oneoff_vaults: OneOffVaults::default(),
+                            rebalance: RebalanceDetails::default(),
+                            kyc_donors_only: false,
+                            deposit_approved: true,
+                            withdraw_approved: true,
+                            pending_redemptions: 0,
+                            proposal_link: None,
+                            name: "Test Endowment".to_string(),
+                            categories: Categories::default(),
+                            tier: Some(3),
+                            logo: Some("Some fancy logo".to_string()),
+                            image: Some("Nice banner image".to_string()),
+                        })
+                        .unwrap(),
+                    )),
+                    // Simulating the `cw20::QueryMsg::Balance { address: [account_address]}`
+                    QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&cw20::BalanceResponse {
+                            balance: Uint128::from(100_u128),
+                        })
+                        .unwrap(),
+                    )),
+                    // Simulating the `registrar::QueryMsg::Config {}`
+                    QueryMsg::Config {} => match contract_addr.as_str() {
+                        "locked_sibling_vault" => SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&angel_core::responses::vault::ConfigResponse {
+                                owner: "owner".to_string(),
+                                acct_type: angel_core::structs::AccountType::Locked,
+                                sibling_vault: MOCK_CONTRACT_ADDR.to_string(),
+                                registrar_contract: "registrar".to_string(),
+                                keeper: "keeper".to_string(),
+                                tax_collector: "tax-collector".to_string(),
+                                native_token: "ujuno".to_string(),
+                                lp_token: "lp-token".to_string(),
+                                lp_pair_token0: "token0".to_string(),
+                                lp_pair_token1: "token1".to_string(),
+                                lp_reward_token: "lp-reward-token".to_string(),
+                                reward_to_native_rotue: vec![],
+                                native_to_lp0_route: vec![],
+                                native_to_lp1_route: vec![],
+                                lp_factory_contract: "lp-factory".to_string(),
+                                lp_staking_contract: "lp-staking".to_string(),
+                                lp_pair_contract: "loop-lp-token".to_string(),
+                                minimum_initial_deposit: "100".to_string(),
+                                pending_owner: "".to_string(),
+                                pending_owner_deadline: 0,
+                            })
+                            .unwrap(),
+                        )),
+                        "liquid_sibling_vault" => SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&angel_core::responses::vault::ConfigResponse {
+                                owner: "owner".to_string(),
+                                acct_type: angel_core::structs::AccountType::Liquid,
+                                sibling_vault: MOCK_CONTRACT_ADDR.to_string(),
+                                registrar_contract: "registrar".to_string(),
+                                keeper: "keeper".to_string(),
+                                tax_collector: "tax-collector".to_string(),
+                                native_token: "ujuno".to_string(),
+                                lp_token: "lp-token".to_string(),
+                                lp_pair_token0: "token0".to_string(),
+                                lp_pair_token1: "token1".to_string(),
+                                lp_reward_token: "lp-reward-token".to_string(),
+                                reward_to_native_rotue: vec![],
+                                native_to_lp0_route: vec![],
+                                native_to_lp1_route: vec![],
+                                lp_factory_contract: "lp-factory".to_string(),
+                                lp_staking_contract: "lp-staking".to_string(),
+                                lp_pair_contract: "loop-lp-token".to_string(),
+                                minimum_initial_deposit: "100".to_string(),
+                                pending_owner: "".to_string(),
+                                pending_owner_deadline: 0,
+                            })
+                            .unwrap(),
+                        )),
+                        _ => SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&ConfigResponse {
+                                owner: "registrar-owner".to_string(),
+                                version: "1.0.0".to_string(),
+                                accounts_contract: Some("accounts-contract".to_string()),
+                                treasury: "treasury".to_string(),
+                                rebalance: RebalanceDetails::default(),
+                                index_fund: None,
+                                split_to_liquid: SplitDetails {
+                                    max: Decimal::one(),
+                                    min: Decimal::zero(),
+                                    default: Decimal::default(),
+                                },
+                                halo_token: None,
+                                gov_contract: None,
+                                charity_shares_contract: None,
+                                cw3_code: Some(3_u64),
+                                cw4_code: Some(4_u64),
+                                accepted_tokens: AcceptedTokens {
+                                    native: vec![],
+                                    cw20: vec![],
+                                },
+                                applications_review: "applications-review".to_string(),
+                                swaps_router: None,
+                            })
+                            .unwrap(),
+                        )),
+                    },
+                    // Simulating the `loopswap::pair::Pair {}` query
+                    QueryMsg::Pair {} => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&PairInfo {
+                            asset_infos: [
+                                AssetInfo::NativeToken {
+                                    denom: "ujuno".to_string(),
+                                },
+                                AssetInfo::Token {
+                                    contract_addr: "halo-token".to_string(),
+                                },
+                            ],
+                            contract_addr: "loop-pair".to_string(),
+                            liquidity_token: "loop-lp-token".to_string(),
+                            asset_decimals: [6_u8, 6_u8],
+                        })
+                        .unwrap(),
+                    )),
+                    // Simulating the `loopswap::farming::QueryFlpTokenFromPoolAddress { pool_address: String }` query
+                    QueryMsg::QueryFlpTokenFromPoolAddress { pool_address: _ } => SystemResult::Ok(
+                        ContractResult::Ok(to_binary(&"flp-token-contract").unwrap()),
+                    ),
+                    // Simulating the `registrar::QueryMsg::Fee { name: String }`
+                    QueryMsg::Fee { name } => match name.as_str() {
+                        "vaults_harvest" => SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&Decimal::from_ratio(10_u128, 100_u128)).unwrap(),
+                        )),
+                        _ => unreachable!(),
+                    },
+                }
+            }
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
                 let key: &[u8] = key.as_slice();
                 let prefix_balance = to_length_prefixed(b"balance").to_vec();

@@ -17,7 +17,7 @@ core platform of smart contracts that support multiple verticals of specialized 
 ### MultiSig Contracts:
 - [AP Team Group](./contracts/multisig/cw4-group)
 - [AP Team](./contracts/multisig/cw3-apteam) - MultiSig contract for enabling Angel Protocol Team's stewardship over all Core and Vault contracts.
-- [Review Team](./contracts/multisig/cw3-applications) - MultiSig contract for enabling Angel Protocol Review Team's to approve Charity endowment applications recieved.
+- [Review Team](./contracts/multisig/cw3-applications) - MultiSig contract for enabling Angel Protocol Review Team's to approve Charity endowment applications received.
 - [Endowment](./contracts/multisig/cw3-endowment) - Allows an Endowment's Members to create a proposal to manage their Endowment or other special actions that requires approval from AP Team CW3.
 
 ## Getting setup for development
@@ -67,7 +67,7 @@ For production builds, run the following from the root folder:
 docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/workspace-optimizer:0.12.1
+  cosmwasm/workspace-optimizer:0.12.9
 ```
 
 This performs several optimizations which can significantly reduce the final size of the contract binaries, which will be available inside the `artifacts/` directory.

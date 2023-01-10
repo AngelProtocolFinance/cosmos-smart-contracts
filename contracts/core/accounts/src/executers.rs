@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -6,20 +6,20 @@ use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
+    VaultListResponse,
 };
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
-    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
-    StrategyComponent, SwapOperation, VaultType, YieldVault,
+    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SplitDetails, StrategyComponent,
+    SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
-    WasmQuery,
+    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
@@ -100,25 +100,20 @@ pub fn create_endowment(
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                withdraw_before_maturity: msg.withdraw_before_maturity,
-                maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
-                copycat_strategy: None,
                 tier: msg.tier.clone(),
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
+                referral_id: msg.referral_id,
             }),
         },
     )?;
-
-    // store the profile data
-    PROFILES.save(deps.storage, config.next_account_id, &msg.profile)?;
 
     STATES.save(
         deps.storage,
@@ -313,51 +308,41 @@ pub fn update_endowment_status(
         .add_attribute("action", "update_endowment_status"))
 }
 
-pub fn update_owner(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_owner: String,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.owner = deps.api.addr_validate(&new_owner)?;
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::default())
-}
-
 pub fn update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    new_registrar: String,
-    max_general_category_id: u8,
+    new_owner: Option<String>,
+    new_registrar: Option<String>,
+    max_general_category_id: Option<u8>,
     ibc_controller: Option<String>,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
 
     // only the accounts owner can update the config
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let new_registrar = deps.api.addr_validate(&new_registrar)?;
-    let mut controller = config.ibc_controller;
-    if ibc_controller != None {
-        controller = deps.api.addr_validate(&ibc_controller.unwrap())?;
-    }
-    // update config attributes with newly passed args
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.registrar_contract = new_registrar;
-        config.max_general_category_id = max_general_category_id;
-        config.ibc_controller = controller;
-        Ok(config)
-    })?;
+    // Update the config
+    config.owner = match new_owner {
+        Some(new_owner) => deps.api.addr_validate(&new_owner)?,
+        None => config.owner,
+    };
+    config.registrar_contract = match new_registrar {
+        Some(registrar) => deps.api.addr_validate(&registrar)?,
+        None => config.registrar_contract,
+    };
+    config.max_general_category_id = match max_general_category_id {
+        Some(id) => id,
+        None => config.max_general_category_id,
+    };
+    config.ibc_controller = match ibc_controller {
+        Some(ibc_controller) => deps.api.addr_validate(&ibc_controller)?,
+        None => config.ibc_controller,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -518,39 +503,6 @@ pub fn update_strategies(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_strategies"))
-}
-
-pub fn copycat_strategies(
-    deps: DepsMut,
-    info: MessageInfo,
-    id: u32,
-    acct_type: AccountType,
-    id_to_copy: u32,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    if endowment.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment.strategies.get(acct_type).is_empty() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        }));
-    }
-
-    if endowment.copycat_strategy == Some(id_to_copy) {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting re-set the same copycat endowment ID".to_string(),
-        }));
-    }
-
-    // set new copycat id
-    endowment.copycat_strategy = Some(id_to_copy);
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::new())
 }
 
 pub fn swap_token(
@@ -942,15 +894,15 @@ pub fn reinvest_to_locked(
                 vault_addr: vault_addr.clone(),
             })?,
         }))?;
-    let yield_vault: YieldVault = vault_config.vault;
+    let yield_vault: YieldVault = vault_config.vault.clone();
     if amount.is_zero() || !yield_vault.approved || yield_vault.acct_type.ne(&AccountType::Liquid) {
         return Err(ContractError::InvalidInputs {});
     }
 
-    let msg: SubMsg;
+    let mut res = Response::new().add_attribute("action", "vault_reinvest_to_locked");
     match yield_vault.vault_type {
         VaultType::Native => {
-            msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr,
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
                     endowment_id: id,
@@ -958,12 +910,44 @@ pub fn reinvest_to_locked(
                 })
                 .unwrap(),
                 funds: vec![],
+            })));
+        }
+        // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+        VaultType::Ibc { ica } => {
+            // look up Registrar network information on the given IBC Vault
+            let network_info: NetworkConnectionResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                        chain_id: vault_config.vault.network,
+                    })?,
+                }))?;
+            // build message
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.ibc_controller.to_string(),
+                msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                    channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                    msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: ica.to_string(),
+                        msg: to_binary(
+                            &angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
+                                endowment_id: id,
+                                amount,
+                            },
+                        )
+                        .unwrap(),
+                        funds: vec![],
+                    })],
+                    // callback_id: Some("ibc-vault-reinvest".to_string()),
+                    callback_id: None,
+                })
+                .unwrap(),
+                funds: vec![],
             }));
         }
-        VaultType::Ibc { ica: _ } => unimplemented!(),
         VaultType::Evm => unimplemented!(),
     }
-    Ok(Response::new().add_submessage(msg))
+    Ok(res)
 }
 
 pub fn deposit(
@@ -1025,7 +1009,7 @@ pub fn deposit(
         amount: deposit_amount * liquid_split,
     };
 
-    // update total donations recieved for a charity
+    // update total donations received for a charity
     let mut state: State = STATES.load(deps.storage, msg.id)?;
     state.donations_received.locked += locked_amount.amount;
     state.donations_received.liquid += liquid_amount.amount;
@@ -1144,7 +1128,7 @@ pub fn vaults_invest(
     // 1. Validate that Vault addr and input Asset are valid
     // 2. Check that TOH for AcctType has enough tokens to cover deposit amt
     // 3. Create deposit message to Vault
-    let mut deposit_msgs: Vec<SubMsg> = vec![];
+    let mut res = Response::new().add_attribute("action", "vault_invest");
     for (vault, asset) in vaults.iter() {
         // check vault addr passed is valid
         let vault_addr = deps.api.addr_validate(vault)?;
@@ -1235,7 +1219,7 @@ pub fn vaults_invest(
         // funds payload can contain CW20 | Native token amounts
         match vault_config.vault.vault_type {
             VaultType::Native => {
-                deposit_msgs.push(match &asset.info {
+                res = res.add_submessage(match &asset.info {
                     AssetInfoBase::Native(ref denom) => {
                         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                             contract_addr: vault_addr.clone().to_string(),
@@ -1267,7 +1251,68 @@ pub fn vaults_invest(
                     _ => unreachable!(),
                 });
             }
-            VaultType::Ibc { ica: _ } => unimplemented!(),
+            // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+            VaultType::Ibc { ica } => {
+                // look up Registrar network information on the given IBC Vault
+                let network_info: NetworkConnectionResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                            chain_id: vault_config.vault.network,
+                        })?,
+                    }))?;
+                // build message
+                res = res.add_messages(match &asset.info {
+                    AssetInfoBase::Native(ref denom) => [
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: config.ibc_controller.to_string(),
+                            msg: to_binary(
+                                &ica_vaults::ica_controller_msg::ExecuteMsg::SendFunds {
+                                    reflect_channel_id: network_info
+                                        .network_connection
+                                        .ibc_channel
+                                        .clone()
+                                        .unwrap(),
+                                    transfer_channel_id: network_info
+                                        .network_connection
+                                        .transfer_channel
+                                        .unwrap(),
+                                },
+                            )
+                            .unwrap(),
+                            funds: vec![Coin {
+                                denom: denom.clone(),
+                                amount: asset.amount,
+                            }],
+                        }),
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: config.ibc_controller.to_string(),
+                            msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                                channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                                    contract_addr: ica.to_string(),
+                                    msg: to_binary(
+                                        &angel_core::messages::vault::ExecuteMsg::Deposit {
+                                            endowment_id: id,
+                                        },
+                                    )
+                                    .unwrap(),
+                                    funds: vec![Coin {
+                                        denom: denom.clone(),
+                                        amount: asset.amount,
+                                    }],
+                                })],
+                                // callback_id: Some("ibc-deposit-native".to_string()),
+                                callback_id: None,
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        }),
+                    ],
+                    AssetInfo::Cw20(ref _contract_addr) => unimplemented!(),
+                    _ => unreachable!(),
+                });
+            }
             VaultType::Evm => unimplemented!(),
         }
     }
@@ -1281,9 +1326,7 @@ pub fn vaults_invest(
     }
     STATES.save(deps.storage, id, &state)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "vault_invest")
-        .add_submessages(deposit_msgs))
+    Ok(res)
 }
 
 /// Allow Endowment owners to redeem some amount of Vault tokens back to their
@@ -1314,7 +1357,7 @@ pub fn vaults_redeem(
     // iterate over each vault and amount passed in
     // 1. Validate that Vault addr and input Asset are valid
     // 2. Create redeem message to Vault
-    let mut redeem_msgs: Vec<SubMsg> = vec![];
+    let mut res = Response::new().add_attribute("action", "vault_redeem");
     for (vault, amount) in vaults.iter() {
         // check vault addr passed is valid
         let vault_addr = deps.api.addr_validate(vault)?.to_string();
@@ -1371,7 +1414,7 @@ pub fn vaults_redeem(
                 if *amount > available_vt {
                     return Err(ContractError::BalanceTooSmall {});
                 }
-                redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: vault_addr,
                     msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
                         endowment_id: id,
@@ -1381,15 +1424,43 @@ pub fn vaults_redeem(
                     funds: vec![],
                 })));
             }
-            VaultType::Ibc { ica: _ } => unimplemented!(),
+            // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+            VaultType::Ibc { ica } => {
+                // look up Registrar network information on the given IBC Vault
+                let network_info: NetworkConnectionResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                            chain_id: vault_config.vault.network,
+                        })?,
+                    }))?;
+                // build message
+                res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.ibc_controller.to_string(),
+                    msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                        channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: ica.to_string(),
+                            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+                                endowment_id: id,
+                                amount: *amount,
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        })],
+                        // callback_id: Some("ibc-vault-redeem".to_string()),
+                        callback_id: None,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }));
+            }
             VaultType::Evm => unimplemented!(),
         }
     }
 
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
-    Ok(Response::new()
-        .add_attribute("action", "vault_redeem")
-        .add_submessages(redeem_msgs))
+    Ok(res)
 }
 
 pub fn withdraw(
@@ -1407,6 +1478,7 @@ pub fn withdraw(
     let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
+    let mut native_coins_fees: Vec<Coin> = vec![];
 
     if !endowment.withdraw_approved {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1426,10 +1498,7 @@ pub fn withdraw(
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time != None
-                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
-            {
+            if !endowment.is_expired(&env) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
@@ -1442,6 +1511,23 @@ pub fn withdraw(
             return Err(ContractError::Unauthorized {});
         }
     }
+
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    let withdraw_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQuerier::Fee {
+            name: match endowment.endow_type {
+                EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
+                EndowmentType::Impact => "accounts_withdraw_impact".to_string(),
+                EndowmentType::Normal => "accounts_withdraw_normal".to_string(),
+            },
+        })?,
+    }))?;
 
     for asset in assets.iter() {
         asset.check(deps.api, None)?;
@@ -1465,6 +1551,8 @@ pub fn withdraw(
             return Err(ContractError::InsufficientFunds {});
         }
 
+        // calculate withdraw fee
+        let withdraw_fee = asset.amount * withdraw_rate;
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
             AssetInfoBase::Native(denom) => {
@@ -1472,7 +1560,11 @@ pub fn withdraw(
                 // and all deductions against the state balance done at the end
                 native_coins.push(Coin {
                     denom: denom.clone(),
-                    amount: asset.amount,
+                    amount: asset.amount - withdraw_fee,
+                });
+                native_coins_fees.push(Coin {
+                    denom: denom.clone(),
+                    amount: withdraw_fee,
                 });
             }
             AssetInfoBase::Cw20(addr) => {
@@ -1481,7 +1573,17 @@ pub fn withdraw(
                     contract_addr: addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                         recipient: beneficiary.to_string(),
-                        amount: asset.amount,
+                        amount: asset.amount - withdraw_fee,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+                // Build message to AP treasury for withdraw fee owned
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: registrar_config.treasury.to_string(),
+                        amount: withdraw_fee,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -1500,10 +1602,16 @@ pub fn withdraw(
     if !native_coins.is_empty() {
         // deduct the native coins withdrawn against balances held in state
         state_bal.deduct_tokens(Balance::from(native_coins.clone()));
-        // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+        state_bal.deduct_tokens(Balance::from(native_coins_fees.clone()));
+        // Build messages to send all native tokens  via BankMsg::Send to either:
+        // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
         messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: beneficiary,
             amount: native_coins,
+        })));
+        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: registrar_config.treasury,
+            amount: native_coins_fees,
         })));
     }
 
@@ -1587,48 +1695,4 @@ pub fn close_endowment(
     Ok(Response::new()
         .add_attribute("action", "close_endowment")
         .add_submessages(redeem_messages))
-}
-
-pub fn update_profile(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateProfileMsg,
-) -> Result<Response, ContractError> {
-    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
-    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-    let mut profile = PROFILES.load(deps.storage, msg.id)?;
-
-    // Only endowment.owner can update these fields
-    if !(info.sender == endowment.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let state = STATES.load(deps.storage, msg.id)?;
-    if state.closing_endowment {
-        return Err(ContractError::UpdatesAfterClosed {});
-    }
-
-    if let Some(overview) = msg.overview {
-        profile.overview = overview;
-    }
-    let social_media_urls = SocialMedialUrls {
-        facebook: msg.facebook,
-        twitter: msg.twitter,
-        linkedin: msg.linkedin,
-    };
-    profile.social_media_urls = social_media_urls;
-    profile.url = msg.url;
-    profile.registration_number = msg.registration_number;
-    profile.country_of_origin = msg.country_of_origin;
-    profile.street_address = msg.street_address;
-    profile.contact_email = msg.contact_email;
-    profile.number_of_employees = msg.number_of_employees;
-    profile.average_annual_budget = msg.average_annual_budget;
-    profile.annual_revenue = msg.annual_revenue;
-    profile.charity_navigator_rating = msg.charity_navigator_rating;
-
-    PROFILES.save(deps.storage, msg.id, &profile)?;
-
-    Ok(Response::new().add_attribute("action", "update_profile"))
 }

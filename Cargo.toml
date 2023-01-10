@@ -6,20 +6,20 @@ members = [
     "contracts/core/cw3-endowment",
     "contracts/core/index-fund",
     "contracts/core/registrar",
+    "contracts/core/swap-router",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-apteam",
     "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-generic",
+    "contracts/accessory/gift-cards",
 ]
 
 exclude = [
     "packages/ica_vaults",
     "contracts/ica/ica-controller",
     "contracts/ica/ica-host",
-    "contracts/vaults/anchor",
-    "contracts/vaults/junoswap",
     "contracts/vaults/loop",
-    "contracts/core/swap-router",
+    "contracts/vaults/astroport",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
@@ -28,6 +28,7 @@ exclude = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
+    "contracts/vaults/junoswap",
 ]
 
 [profile.release]

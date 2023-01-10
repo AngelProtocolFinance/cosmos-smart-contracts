@@ -1,8 +1,12 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::Endowment;
+use crate::state::OldEndowment;
+use crate::state::ENDOWMENTS;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use cosmwasm_std::from_slice;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdError, StdResult,
@@ -111,6 +115,7 @@ pub fn execute(
             vaults,
         } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
         ExecuteMsg::UpdateConfig {
+            new_owner,
             new_registrar,
             max_general_category_id,
             ibc_controller,
@@ -118,27 +123,19 @@ pub fn execute(
             deps,
             env,
             info,
+            new_owner,
             new_registrar,
             max_general_category_id,
             ibc_controller,
         ),
-        ExecuteMsg::UpdateOwner { new_owner } => {
-            executers::update_owner(deps, env, info, new_owner)
-        }
         ExecuteMsg::UpdateStrategies {
             id,
             acct_type,
             strategies,
         } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
-        ExecuteMsg::CopycatStrategies {
-            id,
-            acct_type,
-            id_to_copy,
-        } => executers::copycat_strategies(deps, info, id, acct_type, id_to_copy),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
-        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
 
@@ -210,7 +207,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             limit,
         )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
-        QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
         QueryMsg::TokenAmount {
             id,
             asset_info,
@@ -239,6 +235,45 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // setup the new Endowment struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let config: Config = from_slice(&data)?;
+
+    for endow_id in 1..config.next_account_id {
+        let key = ENDOWMENTS.key(endow_id);
+        let data = deps.storage.get(&key).ok_or_else(|| {
+            StdError::not_found(format!("Endowment not found for ID {}", endow_id))
+        })?;
+        let old_endow: OldEndowment = from_slice(&data)?;
+        ENDOWMENTS.save(
+            deps.storage,
+            endow_id,
+            &Endowment {
+                owner: old_endow.owner,
+                name: old_endow.name,
+                categories: old_endow.categories,
+                tier: old_endow.tier,
+                endow_type: old_endow.endow_type,
+                logo: old_endow.logo,
+                image: old_endow.image,
+                status: old_endow.status,
+                deposit_approved: old_endow.deposit_approved,
+                withdraw_approved: old_endow.withdraw_approved,
+                maturity_time: old_endow.maturity_time,
+                strategies: old_endow.strategies,
+                oneoff_vaults: old_endow.oneoff_vaults,
+                rebalance: old_endow.rebalance,
+                kyc_donors_only: old_endow.kyc_donors_only,
+                pending_redemptions: old_endow.pending_redemptions,
+                proposal_link: old_endow.proposal_link,
+                referral_id: None,
+            },
+        )?;
+    }
 
     Ok(Response::default())
 }

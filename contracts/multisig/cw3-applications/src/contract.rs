@@ -3,7 +3,7 @@ use crate::msg::{
     MetaApplicationsProposalResponse, MigrateMsg,
 };
 use crate::state::{
-    next_id, Ballot, Config, OldConfig, Proposal, ProposalType, Votes, BALLOTS, CONFIG, PROPOSALS,
+    next_id, Ballot, Config, Proposal, ProposalType, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
@@ -17,9 +17,9 @@ use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::EndowmentType;
 use angel_core::utils::validate_deposit_fund;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, BankMsg, Binary, BlockInfo, Coin, CosmosMsg, Decimal, Deps,
-    DepsMut, Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult,
-    SubMsg, SubMsgResult, WasmMsg, WasmQuery,
+    entry_point, to_binary, BankMsg, Binary, BlockInfo, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, SubMsg,
+    SubMsgResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -230,12 +230,12 @@ pub fn execute(
             deps,
             env,
             info,
+            threshold,
+            max_voting_period,
             require_execution,
             seed_asset,
             seed_split_to_liquid,
             new_endow_gas_money,
-            threshold,
-            max_voting_period,
         ),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
@@ -249,12 +249,12 @@ pub fn execute_update_config(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    threshold: Threshold,
+    max_voting_period: Duration,
     require_execution: bool,
     seed_asset: Option<Asset>,
     seed_split_to_liquid: Decimal,
     new_endow_gas_money: Option<Coin>,
-    threshold: Threshold,
-    max_voting_period: Duration,
 ) -> Result<Response<Empty>, ContractError> {
     // only the contract can update own configs
     if info.sender != env.contract.address {
@@ -378,8 +378,6 @@ pub fn execute_propose_application(
     }
 
     // ensure charity specific params are set correctly (regardless of what user passes)
-    msg.withdraw_before_maturity = false;
-    msg.maturity_height = None;
     msg.maturity_time = None;
 
     let registrar_config: RegistrarConfigResponse =
@@ -892,26 +890,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new config struct and save to storage
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let old_config: OldConfig = from_slice(&data)?;
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            registrar_contract: old_config.registrar_contract,
-            threshold: old_config.threshold,
-            max_voting_period: old_config.max_voting_period,
-            group_addr: old_config.group_addr,
-            require_execution: false, // default to auto-execute
-            seed_asset: None,         // default to NO seed funding program
-            seed_split_to_liquid: Decimal::percent(0), // all to LOCKED
-            new_endow_gas_money: None, // don't send any Juno
-        },
-    )?;
 
     Ok(Response::default())
 }

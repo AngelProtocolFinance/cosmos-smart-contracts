@@ -12,13 +12,13 @@ use std::convert::TryInto;
 // we multiply by this when calculating needed_votes in order to round up properly
 // Note: `10u128.pow(9)` fails as "u128::pow` is not yet stable as a const fn"
 const PRECISION_FACTOR: u128 = 1_000_000_000;
-
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct OldConfig {
     pub registrar_contract: Addr,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
+    pub require_execution: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -28,6 +28,7 @@ pub struct Config {
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
     pub require_execution: bool,
+    pub guardians: Vec<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -172,6 +173,8 @@ pub const TEMP_CONFIG: Item<TempConfig> = Item::new("temp_config");
 // multiple-item map
 pub const BALLOTS: Map<(u64, &Addr), Ballot> = Map::new("votes");
 pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
+pub const GUARDIAN_BALLOTS: Map<(u64, &Addr), Ballot> = Map::new("guardian_votes");
+pub const GUARDIAN_PROPOSALS: Map<u64, Proposal> = Map::new("guardian_proposals");
 
 pub fn next_id(store: &mut dyn Storage) -> StdResult<u64> {
     let id: u64 = PROPOSAL_COUNT.may_load(store)?.unwrap_or_default() + 1;

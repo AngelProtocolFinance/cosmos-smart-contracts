@@ -1,4 +1,4 @@
-use crate::structs::{AccountType, Beneficiary, Categories, EndowmentType, Profile, SwapOperation};
+use crate::structs::{AccountType, Beneficiary, Categories, EndowmentType, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
@@ -66,12 +66,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         vaults: Vec<(String, Uint128)>,
     },
-    // set another endowment's strategy to "copycat" as your own
-    CopycatStrategies {
-        id: u32,
-        acct_type: AccountType,
-        id_to_copy: u32,
-    },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
@@ -83,14 +77,11 @@ pub enum ExecuteMsg {
     DistributeToBeneficiary {
         id: u32,
     },
-    // update owner addr
-    UpdateOwner {
-        new_owner: String,
-    },
     // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
     UpdateConfig {
-        new_registrar: String,
-        max_general_category_id: u8,
+        new_owner: Option<String>,
+        new_registrar: Option<String>,
+        max_general_category_id: Option<u8>,
         ibc_controller: Option<String>,
     },
     // Update an Endowment owner, beneficiary, and other settings
@@ -103,28 +94,24 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
-    // Update Endowment profile
-    UpdateProfile(UpdateProfileMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String, // address that originally setup the endowment account
-    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
-    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub name: String,                   // name of the Endowment
+    pub maturity_time: Option<u64>, // datetime int of endowment maturity
+    pub name: String,  // name of the Endowment
     pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub endow_type: EndowmentType,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub profile: Profile, // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
+    pub referral_id: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -179,24 +166,6 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateProfileMsg {
-    pub id: u32,
-    pub overview: Option<String>,
-    pub url: Option<String>,
-    pub registration_number: Option<String>,
-    pub country_of_origin: Option<String>,
-    pub street_address: Option<String>,
-    pub contact_email: Option<String>,
-    pub facebook: Option<String>,
-    pub twitter: Option<String>,
-    pub linkedin: Option<String>,
-    pub number_of_employees: Option<u16>,
-    pub average_annual_budget: Option<String>,
-    pub annual_revenue: Option<String>,
-    pub charity_navigator_rating: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get all Config details for the contract
@@ -218,10 +187,6 @@ pub enum QueryMsg {
         proposal_link: Option<u64>,
         start_after: Option<u32>,
         limit: Option<u64>,
-    },
-    // Get the profile info
-    GetProfile {
-        id: u32,
     },
     // Get endowment token balance
     TokenAmount {
