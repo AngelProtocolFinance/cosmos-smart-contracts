@@ -260,6 +260,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
     cw3ReviewTeam,
     swapRouter,
     giftcards,

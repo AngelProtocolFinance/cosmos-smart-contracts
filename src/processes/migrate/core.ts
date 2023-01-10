@@ -17,6 +17,7 @@ export async function migrateCore(
   accounts: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw4GrpReviewTeam: string,
   cw3ReviewTeam: string,
   swapRouter: string,
   giftcards: string,
@@ -28,6 +29,7 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
+  // await storeAndMigrateContract(juno, apTeam, cw4GrpReviewTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
