@@ -186,11 +186,7 @@ pub fn create_endowment(
 
     // Create the Endowment settings in "settings_controller" contract
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: registrar_config
-            .settings_controller
-            .as_ref()
-            .unwrap()
-            .to_string(),
+        contract_addr: registrar_config.settings_controller.clone(),
         msg: to_binary(
             &angel_core::messages::settings_controller::ExecuteMsg::CreateEndowmentSettings(
                 CreateEndowSettingsMsg {
@@ -225,17 +221,8 @@ pub fn create_endowment(
         registrar_config.subdao_gov_code,
     ) {
         (Some(dao_setup), Some(_token_code), Some(_gov_code)) => {
-            if registrar_config.settings_controller.is_none() {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: format!("Settings_controller contract not exist yet."),
-                }));
-            }
             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: registrar_config
-                    .settings_controller
-                    .as_ref()
-                    .unwrap()
-                    .to_string(),
+                contract_addr: registrar_config.settings_controller,
                 msg: to_binary(
                     &angel_core::messages::settings_controller::ExecuteMsg::SetupDao {
                         endowment_id: config.next_account_id,
@@ -464,15 +451,13 @@ pub fn update_endowment_settings(
     let registrar_config: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
-    let settings_controller = registrar_config
-        .settings_controller
-        .expect("SettingsController contract not exist yet.");
+    let settings_controller: String = registrar_config.settings_controller;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        settings_controller.to_string(),
+        settings_controller.clone(),
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
     let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
-        settings_controller.to_string(),
+        settings_controller.clone(),
         &angel_core::messages::settings_controller::QueryMsg::EndowmentPermissions {
             id: msg.id,
             setting_updater: info.sender.clone(),
@@ -1142,9 +1127,7 @@ pub fn deposit(
     )?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config
-            .settings_controller
-            .expect("Settings-controller contract not exist yet."),
+        registrar_config.settings_controller,
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
@@ -1646,9 +1629,7 @@ pub fn withdraw(
     )?;
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config
-            .settings_controller
-            .expect("Settings-controller contract not exist yet."),
+        registrar_config.settings_controller,
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
 

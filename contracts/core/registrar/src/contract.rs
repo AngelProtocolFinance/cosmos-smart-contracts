@@ -30,7 +30,7 @@ pub fn instantiate(
         None => Ok(SplitDetails::default()),
     }
     .unwrap();
-
+    let settings_controller = deps.api.addr_validate(&msg.settings_controller)?;
     let configs = Config {
         owner: info.sender.clone(),
         applications_review: info.sender,
@@ -60,7 +60,7 @@ pub fn instantiate(
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
         swaps_router: None,
-        settings_controller: None,
+        settings_controller,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -148,13 +148,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // Get the collector addr from user input
-    let collector_addr = msg
-        .collector_addr
-        .map(|addr| deps.api.addr_validate(&addr.to_string()).unwrap());
-    let settings_controller = msg
-        .settings_controller_contract
-        .map(|addr| deps.api.addr_validate(&addr.to_string()).unwrap());
+    // Get the collector addr from msg input
+    let settings_controller = deps.api.addr_validate(&msg.settings_controller_contract)?;
 
     // setup the new config struct and save to storage
     let data = deps
@@ -183,7 +178,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             halo_token: old_config.halo_token,
             halo_token_lp_contract: None,
             gov_contract: old_config.gov_contract,
-            collector_addr: collector_addr,
+            collector_addr: None,
             collector_share: Decimal::zero(), // SHOULD be checked
             charity_shares_contract: old_config.charity_shares_contract,
             accepted_tokens: old_config.accepted_tokens,
@@ -196,16 +191,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     )?;
 
     // setup first fees
-    FEES.save(
-        deps.storage,
-        &"endowtype_charity",
-        &msg.endowtype_fees.endowtype_charity.unwrap_or_default(),
-    )?;
-    FEES.save(
-        deps.storage,
-        &"endowtype_normal",
-        &msg.endowtype_fees.endowtype_normal.unwrap_or_default(),
-    )?;
+    FEES.save(deps.storage, &"endowtype_charity", &msg.fee_charity)?;
+    FEES.save(deps.storage, &"endowtype_normal", &msg.fee_normal)?;
 
     Ok(Response::default())
 }
