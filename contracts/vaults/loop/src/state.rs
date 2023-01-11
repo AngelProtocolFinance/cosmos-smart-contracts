@@ -31,6 +31,10 @@ pub struct Config {
     pub lp_factory_contract: Addr, // loopswap factory contract address
     pub lp_staking_contract: Addr, // loopswap farming contract address
     pub lp_pair_contract: Addr,    // loopswap pair contract address
+
+    pub minimum_initial_deposit: Uint128, // Minimum deposit LP amount limit when `total_shares` = 0
+    pub pending_owner: Option<Addr>, // Pending owner address which is used in 2-step `update_owner` process
+    pub pending_owner_deadline: Option<u64>, // Block height until which the `pending_owner` is valid in `update_owner` process
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

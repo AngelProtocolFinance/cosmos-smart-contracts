@@ -29,6 +29,9 @@ pub fn send_swap_receipt(
     let receiver_balance =
         asset_info.query_balance(&deps.querier, env.contract.address.to_string())?;
     let swap_amount = receiver_balance.checked_sub(prev_balance)?;
+    if swap_amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
     // Take care of 2 cases:
     //   - `accounts_contract` should receive the operation result
     //   - `vault` contract should receive the operation result
@@ -132,7 +135,11 @@ pub fn execute_swap_operation(
                 amount,
             };
 
-            let offer_addr = offer_asset_info.to_string();
+            let offer_addr = match offer_asset_info {
+                AssetInfoBase::Native(denom) => denom.to_string(),
+                AssetInfoBase::Cw20(addr) => addr.to_string(),
+                _ => return Err(ContractError::InvalidInputs {}),
+            };
             let token1_denom = match pair_info.token1_denom {
                 Denom::Native(denom) => denom,
                 Denom::Cw20(addr) => addr.to_string(),
@@ -219,26 +226,15 @@ pub fn execute_swap_operation(
             }],
             msg: binary_msg,
         })],
-        AssetInfo::Cw20(ref contract_addr) => vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                funds: vec![],
-                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: pair.contract_address.to_string(),
-                    amount: offer_asset.amount,
-                    expires: None,
-                })?,
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                funds: vec![],
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: pair.contract_address.to_string(),
-                    amount: offer_asset.amount,
-                    msg: binary_msg,
-                })?,
-            }),
-        ],
+        AssetInfo::Cw20(ref contract_addr) => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            funds: vec![],
+            msg: to_binary(&Cw20ExecuteMsg::Send {
+                contract: pair.contract_address.to_string(),
+                amount: offer_asset.amount,
+                msg: binary_msg,
+            })?,
+        })],
         _ => vec![],
     };
 

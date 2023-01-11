@@ -3,12 +3,18 @@ use angel_core::responses::accounts::*;
 use angel_core::structs::EndowmentBalanceResponse;
 use angel_core::utils::vault_endowment_balance;
 use cosmwasm_std::{Deps, Order, StdResult};
+use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
+        version: format!(
+            "{}-{}",
+            get_contract_version(deps.storage)?.contract,
+            get_contract_version(deps.storage)?.version
+        ),
         registrar_contract: config.registrar_contract.to_string(),
         next_account_id: config.next_account_id,
         max_general_category_id: config.max_general_category_id,
@@ -84,6 +90,7 @@ pub fn query_endowment_by_proposal_link(
         kyc_donors_only,
         pending_redemptions,
         proposal_link,
+        referral_id,
     } = endowments[0].clone();
 
     Ok(EndowmentDetailsResponse {
@@ -104,6 +111,7 @@ pub fn query_endowment_by_proposal_link(
         kyc_donors_only,
         pending_redemptions,
         proposal_link,
+        referral_id,
     })
 }
 
@@ -128,6 +136,7 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         withdraw_approved: endowment.withdraw_approved,
         pending_redemptions: endowment.pending_redemptions,
         proposal_link: endowment.proposal_link,
+        referral_id: endowment.referral_id,
     })
 }
 

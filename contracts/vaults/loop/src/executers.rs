@@ -5,7 +5,7 @@ use cosmwasm_std::{
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase as CwAssetInfoBase;
-use terraswap::asset::{Asset, AssetInfo, PairInfo};
+use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
@@ -20,21 +20,60 @@ use terraswap::querier::query_pair_info_from_pair;
 
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
+// Initial VT(vault token) mint amount
+const INIT_VT_MINT_AMOUNT: u128 = 1000000; // 1 VT
+
+// Number of blocks until pending owner update is valid
+pub const PENDING_OWNER_DEADLINE: u64 = 42069;
+
 /// Contract entry: **UpdateOwner**
 pub fn update_owner(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     new_owner: String,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    // only the owner/admin of the contract can update their address in the configs
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+    // 2-step process of updating `config.owner`
+    //
+    // 1. Current `config.owner` suggests `new_owner` address
+    //    - At this moment, the `pending_owner` is set with `new_owner` address.
+    //    - Also, the `pending_owner_deadline` is set as current block height + constant DEADLINE height
+    //
+    // 2. The `pending_owner`(new_owner) completes the process & becomes the `config.owner`,
+    //    OR the settings are unset for future process.
+    //    - `pending_owner` address calls this entry(update_owner)
+    //    - If the `pending_owner_deadline` is NOT reached at the moment of execution,
+    //         the `pending_owner` becomes `config.owner`.
+    //      If not, the `config.owner` remains unchanged.
+    //    - All settings(`pending_owner` & `pending_owner_deadline`) are unset for future.
+
+    match (config.pending_owner, config.pending_owner_deadline) {
+        (None, None) => {
+            if info.sender != config.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            let new_owner = deps.api.addr_validate(&new_owner)?;
+            config.pending_owner = Some(new_owner);
+            config.pending_owner_deadline = Some(env.block.height + PENDING_OWNER_DEADLINE);
+        }
+        (Some(pending_owner), Some(deadline)) => {
+            if info.sender != pending_owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            if env.block.height <= deadline {
+                config.owner = pending_owner;
+            }
+            config.pending_owner = None;
+            config.pending_owner_deadline = None;
+        }
+        _ => {
+            return Err(ContractError::Std(StdError::generic_err(
+                "Invalid owner update settings",
+            )))
+        }
     }
-    let new_owner = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed args
-    config.owner = new_owner;
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -93,21 +132,6 @@ pub fn update_config(
         None => config.tax_collector,
     };
 
-    config.lp_staking_contract = match msg.lp_staking_contract {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.lp_staking_contract,
-    };
-
-    config.lp_pair_contract = match msg.lp_pair_contract {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.lp_pair_contract,
-    };
-
-    let pair_info: PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?;
-    config.lp_token = deps.api.addr_validate(&pair_info.liquidity_token)?;
-    config.lp_pair_token0 = pair_info.asset_infos[0].clone();
-    config.lp_pair_token1 = pair_info.asset_infos[1].clone();
     config.native_token = match msg.native_token {
         None => config.native_token,
         Some(CwAssetInfoBase::Native(denom)) => AssetInfo::NativeToken { denom },
@@ -127,6 +151,11 @@ pub fn update_config(
     config.native_to_lp1_route = match msg.native_to_lp1_route {
         Some(ops) => ops,
         None => config.native_to_lp1_route,
+    };
+
+    config.minimum_initial_deposit = match msg.minimum_initial_deposit {
+        Some(v) => v,
+        None => config.minimum_initial_deposit,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -256,6 +285,10 @@ pub fn restake_claim_reward(
     let reward_amount = reward_token_bal
         .checked_sub(reward_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    if reward_amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
 
     // Re-stake the `reward token`s for more yield
     // NOTE: This logic is similar to the `Deposit` entry logic, taking care of 2 cases.
@@ -691,16 +724,22 @@ pub fn reinvest_to_locked_receive(
     //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
     //   T = vault shares total (before mint)
     //   a = LP tokens added to Vault's balance
-    //   B = Vault's total LP Token balance
+    //   B = Vault's total LP Token balance (before deposit)
     //
-    //   s = (a * T) / B
+    //   s = (a * T) / B = a * (T / B)
     let vt_mint_amount = match state.total_shares.u128() {
-        0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-        _ => {
-            let increased_total_lp = state.total_lp_amount + lp_amount;
-            let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
-            lp_amount * vt_2_lp_rate
+        0 => {
+            if lp_amount < config.minimum_initial_deposit {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: format!(
+                        "Received {}, should be bigger than {}.",
+                        lp_amount, config.minimum_initial_deposit
+                    ),
+                }));
+            }
+            Uint128::from(INIT_VT_MINT_AMOUNT)
         }
+        _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
     };
     state.total_lp_amount += lp_amount;
     state.total_shares += vt_mint_amount;
@@ -913,16 +952,22 @@ pub fn stake_lp_token(
             //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
             //   T = vault shares total (before mint)
             //   a = LP tokens added to Vault's balance
-            //   B = Vault's total LP Token balance
+            //   B = Vault's total LP Token balance (before deposit)
             //
-            //   s = (a * T) / B
+            //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-                _ => {
-                    let increased_total_lp = state.total_lp_amount + lp_amount;
-                    let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
-                    lp_amount * vt_2_lp_rate
+                0 => {
+                    if lp_amount < config.minimum_initial_deposit {
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: format!(
+                                "Received {}, should be bigger than {}.",
+                                lp_amount, config.minimum_initial_deposit
+                            ),
+                        }));
+                    }
+                    Uint128::from(INIT_VT_MINT_AMOUNT)
                 }
+                _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
             state.total_shares += vt_mint_amount;
@@ -949,16 +994,22 @@ pub fn stake_lp_token(
             //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
             //   T = vault shares total (before mint)
             //   a = LP tokens added to Vault's balance
-            //   B = Vault's total LP Token balance
+            //   B = Vault's total LP Token balance (before deposit)
             //
-            //   s = (a * T) / B
+            //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-                _ => {
-                    let increased_total_lp = state.total_lp_amount + lp_amount;
-                    let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
-                    lp_amount * vt_2_lp_rate
+                0 => {
+                    if lp_amount < config.minimum_initial_deposit {
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: format!(
+                                "Received {}, should be bigger than {}.",
+                                lp_amount, config.minimum_initial_deposit
+                            ),
+                        }));
+                    }
+                    Uint128::from(INIT_VT_MINT_AMOUNT)
                 }
+                _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
             state.total_shares += vt_mint_amount;
@@ -1142,28 +1193,16 @@ pub fn remove_liquidity(
         .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
 
     // Prepare the "remove_liquidity" messages
-    let withdraw_liquidity_msgs = vec![
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.lp_factory_contract.to_string(),
-                amount: lp_token_amount,
-                expires: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        }),
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                contract: config.lp_pair_contract.to_string(),
-                amount: lp_token_amount,
-                msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
-            })
-            .unwrap(),
-            funds: vec![],
-        }),
-    ];
+    let withdraw_liquidity_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.lp_token.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.lp_pair_contract.to_string(),
+            amount: lp_token_amount,
+            msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
 
     // Convert the returning token pairs to the `native_token`
     // & send back to `accounts_contract`.
@@ -1256,16 +1295,6 @@ pub fn send_asset(
         },
         AssetInfo::Token { contract_addr } => match id {
             Some(id) => {
-                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: contract_addr.clone(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                        spender: beneficiary.to_string(),
-                        amount: send_amount,
-                        expires: None,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }));
                 msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr,
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
@@ -1401,34 +1430,22 @@ fn prepare_swap_router_swap_msgs(
             .unwrap(),
             funds: coins(swap_amount.u128(), denom.to_string()),
         })],
-        AssetInfo::Token { ref contract_addr } => vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: swap_router.to_string(),
-                    amount: swap_amount,
-                    expires: None,
+        AssetInfo::Token { ref contract_addr } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                contract: swap_router,
+                amount: swap_amount,
+                msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                    operations,
+                    minimum_receive: None,
+                    endowment_id: 1,                // Placeholder value
+                    acct_type: AccountType::Locked, // Placeholder value
                 })
                 .unwrap(),
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: swap_router,
-                    amount: swap_amount,
-                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
-                        operations,
-                        minimum_receive: None,
-                        endowment_id: 1,                // Placeholder value
-                        acct_type: AccountType::Locked, // Placeholder value
-                    })
-                    .unwrap(),
-                })
-                .unwrap(),
-                funds: vec![],
-            }),
-        ],
+            })
+            .unwrap(),
+            funds: vec![],
+        })],
     };
     Ok(msgs)
 }
@@ -1485,18 +1502,6 @@ fn prepare_loop_pair_swap_msg(
     input_amount: Uint128,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs: Vec<CosmosMsg> = vec![];
-    if let AssetInfo::Token { contract_addr } = input_asset_info {
-        msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract.to_string(),
-                amount: input_amount,
-                expires: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        }));
-    }
 
     match input_asset_info {
         AssetInfo::NativeToken { denom } => {

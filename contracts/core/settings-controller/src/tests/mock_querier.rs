@@ -211,7 +211,7 @@ impl WasmMockQuerier {
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
-                        settings_controller: Some("settings-controller".to_string()),
+                        settings_controller: "settings-controller".to_string(),
                     })
                     .unwrap(),
                 )),
@@ -235,6 +235,7 @@ impl WasmMockQuerier {
                             kyc_donors_only: false,
                             pending_redemptions: 0,
                             proposal_link: None,
+                            referral_id: None,
                         })
                         .unwrap(),
                     )),
@@ -257,6 +258,7 @@ impl WasmMockQuerier {
                             kyc_donors_only: false,
                             pending_redemptions: 0,
                             proposal_link: None,
+                            referral_id: None,
                         })
                         .unwrap(),
                     )),

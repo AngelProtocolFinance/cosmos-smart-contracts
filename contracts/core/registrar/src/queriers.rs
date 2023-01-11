@@ -7,7 +7,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        version: get_contract_version(deps.storage)?.contract,
+        version: format!(
+            "{}-{}",
+            get_contract_version(deps.storage)?.contract,
+            get_contract_version(deps.storage)?.version
+        ),
         accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
         rebalance: config.rebalance,
@@ -55,7 +59,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
         applications_review: config.applications_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
-        settings_controller: config.settings_controller.map(|addr| addr.to_string()),
+        settings_controller: config.settings_controller.to_string(),
     })
 }
 

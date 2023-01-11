@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128,
+    entry_point, from_binary, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Response, StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -30,6 +30,20 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // Some validations
+    if msg.ap_tax_rate > Decimal::one() {
+        return Err(ContractError::Std(StdError::generic_err(format!(
+            "Invalid ap_tax_rate: {}",
+            msg.ap_tax_rate
+        ))));
+    }
+    if msg.interest_distribution > Decimal::one() {
+        return Err(ContractError::Std(StdError::generic_err(format!(
+            "Invalid interest_distribution rate: {}",
+            msg.interest_distribution
+        ))));
+    }
 
     // Store the configuration
     let sibling_vault = match msg.sibling_vault {
@@ -72,6 +86,10 @@ pub fn instantiate(
         lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
         lp_pair_contract: pair_contract,
+
+        minimum_initial_deposit: msg.minimum_initial_deposit,
+        pending_owner: None,
+        pending_owner_deadline: None,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -113,7 +131,9 @@ pub fn execute(
         ExecuteMsg::ReceiveIbcResponse(resp) => {
             executers::execute_receive_ibc_response(deps, env, info, resp)
         }
-        ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateOwner { new_owner } => {
+            executers::update_owner(deps, env, info, new_owner)
+        }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit { endowment_id } => {

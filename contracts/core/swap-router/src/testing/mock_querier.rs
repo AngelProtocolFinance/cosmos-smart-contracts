@@ -1,6 +1,6 @@
 use angel_core::messages::dexs::InfoResponse;
-use angel_core::responses::registrar::VaultDetailResponse;
-use angel_core::structs::{AccountType, VaultType};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::structs::{AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -10,7 +10,6 @@ use cw20::{BalanceResponse, Denom};
 use cw_asset::AssetInfo;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::marker::PhantomData;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,16 +36,11 @@ pub fn mock_dependencies(
     contract_balance: &[Coin],
 ) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let contract_addr = MOCK_CONTRACT_ADDR;
-    let mut custom_querier: WasmMockQuerier = WasmMockQuerier::new(
+    let custom_querier: WasmMockQuerier = WasmMockQuerier::new(
         MockQuerier::new(&[(&contract_addr, contract_balance)]),
         MockApi::default(),
     );
-    let contract_balance: Vec<(&String, &Uint128)> = contract_balance
-        .into_iter()
-        .map(|x| (&(x.denom), &(x.amount)))
-        .collect();
-    custom_querier.token_querier =
-        TokenQuerier::new(&[(&contract_addr.to_string(), &contract_balance)]);
+
     OwnedDeps {
         storage: MockStorage::default(),
         api: MockApi::default(),
@@ -57,109 +51,6 @@ pub fn mock_dependencies(
 
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
-    token_querier: TokenQuerier,
-    oracle_price_querier: OraclePriceQuerier,
-    oracle_prices_querier: OraclePricesQuerier,
-}
-
-#[derive(Clone, Default)]
-pub struct TokenQuerier {
-    #[allow(dead_code)]
-    // this allows to iterate over all pairs that match the first string
-    balances: HashMap<String, HashMap<String, Uint128>>,
-}
-
-impl TokenQuerier {
-    pub fn new(balances: &[(&String, &[(&String, &Uint128)])]) -> Self {
-        TokenQuerier {
-            balances: balances_to_map(balances),
-        }
-    }
-}
-
-pub(crate) fn balances_to_map(
-    balances: &[(&String, &[(&String, &Uint128)])],
-) -> HashMap<String, HashMap<String, Uint128>> {
-    let mut balances_map: HashMap<String, HashMap<String, Uint128>> = HashMap::new();
-    for (contract_addr, balances) in balances.iter() {
-        let mut contract_balances_map: HashMap<String, Uint128> = HashMap::new();
-        for (addr, balance) in balances.iter() {
-            contract_balances_map.insert(addr.to_string(), **balance);
-        }
-
-        balances_map.insert(contract_addr.to_string(), contract_balances_map);
-    }
-    balances_map
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePriceQuerier {
-    #[allow(dead_code)]
-    // this lets us iterate over all pairs that match the first string
-    oracle_price: HashMap<(String, String), (Decimal, u64, u64)>,
-}
-
-impl OraclePriceQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_price: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePriceQuerier {
-            oracle_price: oracle_price_to_map(oracle_price),
-        }
-    }
-}
-#[allow(dead_code)]
-pub(crate) fn oracle_price_to_map(
-    oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-) -> HashMap<(String, String), (Decimal, u64, u64)> {
-    let mut oracle_price_map: HashMap<(String, String), (Decimal, u64, u64)> = HashMap::new();
-    for (base_quote, oracle_price) in oracle_price.iter() {
-        oracle_price_map.insert((*base_quote).clone(), **oracle_price);
-    }
-
-    oracle_price_map
-}
-
-#[allow(dead_code)]
-#[derive(Clone, Default)]
-pub struct PriceStruct {
-    base: String,
-    quote: String,
-    rate: Decimal,
-    last_updated_base: u64,
-    last_updated_quote: u64,
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePricesQuerier {
-    #[allow(dead_code)]
-    // this lets us iterate over all pairs
-    oracle_prices: Vec<PriceStruct>,
-}
-
-impl OraclePricesQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_prices: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePricesQuerier {
-            oracle_prices: oracle_prices_to_map(oracle_prices),
-        }
-    }
-}
-
-pub(crate) fn oracle_prices_to_map(
-    oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-) -> Vec<PriceStruct> {
-    let mut oracle_prices_map: Vec<PriceStruct> = vec![];
-    for (base_quote, oracle_prices) in oracle_prices.iter() {
-        oracle_prices_map.push(PriceStruct {
-            base: base_quote.0.clone(),
-            quote: base_quote.1.clone(),
-            rate: oracle_prices.0,
-            last_updated_base: oracle_prices.1,
-            last_updated_quote: oracle_prices.2,
-        });
-    }
-
-    oracle_prices_map
 }
 
 impl Querier for WasmMockQuerier {
@@ -220,7 +111,38 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Uint128::from(1000000_u128)).unwrap(),
                 )),
-                QueryMsg::Config {} => unimplemented!(),
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&ConfigResponse {
+                        owner: "registrar-owner".to_string(),
+                        version: "v1.0".to_string(),
+                        accounts_contract: None,
+                        treasury: "treasury".to_string(),
+                        rebalance: RebalanceDetails::default(),
+                        index_fund: None,
+                        split_to_liquid: SplitDetails::default(),
+                        halo_token: None,
+                        gov_contract: None,
+                        charity_shares_contract: None,
+                        cw3_code: None,
+                        cw4_code: None,
+                        accepted_tokens: AcceptedTokens::default(),
+                        applications_review: "applications_review".to_string(),
+                        swaps_router: None,
+                        donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
+                        collector_addr: "collector-addr".to_string(),
+                        collector_share: Decimal::percent(50),
+                        swap_factory: Some("swap-factory".to_string()),
+                        settings_controller: "settings-controller".to_string(),
+                        subdao_gov_code: None,
+                        subdao_cw20_token_code: None,
+                        subdao_bonding_token_code: None,
+                        subdao_cw900_code: None,
+                        subdao_distributor_code: None,
+                        donation_match_code: None,
+                        halo_token_lp_contract: None,
+                    })
+                    .unwrap(),
+                )),
                 QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
                         vault: angel_core::structs::YieldVault {
@@ -244,29 +166,6 @@ impl WasmMockQuerier {
 
 impl WasmMockQuerier {
     pub fn new<A: Api>(base: MockQuerier<Empty>, _api: A) -> Self {
-        WasmMockQuerier {
-            base,
-            token_querier: TokenQuerier::default(),
-            oracle_price_querier: OraclePriceQuerier::default(),
-            oracle_prices_querier: OraclePricesQuerier::default(),
-        }
-    }
-
-    //  Configure oracle price
-    #[allow(dead_code)]
-    pub fn with_oracle_price(
-        &mut self,
-        oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_price_querier = OraclePriceQuerier::new(oracle_price);
-    }
-
-    //  Configure oracle prices
-    #[allow(dead_code)]
-    pub fn with_oracle_prices(
-        &mut self,
-        oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_prices_querier = OraclePricesQuerier::new(oracle_prices);
+        WasmMockQuerier { base }
     }
 }

@@ -39,6 +39,7 @@ pub struct Endowment {
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
     pub proposal_link: Option<u64>, // link back the CW3 Proposal that created an endowment
+    pub referral_id: Option<u32>, // at time of creation, the Endowment ID that referred them can be noted, fixed value
 }
 
 impl Endowment {

@@ -10,11 +10,9 @@ use serde::{Deserialize, Serialize};
 
 pub struct MigrateMsg {
     // EndowmentTypeFees
-    pub endowtype_fees: MigrateEndowTypeFees,
-    // collector_addr
-    pub collector_addr: Option<String>,
-    // settings_controller contract address
-    pub settings_controller_contract: Option<String>,
+    pub fee_charity: Decimal,
+    pub fee_normal: Decimal,
+    pub settings_controller_contract: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -29,12 +27,6 @@ pub struct MigrateEndowment {
     pub image: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateEndowTypeFees {
-    pub endowtype_charity: Option<Decimal>,
-    pub endowtype_normal: Option<Decimal>,
-}
-
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
     pub treasury: String,
@@ -43,6 +35,7 @@ pub struct InstantiateMsg {
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<String>,
+    pub settings_controller: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -104,8 +97,6 @@ pub struct UpdateConfigMsg {
     pub collector_addr: Option<String>,
     pub swap_factory: Option<String>,
     pub fundraising_contract: Option<String>,
-    pub accepted_tokens_native: Option<Vec<String>>,
-    pub accepted_tokens_cw20: Option<Vec<String>>,
     pub applications_review: Option<String>,
     pub swaps_router: Option<String>,
     pub settings_controller: Option<String>,

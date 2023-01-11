@@ -2,8 +2,9 @@ use crate::msg::{ExecuteMsg, InstantiateMsg};
 use angel_core::messages::accounts::CreateEndowmentMsg;
 use angel_core::messages::cw3_multisig::QueryMsg;
 use angel_core::structs::{Categories, EndowmentType, SplitDetails};
-use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
-use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
+use cosmwasm_std::{
+    coin, coins, Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Decimal, Empty, Timestamp,
+};
 use cw2::{query_contract_info, ContractVersion};
 use cw3::{
     ProposalListResponse, ProposalResponse, Status, Vote, VoteInfo, VoteListResponse, VoteResponse,
@@ -219,6 +220,7 @@ fn new_application_proposal() -> ExecuteMsg {
         parent: None,
         split_to_liquid: Some(SplitDetails::default()),
         ignore_user_splits: false,
+        referral_id: None,
     };
 
     ExecuteMsg::ProposeApplication {

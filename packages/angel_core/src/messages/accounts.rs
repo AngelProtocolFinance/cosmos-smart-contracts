@@ -82,14 +82,13 @@ pub enum ExecuteMsg {
     DistributeToBeneficiary {
         id: u32,
     },
-    // update owner addrInstantiateMsg
-    UpdateOwner {
-        new_owner: String,
-    },
-    // update config
     // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
-    UpdateConfig(UpdateConfigMsg),
-
+    UpdateConfig {
+        new_owner: Option<String>,
+        new_registrar: Option<String>,
+        max_general_category_id: Option<u8>,
+        ibc_controller: Option<String>,
+    },
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
@@ -114,14 +113,6 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         asset: Asset,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateConfigMsg {
-    pub new_registrar: String,
-    pub max_general_category_id: u8,
-    pub ibc_controller: Option<String>,
-    pub settings_controller: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -153,6 +144,7 @@ pub struct CreateEndowmentMsg {
     pub parent: Option<u64>,
     pub split_to_liquid: Option<SplitDetails>,
     pub ignore_user_splits: bool,
+    pub referral_id: Option<u32>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -183,7 +175,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
-
     pub donation_match_active: Option<bool>,
     pub beneficiaries_allowlist: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub contributors_allowlist: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)

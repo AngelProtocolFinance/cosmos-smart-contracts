@@ -128,6 +128,7 @@ pub fn create_endowment(
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
+                referral_id: msg.referral_id,
             }),
         },
     )?;
@@ -185,11 +186,7 @@ pub fn create_endowment(
 
     // Create the Endowment settings in "settings_controller" contract
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: registrar_config
-            .settings_controller
-            .as_ref()
-            .unwrap()
-            .to_string(),
+        contract_addr: registrar_config.settings_controller.clone(),
         msg: to_binary(
             &angel_core::messages::settings_controller::ExecuteMsg::CreateEndowmentSettings(
                 CreateEndowSettingsMsg {
@@ -224,17 +221,8 @@ pub fn create_endowment(
         registrar_config.subdao_gov_code,
     ) {
         (Some(dao_setup), Some(_token_code), Some(_gov_code)) => {
-            if registrar_config.settings_controller.is_none() {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: format!("Settings_controller contract not exist yet."),
-                }));
-            }
             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: registrar_config
-                    .settings_controller
-                    .as_ref()
-                    .unwrap()
-                    .to_string(),
+                contract_addr: registrar_config.settings_controller,
                 msg: to_binary(
                     &angel_core::messages::settings_controller::ExecuteMsg::SetupDao {
                         endowment_id: config.next_account_id,
@@ -275,30 +263,6 @@ pub fn update_owner(
     config.owner = deps.api.addr_validate(&new_owner)?;
     CONFIG.save(deps.storage, &config)?;
 
-    Ok(Response::default())
-}
-
-pub fn update_config(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateConfigMsg,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    // only the accounts owner can update the config
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.registrar_contract = deps.api.addr_validate(&msg.new_registrar)?;
-    config.max_general_category_id = msg.max_general_category_id;
-    config.ibc_controller = match msg.ibc_controller {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.ibc_controller,
-    };
-
-    CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
 }
 
@@ -437,6 +401,45 @@ pub fn update_endowment_status(
         .add_attribute("action", "update_endowment_status"))
 }
 
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_owner: Option<String>,
+    new_registrar: Option<String>,
+    max_general_category_id: Option<u8>,
+    ibc_controller: Option<String>,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the accounts owner can update the config
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the config
+    config.owner = match new_owner {
+        Some(new_owner) => deps.api.addr_validate(&new_owner)?,
+        None => config.owner,
+    };
+    config.registrar_contract = match new_registrar {
+        Some(registrar) => deps.api.addr_validate(&registrar)?,
+        None => config.registrar_contract,
+    };
+    config.max_general_category_id = match max_general_category_id {
+        Some(id) => id,
+        None => config.max_general_category_id,
+    };
+    config.ibc_controller = match ibc_controller {
+        Some(ibc_controller) => deps.api.addr_validate(&ibc_controller)?,
+        None => config.ibc_controller,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
+
 pub fn update_endowment_settings(
     deps: DepsMut,
     _env: Env,
@@ -448,15 +451,13 @@ pub fn update_endowment_settings(
     let registrar_config: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
-    let settings_controller = registrar_config
-        .settings_controller
-        .expect("SettingsController contract not exist yet.");
+    let settings_controller: String = registrar_config.settings_controller;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        settings_controller.to_string(),
+        settings_controller.clone(),
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
     let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
-        settings_controller.to_string(),
+        settings_controller.clone(),
         &angel_core::messages::settings_controller::QueryMsg::EndowmentPermissions {
             id: msg.id,
             setting_updater: info.sender.clone(),
@@ -1126,9 +1127,7 @@ pub fn deposit(
     )?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config
-            .settings_controller
-            .expect("Settings-controller contract not exist yet."),
+        registrar_config.settings_controller,
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
@@ -1630,9 +1629,7 @@ pub fn withdraw(
     )?;
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config
-            .settings_controller
-            .expect("Settings-controller contract not exist yet."),
+        registrar_config.settings_controller,
         &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
 
@@ -1688,6 +1685,7 @@ pub fn withdraw(
                 )));
             }
         }
+        (EndowmentType::Impact, _) => todo!(),
     }
 
     let registrar_config: RegistrarConfigResponse =
@@ -1701,7 +1699,8 @@ pub fn withdraw(
         msg: to_binary(&RegistrarQuerier::Fee {
             name: match endowment.endow_type {
                 EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
-                _ => "accounts_withdraw_normal".to_string(),
+                EndowmentType::Impact => "accounts_withdraw_impact".to_string(),
+                EndowmentType::Normal => "accounts_withdraw_normal".to_string(),
             },
         })?,
     }))?;

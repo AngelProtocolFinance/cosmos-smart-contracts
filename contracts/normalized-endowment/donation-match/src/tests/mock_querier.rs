@@ -61,8 +61,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    oracle_price_querier: OraclePriceQuerier,
-    oracle_prices_querier: OraclePricesQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -92,76 +90,6 @@ pub(crate) fn balances_to_map(
         balances_map.insert(contract_addr.to_string(), contract_balances_map);
     }
     balances_map
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePriceQuerier {
-    #[allow(dead_code)]
-    // this lets us iterate over all pairs that match the first string
-    oracle_price: HashMap<(String, String), (Decimal, u64, u64)>,
-}
-
-impl OraclePriceQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_price: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePriceQuerier {
-            oracle_price: oracle_price_to_map(oracle_price),
-        }
-    }
-}
-#[allow(dead_code)]
-pub(crate) fn oracle_price_to_map(
-    oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-) -> HashMap<(String, String), (Decimal, u64, u64)> {
-    let mut oracle_price_map: HashMap<(String, String), (Decimal, u64, u64)> = HashMap::new();
-    for (base_quote, oracle_price) in oracle_price.iter() {
-        oracle_price_map.insert((*base_quote).clone(), **oracle_price);
-    }
-
-    oracle_price_map
-}
-
-#[allow(dead_code)]
-#[derive(Clone, Default)]
-pub struct PriceStruct {
-    base: String,
-    quote: String,
-    rate: Decimal,
-    last_updated_base: u64,
-    last_updated_quote: u64,
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePricesQuerier {
-    #[allow(dead_code)]
-    // this lets us iterate over all pairs
-    oracle_prices: Vec<PriceStruct>,
-}
-
-impl OraclePricesQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_prices: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePricesQuerier {
-            oracle_prices: oracle_prices_to_map(oracle_prices),
-        }
-    }
-}
-
-pub(crate) fn oracle_prices_to_map(
-    oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-) -> Vec<PriceStruct> {
-    let mut oracle_prices_map: Vec<PriceStruct> = vec![];
-    for (base_quote, oracle_prices) in oracle_prices.iter() {
-        oracle_prices_map.push(PriceStruct {
-            base: base_quote.0.clone(),
-            quote: base_quote.1.clone(),
-            rate: oracle_prices.0,
-            last_updated_base: oracle_prices.1,
-            last_updated_quote: oracle_prices.2,
-        });
-    }
-
-    oracle_prices_map
 }
 
 impl Querier for WasmMockQuerier {
@@ -206,6 +134,7 @@ impl WasmMockQuerier {
                         tier: None,
                         image: None,
                         logo: None,
+                        referral_id: None,
                     }).unwrap()
                 )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(
@@ -227,6 +156,7 @@ impl WasmMockQuerier {
                         "accounts-contract" => SystemResult::Ok(ContractResult::Ok(
                             to_binary(&angel_core::responses::accounts::ConfigResponse {
                                 owner: "owner".to_string(),
+                                version: "accounts-v2.0.0".to_string(),
                                 registrar_contract: "registrar-contract".to_string(),
                                 next_account_id: 2,
                                 max_general_category_id: 1,
@@ -265,7 +195,7 @@ impl WasmMockQuerier {
                                     cw20: vec![],
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
-                                settings_controller: Some("settings-controller".to_string()),
+                                settings_controller: "settings-controller".to_string(),
                             })
                             .unwrap()
                         )),
@@ -320,9 +250,6 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-
-            oracle_price_querier: OraclePriceQuerier::default(),
-            oracle_prices_querier: OraclePricesQuerier::default(),
         }
     }
 
@@ -331,23 +258,6 @@ impl WasmMockQuerier {
         self.token_querier = TokenQuerier::new(balances);
     }
 
-    //  Configure oracle price
-    #[allow(dead_code)]
-    pub fn with_oracle_price(
-        &mut self,
-        oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_price_querier = OraclePriceQuerier::new(oracle_price);
-    }
-
-    //  Configure oracle prices
-    #[allow(dead_code)]
-    pub fn with_oracle_prices(
-        &mut self,
-        oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_prices_querier = OraclePricesQuerier::new(oracle_prices);
-    }
     pub fn query_all_balances(&mut self, address: String) -> StdResult<Vec<Coin>> {
         let mut res = vec![];
         for contract_addr in self.token_querier.balances.keys() {

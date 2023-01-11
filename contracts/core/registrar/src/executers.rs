@@ -162,7 +162,7 @@ pub fn update_config(
         None => config.halo_token_lp_contract,
     };
     config.settings_controller = match msg.settings_controller {
-        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        Some(addr) => deps.api.addr_validate(&addr).unwrap(),
         None => config.settings_controller,
     };
 

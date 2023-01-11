@@ -30,11 +30,13 @@ fn proper_initialization() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
     assert_eq!(0, res.messages.len());
 
+    // Check the result
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(None, config_response.accounts_contract);
@@ -60,6 +62,7 @@ fn update_owner() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -97,9 +100,54 @@ fn update_config() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Only config.owner can update the config
+    let info = mock_info("anyone", &coins(1000, "earth"));
+    let update_config_message = UpdateConfigMsg {
+        accounts_contract: Some("accounts_contract_addr".to_string()),
+        index_fund_contract: Some(index_fund_contract.clone()),
+        approved_charities: None,
+        treasury: Some(ap_team.clone()),
+        rebalance: Some(RebalanceDetails {
+            rebalance_liquid_invested_profits: true,
+            locked_interests_to_liquid: true,
+            interest_distribution: Decimal::one(),
+            locked_principle_to_liquid: true,
+            principle_distribution: Decimal::one(),
+        }),
+        split_max: Some(Decimal::one()),
+        split_min: Some(Decimal::zero()),
+        split_default: Some(Decimal::percent(30)),
+        charity_shares_contract: None,
+        gov_contract: None,
+        halo_token: None,
+        cw3_code: Some(MOCK_CW3_CODE_ID),
+        cw4_code: Some(MOCK_CW4_CODE_ID),
+        applications_review: Some(REVIEW_TEAM.to_string()),
+        swaps_router: Some("swaps_router_addr".to_string()),
+        fundraising_contract: None,
+        accepted_tokens: None,
+        halo_token_lp_contract: None,
+        donation_match_charites_contract: None,
+        collector_addr: None,
+        collector_share: None,
+        swap_factory: None,
+        subdao_gov_code: None,
+        subdao_cw20_token_code: None,
+        subdao_bonding_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
+        settings_controller: Some("settings-controller".to_string()),
+        tax_rate: Some(Decimal::from_ratio(20_u128, 100_u128)),
+    };
+    let msg = ExecuteMsg::UpdateConfig(update_config_message);
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_message = UpdateConfigMsg {
@@ -135,8 +183,6 @@ fn update_config() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
-        accepted_tokens_cw20: None,
-        accepted_tokens_native: None,
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
         settings_controller: Some("settings-controller".to_string()),
@@ -174,10 +220,26 @@ fn test_add_update_and_remove_vault() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
     assert_eq!(0, res.messages.len());
+
+    // Only owner can add/remove the vault
+    let info = mock_info("anyone", &coins(1000, "earth"));
+    let add_vault_message = VaultAddMsg {
+        acct_type: AccountType::Locked,
+        vault_type: VaultType::Native,
+        network: None,
+        vault_addr: vault_addr.clone(),
+        input_denom: String::from("input_denom"),
+        yield_token: String::from("yield_token"),
+        restricted_from: vec![],
+    };
+    let msg = ExecuteMsg::VaultAdd(add_vault_message);
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
     // add vault
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
@@ -206,7 +268,31 @@ fn test_add_update_and_remove_vault() {
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
     assert_eq!(true, vault_detail_response.vault.approved);
 
+    // Cannot add vaults twice with same address
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let add_vault_message = VaultAddMsg {
+        acct_type: AccountType::Locked,
+        vault_type: VaultType::Native,
+        network: None,
+        vault_addr: vault_addr.clone(),
+        input_denom: String::from("input_denom"),
+        yield_token: String::from("yield_token"),
+        restricted_from: vec![],
+    };
+    let msg = ExecuteMsg::VaultAdd(add_vault_message);
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::VaultAlreadyExists {});
+
     // update vault status
+    let info = mock_info("anyone", &coins(1000, "earth"));
+    let msg = ExecuteMsg::VaultUpdate {
+        vault_addr: String::from("terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg"),
+        approved: false,
+        restricted_from: vec![],
+    };
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::VaultUpdate {
         vault_addr: String::from("terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg"),
@@ -229,6 +315,13 @@ fn test_add_update_and_remove_vault() {
     assert_eq!(false, vault_detail_response.vault.approved);
 
     // remove vault
+    let info = mock_info("anyone", &coins(1000, "earth"));
+    let msg = ExecuteMsg::VaultRemove {
+        vault_addr: vault_addr.clone(),
+    };
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::VaultRemove {
         vault_addr: vault_addr.clone(),
@@ -269,6 +362,7 @@ fn test_add_update_and_remove_accepted_tokens() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -311,8 +405,6 @@ fn test_add_update_and_remove_accepted_tokens() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
-        accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
-        accepted_tokens_native: None,
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
         settings_controller: Some("settings-controller".to_string()),
@@ -359,6 +451,7 @@ fn test_add_update_and_remove_network_infos() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -373,6 +466,21 @@ fn test_add_update_and_remove_network_infos() {
         },
     )
     .unwrap_err();
+
+    // Only owner can update the network info
+    let info = mock_info("anyone", &coins(1000, "earth"));
+    let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        network_info: mock_network_info.clone(),
+        action: "blahblah".to_string(),
+    };
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        add_network_info_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
     // Add new network_info
 
@@ -434,4 +542,84 @@ fn test_add_update_and_remove_network_infos() {
         },
     )
     .unwrap_err();
+}
+
+#[test]
+fn test_update_fees() {
+    let mut deps = mock_dependencies();
+    let ap_team = AP_TEAM.to_string();
+    let instantiate_msg = InstantiateMsg {
+        treasury: ap_team.clone(),
+        tax_rate: Decimal::percent(20),
+        rebalance: None,
+        split_to_liquid: None,
+        accepted_tokens: Some(AcceptedTokens {
+            native: vec![
+                "ujuno".to_string(),
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ],
+            cw20: vec![],
+        }),
+        swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    // Only the config.owner can update the fees
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateFees {
+            fees: vec![("new_fees_1".to_string(), Decimal::default())],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // The rates should be <= 100%
+    let info = mock_info(ap_team.as_str(), &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateFees {
+            fees: vec![(
+                "new_fees_1".to_string(),
+                Decimal::from_ratio(101_u128, 100_u128),
+            )],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Suceed to update the fees
+    let info = mock_info(ap_team.as_str(), &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateFees {
+            fees: vec![(
+                "new_fees_1".to_string(),
+                Decimal::from_ratio(20_u128, 100_u128),
+            )],
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 0);
+
+    // Check the result
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Fee {
+            name: "new_fees_1".to_string(),
+        },
+    )
+    .unwrap();
+    let fee: Decimal = from_binary(&res).unwrap();
+    assert_eq!(fee, Decimal::from_ratio(20_u128, 100_u128));
 }
