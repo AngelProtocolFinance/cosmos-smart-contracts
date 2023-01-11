@@ -213,7 +213,7 @@ export async function testUpdateCw3Config(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  threshold: number,
+  threshold: string,
   max_voting_period: number
 ): Promise<void> {
   process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
@@ -232,6 +232,7 @@ export async function testUpdateCw3Config(
                 update_config: {
                   threshold: { absolute_percentage: { percentage: threshold } },
                   max_voting_period: { height: max_voting_period },
+                  require_execution: false,
                 },
               }),
             },
