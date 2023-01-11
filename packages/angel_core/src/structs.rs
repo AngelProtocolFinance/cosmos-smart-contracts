@@ -842,14 +842,6 @@ pub enum DonationMatch {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct TransactionRecord {
-    pub block: u64,
-    pub sender: Addr,
-    pub recipient: Option<Addr>,
-    pub assets: GenericBalance,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Categories {
     pub sdgs: Vec<u8>, // u8 maps one of the 17 UN SDG
