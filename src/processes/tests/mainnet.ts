@@ -139,12 +139,14 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  giftcards: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddMemberToC4Group(juno, apTeamAddr, cw3ReviewTeam, cw4GrpReviewTeam, "juno1h27pex3z3mm97gwfdhan8cfak8yzvtvprjlcz7");
   // await testCw3ExecutePoll(juno, apTeamAddr, cw3ApTeam, 2);
   // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
+  // await testQueryMultisigThreshold(juno, cw3ReviewTeam);
 
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
@@ -343,6 +345,7 @@ export async function testExecute(
   // await testQueryAccountsEndowmentList(juno, accounts, 1, 20);
   // await testQueryAccountsState(juno, accounts, 1);
   // await testQueryAccountsEndowment(juno, accounts, 1);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, accounts);

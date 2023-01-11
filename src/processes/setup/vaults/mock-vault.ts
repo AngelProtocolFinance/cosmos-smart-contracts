@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/helpers";
+import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/juno/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
 // -------------------------------------------------------------------------------------
@@ -41,8 +41,8 @@ export async function setupMockVaults(
     apTreasury: DirectSecp256k1HdWallet;
   },
   contracts: {
-  	registrar: string,
-  	cw3ApTeam: string,
+    registrar: string,
+    cw3ApTeam: string,
   },
   config: {
     harvest_to_liquid: string;

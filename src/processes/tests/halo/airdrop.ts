@@ -3,8 +3,8 @@ import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { SigningCosmWasmClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
-import { sendTransaction } from "../../../utils/helpers";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { sendTransaction } from "../../../utils/juno/helpers";
 import { Airdrop } from "./airdrop/airdrop";
 import { readFileSync } from 'fs';
 

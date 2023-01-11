@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
   networkInfo: {
-    url: "https://rpc.uni.juno.deuslabs.fi",
+    url: "https://rpc.uni.junonetwork.io",
     chainId: "uni-5",
     walletPrefix: "juno",
     nativeToken: "ujunox",
@@ -19,20 +19,25 @@ export const testnet = {
     charity3: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
     pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
+
+    junoIbcClient: "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno1dmry032p0khv2d5knrtf8q5hzcnv06f8ps24naw9hrpv699zw9xqad4jma",
-    accounts: "juno1ltu4ng2gnm5zs3gnmww89udr0kknd5hlds44lq48guem5xxf4nzsawa9sc",
-    indexFund: "juno1jxgswmw6kndcqtp545pt0wn4m2rqunf7mzaxncyguuc9nx2tycgqalxeg6",
-    cw4GrpApTeam: "juno1ptpsp2shhyqqesd52gwtj0lele46sl3wp3myvxa46zq3r0g596wsztqvur",
-    cw3ApTeam: "juno189gdk2aczgkx7p0cyll2whah5afazazhmaw4rmfhh7lda2twyrxseq76zw",
-    cw4GrpReviewTeam: "juno129g6ldqjnfpgzyxn3lm5yr67r2zl7e35upsrswejdds49q5s60dqnttzx9",
-    cw3ReviewTeam: "juno1dkt5kujyd876wf0xgv3sedsjh6nzlhtdyykaz2e6tmnamzwphryqvaayaj",
-    vaultLocked1: "juno1tta5j2tzsgnq2smnwh595alqn8jg6sxll6cym7wg2ufgyvhrnu7qef5sfw",
-    vaultLiquid1: "juno1qyh0g7jwgqnxl07h8cs8f5df7aujf5t9xdp4c3a3330qt2gxcnesq5yjrt",
-    vaultLocked2: "juno1ew6nzhzskpqqncd0rxlqzd98khgzcfjcy3964q42qm7r2dafuagqrvg634",
-    vaultLiquid2: "juno1n0llmlzjqsc60m42q36mzvelyz9dn7yprm0jpp0f457rt9t4km7sk7l483",
+    registrar: "juno1nsttv2lpv3kl4zteze99fs72mevmxcfutqvfza90e9243wy0a40qk87j0l",
+    accounts: "juno1xc6sahdstwyc3a9rrupvjj87xps8d396seutnh40578mdpygpenqjg04rd",
+    indexFund: "juno1cp4ddyn4wg0lh3gugacng5wk8kjsahxpgpd5m5jhqjfssfqasxzsjqtr8y",
+    cw4GrpApTeam: "juno1l6dstn6kyys6cg0fqn2k9dyxzetcxffkuwspe6t8qqqrjy9vs8usxu50ed",
+    cw3ApTeam: "juno17shnd06l8guaqw3ekq56x5u3z0n65qu2qfms6nvzh3mwxr2cr53smmj4yq",
+    cw4GrpReviewTeam: "juno168v32h347du4wc8y5gf6sljkhvktqvn85r2vywekzfwaq4e3sdlqscd5sd",
+    cw3ReviewTeam: "juno16p5mnk2r73yze7emyqw8w6p6cnf7qjlmqwc3lx6c36t9lj5fgmjst3cjnx",
+    swapRouter: "juno1kd7lvretrqldelqdvpj37kjpqpkwzlsynqevzkhtntq702kqwg6sssmfsr",
+    giftcards: "juno1q5q8fgw83fusujz7x339yq352tlxdk2f0q2a6qz72dl0r9lk5y7qwf6w3u",
+    vaultLocked1: "juno1jyxdcsrnurrelw0k8clz42zwhwszs2g832000u9872wvm6jv8clszkzhdg",
+    vaultLiquid1: "juno16ykya903fs6uz24he57v8v6nxmmfnn0d3ahd6d583ujj22ztv4tsqdr4w0",
+    vaultLocked2: "juno1gnh5vfrkxrm5pslgzcg4qq0qqfpy40xpl9ehkjqwnxfadcqhecxqlhrv92",
+    vaultLiquid2: "juno1talhj3797j6xyac49zy4ppwjp776jntqd7j03jwezdzxtrv46ufswxdnnz",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
@@ -65,15 +70,27 @@ export const testnet = {
     loop_juno_pair_contract: "",
     loop_juno_pair_lp_token: "",
     initial_loop_supply: "1000000000000000",
-    loop_liquidity: "200000000",
-    juno_liquidity: "100000000",
-    
-    halo_token_contract: "",
-    halo_juno_pair_contract: "",
-    halo_juno_pair_lp_token: "",
-    initial_halo_supply: "1000000000000000",
-    halo_liquidity: "200000000",
-    native_liquidity: "100000000",
+    lj_pair_loop_liquidity: "200000000",
+    lj_pair_juno_liquidity: "100000000",
+
+    malo_token_contract: "",
+    malo_juno_pair_contract: "",
+    malo_juno_pair_lp_token: "",
+    initial_malo_supply: "1000000000000000",
+    mj_pair_malo_liquidity: "20000000",
+    mj_pair_juno_liquidity: "10000000",
+
+    kalo_token_contract: "",
+    kalo_juno_pair_contract: "",
+    kalo_juno_pair_lp_token: "",
+    initial_kalo_supply: "1000000000000000",
+    kj_pair_kalo_liquidity: "20000000",
+    kj_pair_juno_liquidity: "10000000",
+
+    malo_kalo_pair_contract: "",
+    malo_kalo_pair_lp_token: "",
+    mk_pair_malo_liquidity: "10000000",
+    mk_pair_kalo_liquidity: "10000000",
   },
 
   // HALO contracts
@@ -104,6 +121,7 @@ export const mainnet = {
   mnemonicKeys: {
     apTeam: "",
     apTreasury: "juno1fz8jx4qhkgdrm5vm3s20n670mf872xsp2c0a6cl0yuncquzmj4jss2cfgj", // this is the CW3 of the AP Endowment
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
@@ -114,6 +132,8 @@ export const mainnet = {
     cw3ApTeam: "juno1sae4p8crnac0h9m27psn205d6k586f7cnm4eshws623v05g95teqvj2s8q",
     cw4GrpReviewTeam: "juno1a22f8dxevu3er7vs4lkrca9n8rgf8uvgjd8s2p5eq787vmczq59syuplqx",
     cw3ReviewTeam: "juno1vp2q50smgzw64xm2j2ksntej34pnnedaz4qkwdh8zah9kjcaas6s8g92t8",
+    swapRouter: "",
+    giftcards: "juno17pghl3qreyqnjlq6hun5ymshl0dkfeelcy738dkgk602lzmgcvaq2e4xav",
     vaults: [],
   },
   members: [
@@ -150,7 +170,7 @@ export const mainnet = {
     initial_loop_supply: "1000000000000000",
     loop_liquidity: "200000000",
     juno_liquidity: "100000000",
-    
+
     halo_token_contract: "",
     halo_juno_pair_contract: "",
     halo_juno_pair_lp_token: "",

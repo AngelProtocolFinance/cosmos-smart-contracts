@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -20,7 +20,7 @@ export async function testQueryProposal(
 ): Promise<void> {
   process.stdout.write("Test - Query proposal by id");
   const result: any = await juno.queryContractSmart(cw3, {
-    proposal: { proposal_id},
+    proposal: { proposal_id },
   });
 
   console.log(result);
@@ -213,7 +213,7 @@ export async function testUpdateCw3Config(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  threshold: number,
+  threshold: string,
   max_voting_period: number
 ): Promise<void> {
   process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
@@ -232,6 +232,7 @@ export async function testUpdateCw3Config(
                 update_config: {
                   threshold: { absolute_percentage: { percentage: threshold } },
                   max_voting_period: { height: max_voting_period },
+                  require_execution: false,
                 },
               }),
             },

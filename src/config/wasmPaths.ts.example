@@ -1,8 +1,11 @@
 export const wasm_path = {
-  core: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-smart-contracts/artifacts",
+  core: "/home/andrey/Documents/Code/AngelProtocol/cosmos-smart-contracts/artifacts",
   junoswap:
-    "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/junoswap",
+    "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/junoswap",
   loopswap:
-    "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/loopswap",
-  mock_vault: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/mock-vault/artifacts"
+    "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/loopswap",
+  astroport:
+    "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/astroport",
+  mock_vault: "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/mock-vault/artifacts",
+  cosmwasm: "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/cosmwasm",
 };

@@ -1,6 +1,8 @@
 import * as LocalNet from "./environments/localjuno";
 import * as TestNet from "./environments/testnet";
 import * as MainNet from "./environments/mainnet";
+import * as LocalTerra from "./environments/localterra";
+import * as IBC from "./environments/ibc";
 
 //----------------------------------------------------------------------------------------
 // Test-suite for  TestNet, and MainNet
@@ -8,6 +10,16 @@ import * as MainNet from "./environments/mainnet";
 (async () => {
 	const mode = process.env.npm_config_mode || "";
 	switch (mode) {
+		case "localterra_tests":
+			await LocalTerra.startTestsAstroportVault();
+			break;
+		case "localterra_setup_astroport":
+			await LocalTerra.startSetupAstroport();
+			break;
+		case "localterra_setup_astrovaults":
+			await LocalTerra.startSetupAstroportVaults();
+			break;
+
 		case "localjuno_tests":
 			await LocalNet.startTests();
 			break;
@@ -16,6 +28,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "localjuno_setup_endowments":
 			await LocalNet.startSetupEndowments();
+			break;
+		case "localjuno_setup_giftcards":
+			await LocalNet.startSetupGiftcards();
 			break;
 		// case "localjuno_setup_halo":
 		// 	await LocalNet.startSetupHalo();
@@ -39,7 +54,7 @@ import * as MainNet from "./environments/mainnet";
 			await TestNet.startTests();
 			break;
 		case "testnet_setup_core":
-			await TestNet.startSetupCore();	
+			await TestNet.startSetupCore();
 			break;
 		case "testnet_setup_endowments":
 			await TestNet.startSetupEndowments();
@@ -49,6 +64,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "testnet_setup_loopvaults":
 			await TestNet.startSetupLoopVaults();
+			break;
+		case "testnet_setup_giftcards":
+			await TestNet.startSetupGiftcards();
 			break;
 		// case "testnet_setup_halo":
 		// 	await TestNet.startSetupHalo();
@@ -71,6 +89,9 @@ import * as MainNet from "./environments/mainnet";
 		case "mainnet_setup_endowments":
 			await MainNet.startSetupEndowments();
 			break;
+		case "mainnet_setup_giftcards":
+			await MainNet.startSetupGiftcards();
+			break;
 		// case "mainnet_setup_halo":
 		// 	await MainNet.startSetupHalo();
 		// 	break;
@@ -83,6 +104,13 @@ import * as MainNet from "./environments/mainnet";
 		// case "mainnet_migrate_halo":
 		// 	await MainNet.startMigrateHalo();
 		// 	break;
+
+		case "local_setup_ibc":
+			await IBC.startSetupIBC();
+			break;
+		case "local_test_ibc":
+			await IBC.startTestIBC();
+			break;
 		default:
 			console.log("Invalid command");
 			break;
