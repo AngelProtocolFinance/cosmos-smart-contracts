@@ -30,6 +30,7 @@ fn proper_initialization() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -61,6 +62,7 @@ fn update_owner() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -98,6 +100,7 @@ fn update_config() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -217,6 +220,7 @@ fn test_add_update_and_remove_vault() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -358,6 +362,7 @@ fn test_add_update_and_remove_accepted_tokens() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -446,6 +451,7 @@ fn test_add_update_and_remove_network_infos() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -555,6 +561,7 @@ fn test_update_fees() {
             cw20: vec![],
         }),
         swap_factory: None,
+        settings_controller: "settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();

@@ -195,7 +195,7 @@ impl WasmMockQuerier {
                                     cw20: vec![],
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
-                                settings_controller: Some("settings-controller".to_string()),
+                                settings_controller: "settings-controller".to_string(),
                             })
                             .unwrap()
                         )),
