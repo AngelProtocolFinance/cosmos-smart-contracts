@@ -17,6 +17,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
             get_contract_version(deps.storage)?.version
         ),
         registrar_contract: config.registrar_contract.to_string(),
+        next_account_id: config.next_account_id,
+        max_general_category_id: config.max_general_category_id,
     })
 }
 
