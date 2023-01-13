@@ -17,9 +17,9 @@ use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::EndowmentType;
 use angel_core::utils::validate_deposit_fund;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, BankMsg, Binary, BlockInfo, Coin, CosmosMsg,
-    Decimal, Deps, DepsMut, Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response,
-    StdError, StdResult, SubMsg, SubMsgResult, WasmMsg, WasmQuery,
+    entry_point, to_binary, BankMsg, Binary, BlockInfo, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, SubMsg,
+    SubMsgResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -879,7 +879,7 @@ fn list_voters(
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -895,20 +895,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // if there is an updated threshold || max voting period passed, update it in Configs
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let mut config: Config = from_slice(&data)?;
-    if msg.threshold != None {
-        config.threshold = msg.threshold.unwrap();
-    }
-    if msg.max_voting_period != None {
-        config.max_voting_period = msg.max_voting_period.unwrap();
-    }
-    deps.storage.set("config".as_bytes(), &to_vec(&config)?);
 
     Ok(Response::default())
 }
