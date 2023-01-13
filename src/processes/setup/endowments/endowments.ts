@@ -36,13 +36,13 @@ export async function setupEndowments(
         new Promise(async (resolve, reject) => {
           try {
             console.log(`Building new endowment for owner: ${item.owner}`);
-            const endow_id = await sendApplicationViaCw3Proposal(networkInfo, apTeam, cw3ReviewTeam, accounts, "unknown", {
+            const endow_id = await sendApplicationViaCw3Proposal(networkInfo, apTeam, cw3ReviewTeam, accounts, item.ref_id, item.meta, {
               owner: item.owner,
               withdraw_before_maturity: false,
               maturity_time: undefined,
               maturity_height: undefined,
               name: item.name,
-              categories: { sdgs: [item.un_sdg], general: [] },
+              categories: { sdgs: item.un_sdgs, general: [] },
               tier: item.tier,
               logo: item.logo,
               image: item.image,
@@ -65,7 +65,7 @@ export async function setupEndowments(
                 charity_navigator_rating: item.charity_navigator_rating,
               },
               cw4_members: [{ addr: item.owner, weight: 1 }],
-              kyc_donors_only: false,
+              kyc_donors_only: item.kyc_donors_only,
               cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
               cw3_max_voting_period: charity_cw3_max_voting_period,
             }, [apTeam]);

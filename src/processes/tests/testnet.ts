@@ -50,6 +50,7 @@ import {
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
+  testUpdateCw3ApplicationsConfig,
   testAddMemberToC4Group,
   testProposalApprovingEndowment,
   testCw3CastVote,
@@ -59,6 +60,7 @@ import {
   testQueryGroupMembersList,
   testQueryProposal,
   testQueryProposalList,
+  testQueryMultisigConfig,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -230,6 +232,7 @@ export async function testExecute(
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
+  // await testQueryMultisigConfig(actors.apTeam.client, cw3ReviewTeam);
 
   /* --- GIFTCARD contract --- */
   // await testSendDepositToGiftcards(actors.apTeam.client, actors.apTeam.addr, giftcards, { denom: "ujunox", amount: "4206900" });

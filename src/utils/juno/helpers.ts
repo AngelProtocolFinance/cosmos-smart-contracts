@@ -9,12 +9,13 @@ import { wasm_path } from "../../config/wasmPaths";
 import { GasPrice } from "@cosmjs/stargate";
 
 export type Endowment = {
+  ref_id: string,
   name: string;
   owner: string;
   tier: number;
   overview: string;
   url: string;
-  un_sdg: number;
+  un_sdgs: number[];
   logo: string;
   image: string;
   email: string;
@@ -29,6 +30,7 @@ export type Endowment = {
   annual_revenue: string;
   average_annual_budget: string;
   kyc_donors_only: boolean;
+  meta: string,
 };
 
 export type Member = {
@@ -324,6 +326,7 @@ export async function sendApplicationViaCw3Proposal(
   cw3: string,
   target_contract: string,
   ref_id: string,
+  meta: string | undefined,
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[],
 ): Promise<number> {
@@ -332,7 +335,7 @@ export async function sendApplicationViaCw3Proposal(
   console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
   // 1. Create the new proposal (no vote is cast here)
   const proposal = await sendTransaction(proposor_client, proposor_wallet, cw3, {
-    propose_application: { ref_id, msg },
+    propose_application: { ref_id, msg, meta },
   });
 
   // 2. Parse out the proposal ID

@@ -1,6 +1,8 @@
 {
   "data": [
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1k7jkmvzkrr3rv4htqvmh63f0fmvm89dfpqc6y5",
         "email": "hi@angelprotocol.io",
         "image": "https://www.angelprotocol.io/static/media/angelprotocol-beta-horiz-wht.8c080bd856f5b13f2a65.png",
@@ -18,11 +20,13 @@
         "average_annual_budget": "$80,000",
         "number_of_employees": 23,
         "tier": 3,
-        "un_sdg": 1,
+        "un_sdgs": [1],
         "url": "https://angelprotocol.io",
         "kyc_donors_only": true
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno18ppy5rcu2408qytvl8rlgxjqa7rja9xslu8v6s",
         "email": "hi@angelprotocol.io",
         "image": "https://www.angelprotocol.io/static/media/angelprotocol-beta-horiz-wht.8c080bd856f5b13f2a65.png",
@@ -40,11 +44,13 @@
         "average_annual_budget": "$300,000",
         "number_of_employees": 1,
         "tier": 1,
-        "un_sdg": 10,
+        "un_sdgs": [10],
         "url": "https://angelprotocol.io",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1pk2hslq9zds3y6ndfv8zy9cpm4qv2s2qnnnye3",
         "email": "contact@sowe.se",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/SOWE.jpg",
@@ -62,11 +68,13 @@
         "average_annual_budget": "20000",
         "number_of_employees": 44566,
         "tier": 3,
-        "un_sdg": 1,
+        "un_sdgs": [1],
         "url": "https://sowe.se/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1fm0u854mmhn70kk6cdhtv6w43v032vqxkvy4el",
         "email": "enla.fees@m2m.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/m2m-banner.jpg",
@@ -84,11 +92,13 @@
         "average_annual_budget": "",
         "number_of_employees": 2200,
         "tier": 3,
-        "un_sdg": 3,
+        "un_sdgs": [3],
         "url": "https://m2m.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1urqkyfnwnv8s0ruhsu7td78gcgdrcpgsm7668w",
         "email": "trf@tibetrelieffund.co.uk",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/19a8a2dd76c1b0607adad975ea6e3abbb52cc2ce071f8ce0b6c4a1f20cb13cf0.jpg",
@@ -106,11 +116,13 @@
         "average_annual_budget": "$500-$700K",
         "number_of_employees": 8,
         "tier": 3,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "https://tibetrelieffund.co.uk/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1agpqrrwe9wx3pur3r07npspdtgucmpyfd7f4yh",
         "email": "ecartmp@my.com",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/56701e85c5ba882206f964372dc614439ed704db553903a5207a41524433517d.png",
@@ -128,11 +140,13 @@
         "average_annual_budget": "$120k",
         "number_of_employees": 52,
         "tier": 2,
-        "un_sdg": 1,
+        "un_sdgs": [1],
         "url": "https://www.endpoverty.org.in/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1ugsv4p0wdkvy6yh7lsdkfd4e3ymr2sjehr4wwj",
         "email": "hello@regenclt.org",
         "image": "https://storageapi.fleek.co/57b943eb-ed70-478a-8899-c7859400f77b-bucket/charity-profile-images/banner/RCLTbanner.jpg",
@@ -150,11 +164,13 @@
         "average_annual_budget": "",
         "number_of_employees": 3,
         "tier": 1,
-        "un_sdg": 11,
+        "un_sdgs": [11],
         "url": "https://regenclt.org/",
         "kyc_donors_only": false
     },
         {
+            "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1f9shwspneqc6pw8awkgy46tceef42uy9nx82dv",
         "email": "jay@yellowboat.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Yellow+Boat+of+Hope+Foundation.jpeg",
@@ -172,11 +188,13 @@
         "average_annual_budget": "50000",
         "number_of_employees": 44706,
         "tier": 3,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1d6u8387h2cfrnv27tc7q05v8nxdkj4xrghlhsz",
         "email": "simon@marinemegafauna.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Marine+Megafauna+Foundation.jpeg",
@@ -194,11 +212,13 @@
         "average_annual_budget": "500000",
         "number_of_employees": 40,
         "tier": 3,
-        "un_sdg": 14,
+        "un_sdgs": [14],
         "url": "https://marinemegafauna.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1na28dssup56t5pyjs9ppkps2lw83ztjrv9uhfz",
         "email": "torsten@betterme.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Better+Me+e.V..jpg",
@@ -216,11 +236,13 @@
         "average_annual_budget": "$80,000",
         "number_of_employees": 5,
         "tier": 3,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "https://betterme.org",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1fuhunq5hu8e562ahnjwuzqaznmdp7kjdcmuzn5",
         "email": "annaspals.org@gmail.com",
         "image": "https://charity-profile-images.s3.amazonaws.com/charity_image/4d50726f-8dd7-4626-8ae5-e80469ddb05a.png",
@@ -238,11 +260,13 @@
         "average_annual_budget": "$25k",
         "number_of_employees": 0,
         "tier": 3,
-        "un_sdg": 3,
+        "un_sdgs": [3],
         "url": "https://www.annaspals.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1hns33uts34n4nef9k23h8fjr6n2ejntg4lf4yv",
         "email": "SarahAdams@womenempowerment.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/charity_image/f9ec9eeb-64c1-4c8f-a38c-9fb38737f1be.png",
@@ -260,11 +284,13 @@
         "average_annual_budget": "$460,000",
         "number_of_employees": 2,
         "tier": 3,
-        "un_sdg": 5,
+        "un_sdgs": [5],
         "url": "https://womenempowerment.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1jrmsq8f4ngvzl99rw37fvvljl8hh2nv7qmv4s9",
         "email": "khfindia@protonmail.com",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Kashmir+Humanity+Foundation.jpg",
@@ -282,11 +308,13 @@
         "average_annual_budget": "35k",
         "number_of_employees": 12,
         "tier": 2,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "https://www.jkhfindia.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1xlaswhyluhp6tsq0h9wvglwnfamlnugw38hx72",
         "email": "info@sumarth.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/SumArth.png",
@@ -304,11 +332,13 @@
         "average_annual_budget": "$110k",
         "number_of_employees": 25,
         "tier": 3,
-        "un_sdg": 2,
+        "un_sdgs": [2],
         "url": "http://sumarth.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1hcrxzpk8e6hjvcyf08eeh0hcepjsc06fdmrgrf",
         "email": "codnerc@protonmail.com",
         "image": "https://storageapi.fleek.co/57b943eb-ed70-478a-8899-c7859400f77b-bucket/charity-profile-images/logo/CodNercLogo.jpg",
@@ -326,11 +356,13 @@
         "average_annual_budget": "$12k",
         "number_of_employees": 8,
         "tier": 3,
-        "un_sdg": 8,
+        "un_sdgs": [8],
         "url": "https://codnerc.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1va9grgr8lrn2tg05ecd0a6rdl62jcakatj86y9",
         "email": "info@shipo.or.tz",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/shpo-banner.jpg",
@@ -348,11 +380,13 @@
         "average_annual_budget": "",
         "number_of_employees": 15,
         "tier": 3,
-        "un_sdg": 6,
+        "un_sdgs": [6],
         "url": "https://shipo.or.tz/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno10n3uwags47py4l6kjuc8j2sp5kkplqr0jgdnhs",
         "email": "donorsupport@bumisehat.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/charity_image/a66bd6c8-dcaf-4ce6-a8db-39e1acdaacdd.jpeg",
@@ -370,11 +404,13 @@
         "average_annual_budget": "$488K",
         "number_of_employees": 110,
         "tier": 3,
-        "un_sdg": 3,
+        "un_sdgs": [3],
         "url": "http://bumisehat.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno18ucw7rgcz5v22qf3tlw7jrmjk57wt4uapmmq22",
         "email": "ashley@rizomafieldschool.com",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Rizoma+Foundation.png",
@@ -392,11 +428,13 @@
         "average_annual_budget": "$70,000",
         "number_of_employees": 1,
         "tier": 3,
-        "un_sdg": 2,
+        "un_sdgs": [2],
         "url": "",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1af0csa8a90vpv3yer35atrjrdrf5wmzfamz5nd",
         "email": "jas.pham@weareaptn.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/asia-pacific-transgender-network.jpg",
@@ -414,11 +452,13 @@
         "average_annual_budget": "$1,000,000",
         "number_of_employees": 5,
         "tier": 3,
-        "un_sdg": 10,
+        "un_sdgs": [10],
         "url": "https://weareaptn.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1q00lfna0f2xmaq75y0augnu06u4ufezxvcphpe",
         "email": "info@biodiversitygroup.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/The+Biodiversity+Group.jpg",
@@ -436,11 +476,13 @@
         "average_annual_budget": "<50k",
         "number_of_employees": 3,
         "tier": 3,
-        "un_sdg": 15,
+        "un_sdgs": [15],
         "url": "http://biodiversitygroup.org/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1pgqpqvwc2xh9cafmpmuu5d4dlcfge58er2h5zr",
         "email": "info@turingtrust.co.uk",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Turing+Trust.png",
@@ -458,11 +500,13 @@
         "average_annual_budget": "\u00a3400,000",
         "number_of_employees": 1,
         "tier": 3,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "https://turingtrust.co.uk/",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1kfx6uwju0vnzfcy9q4xgfhu3lpu2d08nr7xvnl",
         "email": "info@childreachnp.org",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Childreach+Nepal.jpg",
@@ -480,11 +524,13 @@
         "average_annual_budget": "$55,000",
         "number_of_employees": 5,
         "tier": 3,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1pwkyym8h4l064uqsxpe2xr0vdautu8tnw53yh3",
         "email": "nick@impactmarathon.com",
         "image": "https://charity-profile-images.s3.amazonaws.com/banner/Impact+Marathon+Foundation.jpg",
@@ -502,11 +548,13 @@
         "average_annual_budget": "$200,000",
         "number_of_employees": 1,
         "tier": 3,
-        "un_sdg": 17,
+        "un_sdgs": [17],
         "url": "",
         "kyc_donors_only": false
     },
     {
+        "ref_id": "unknown",
+        "meta": "",
         "owner": "juno1w45wvnhlg7sypvp33xv9l5d7s37gq4wqyalads",
         "email": "espacovoa@gmail.com",
         "image": "https://storageapi.fleek.co/57b943eb-ed70-478a-8899-c7859400f77b-bucket/charity-profile-images/banner/EspacoVoa.jpg",
@@ -524,7 +572,7 @@
         "average_annual_budget": "$52k",
         "number_of_employees": 20,
         "tier": 2,
-        "un_sdg": 4,
+        "un_sdgs": [4],
         "url": "https://www.instagram.com/espaco.voa/",
         "kyc_donors_only": false
     }
