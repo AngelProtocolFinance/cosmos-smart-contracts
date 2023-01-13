@@ -11,7 +11,10 @@ use std::fmt;
 
 /// We currently take no arguments for migrations
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub threshold: Option<Threshold>,
+    pub max_voting_period: Option<Duration>,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -71,6 +74,7 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub struct ConfigResponse {
     pub registrar_contract: String,
+    pub version: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: String,
