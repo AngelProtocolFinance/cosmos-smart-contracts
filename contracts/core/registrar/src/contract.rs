@@ -30,7 +30,7 @@ pub fn instantiate(
         None => Ok(SplitDetails::default()),
     }
     .unwrap();
-    let settings_controller = deps.api.addr_validate(&msg.settings_controller)?;
+
     let configs = Config {
         owner: info.sender.clone(),
         applications_review: info.sender,
@@ -60,7 +60,7 @@ pub fn instantiate(
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
         swaps_router: None,
-        settings_controller,
+        accounts_settings_controller: deps.api.addr_validate(&msg.accounts_settings_controller)?,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -149,7 +149,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // Get the collector addr from msg input
-    let settings_controller = deps.api.addr_validate(&msg.settings_controller_contract)?;
+    let accounts_settings_controller = deps.api.addr_validate(&msg.accounts_settings_controller)?;
 
     // setup the new config struct and save to storage
     let data = deps
@@ -186,7 +186,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             fundraising_contract: None,
             rebalance: old_config.rebalance,
             swaps_router: old_config.swaps_router,
-            settings_controller,
+            accounts_settings_controller,
         },
     )?;
 

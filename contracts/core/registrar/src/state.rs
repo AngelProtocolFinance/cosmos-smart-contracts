@@ -54,7 +54,7 @@ pub struct Config {
     pub fundraising_contract: Option<Addr>,
     pub rebalance: RebalanceDetails,
     pub swaps_router: Option<Addr>,
-    pub settings_controller: Addr, // contract address used for storing extra Endowment settings
+    pub accounts_settings_controller: Addr, // contract address used for storing extra Endowment settings
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

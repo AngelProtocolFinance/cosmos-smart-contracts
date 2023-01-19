@@ -1,4 +1,4 @@
-use angel_core::structs::EndowmentSettings;
+use angel_core::structs::{EndowmentController, EndowmentSettings};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -12,4 +12,5 @@ pub struct Config {
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const ENDOWMENTSETTINGS: Map<u32, EndowmentSettings> = Map::new("endowmentsettings");
+pub const SETTINGS: Map<u32, EndowmentSettings> = Map::new("endowment-settings");
+pub const CONTROLLER: Map<u32, EndowmentController> = Map::new("endowment-controller");

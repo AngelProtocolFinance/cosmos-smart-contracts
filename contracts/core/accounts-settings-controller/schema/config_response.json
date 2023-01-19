@@ -1,19 +1,15 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Config",
+  "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "ibc_controller",
     "max_general_category_id",
     "next_account_id",
     "owner",
     "registrar_contract",
-    "settings_controller"
+    "endowment_controller"
   ],
   "properties": {
-    "ibc_controller": {
-      "$ref": "#/definitions/Addr"
-    },
     "max_general_category_id": {
       "type": "integer",
       "format": "uint8",
@@ -25,13 +21,13 @@
       "minimum": 0.0
     },
     "owner": {
-      "$ref": "#/definitions/Addr"
+      "type": "string"
     },
     "registrar_contract": {
-      "$ref": "#/definitions/Addr"
+      "type": "string"
     },
-    "settings_controller": {
-      "$ref": "#/definitions/SettingsController"
+    "endowment_controller": {
+      "$ref": "#/definitions/EndowmentController"
     }
   },
   "definitions": {
@@ -58,7 +54,7 @@
         }
       }
     },
-    "SettingsController": {
+    "EndowmentController": {
       "type": "object",
       "required": [
         "aum_fee",
@@ -125,7 +121,7 @@
       "type": "object",
       "required": [
         "gov_controlled",
-        "modifiable_after_init",
+        "modifiable",
         "owner_controlled"
       ],
       "properties": {
@@ -142,7 +138,7 @@
         "gov_controlled": {
           "type": "boolean"
         },
-        "modifiable_after_init": {
+        "modifiable": {
           "type": "boolean"
         },
         "owner_controlled": {

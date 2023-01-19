@@ -25,7 +25,7 @@ impl Delegate {
 pub struct SettingsPermissions {
     owner_controlled: bool,
     gov_controlled: bool,
-    modifiable_after_init: bool,
+    modifiable: bool,
     delegate: Option<Delegate>,
 }
 
@@ -34,7 +34,7 @@ impl SettingsPermissions {
         SettingsPermissions {
             owner_controlled: true,
             gov_controlled: false,
-            modifiable_after_init: true,
+            modifiable: true,
             delegate: None,
         }
     }
@@ -84,6 +84,9 @@ impl SettingsPermissions {
         gov: Option<&Addr>,
         env_time: Timestamp,
     ) -> bool {
+        if !self.modifiable {
+            return false;
+        }
         if sender == owner && self.owner_controlled
             || gov.is_some() && self.gov_controlled && sender == gov.unwrap()
             || self.delegate.is_some()
@@ -93,11 +96,9 @@ impl SettingsPermissions {
                     .unwrap()
                     .can_take_action(sender, env_time)
         {
-            if self.modifiable_after_init {
-                return true;
-            }
+            return true;
         }
-        return false;
+        false
     }
 }
 
@@ -134,8 +135,7 @@ pub struct EndowmentSettings {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
-    pub settings_controller: SettingsController,
-    pub parent: Option<u64>,
+    pub parent: Option<u32>,
     pub split_to_liquid: Option<SplitDetails>, // set of max, min, and default Split paramenters to check user defined split input against
     pub ignore_user_splits: bool, // ignore user-submitted splits in favor of the default splits
 }
@@ -154,7 +154,6 @@ impl EndowmentSettings {
             withdraw_fee: None,
             deposit_fee: None,
             aum_fee: None,
-            settings_controller: SettingsController::default(),
             parent: None,
             split_to_liquid: None,
             ignore_user_splits: false,
@@ -163,12 +162,12 @@ impl EndowmentSettings {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct SettingsController {
-    pub settings_controller: SettingsPermissions,
+pub struct EndowmentController {
+    pub endowment_controller: SettingsPermissions,
     pub strategies: SettingsPermissions,
     pub beneficiaries_allowlist: SettingsPermissions,
     pub contributors_allowlist: SettingsPermissions,
-    pub maturity_time: SettingsPermissions,
+    pub maturity_allowlist: SettingsPermissions,
     pub profile: SettingsPermissions,
     pub earnings_fee: SettingsPermissions,
     pub withdraw_fee: SettingsPermissions,
@@ -179,16 +178,18 @@ pub struct SettingsController {
     pub image: SettingsPermissions,
     pub logo: SettingsPermissions,
     pub categories: SettingsPermissions,
+    pub ignore_user_splits: SettingsPermissions,
+    pub split_to_liquid: SettingsPermissions,
 }
 
-impl SettingsController {
+impl EndowmentController {
     pub fn default() -> Self {
-        SettingsController {
-            settings_controller: SettingsPermissions::default(),
+        EndowmentController {
+            endowment_controller: SettingsPermissions::default(),
             strategies: SettingsPermissions::default(),
             beneficiaries_allowlist: SettingsPermissions::default(),
             contributors_allowlist: SettingsPermissions::default(),
-            maturity_time: SettingsPermissions::default(),
+            maturity_allowlist: SettingsPermissions::default(),
             profile: SettingsPermissions::default(),
             earnings_fee: SettingsPermissions::default(),
             withdraw_fee: SettingsPermissions::default(),
@@ -199,17 +200,20 @@ impl SettingsController {
             image: SettingsPermissions::default(),
             logo: SettingsPermissions::default(),
             categories: SettingsPermissions::default(),
+            ignore_user_splits: SettingsPermissions::default(),
+            split_to_liquid: SettingsPermissions::default(),
         }
     }
 
     pub fn get_permissions(&self, name: String) -> Result<SettingsPermissions, ContractError> {
         match name.as_str() {
-            "settings_controller" => Ok(self.settings_controller.clone()),
+            "endowment_controller" => Ok(self.endowment_controller.clone()),
             "strategies" => Ok(self.strategies.clone()),
             "beneficiaries_allowlist" => Ok(self.beneficiaries_allowlist.clone()),
             "contributors_allowlist" => Ok(self.contributors_allowlist.clone()),
-            "maturity_time" => Ok(self.maturity_time.clone()),
-            "profile" => Ok(self.profile.clone()),
+            "maturity_allowlist" => Ok(self.maturity_allowlist.clone()),
+            "split_to_liquid" => Ok(self.split_to_liquid.clone()),
+            "ignore_user_splits" => Ok(self.ignore_user_splits.clone()),
             "earnings_fee" => Ok(self.earnings_fee.clone()),
             "withdraw_fee" => Ok(self.withdraw_fee.clone()),
             "deposit_fee" => Ok(self.deposit_fee.clone()),
@@ -232,8 +236,9 @@ impl SettingsController {
             "strategies" => Ok(self.strategies = permissions),
             "beneficiaries_allowlist" => Ok(self.beneficiaries_allowlist = permissions),
             "contributors_allowlist" => Ok(self.contributors_allowlist = permissions),
-            "maturity_time" => Ok(self.maturity_time = permissions),
-            "profile" => Ok(self.profile = permissions),
+            "maturity_allowlist" => Ok(self.maturity_allowlist = permissions),
+            "split_to_liquid" => Ok(self.split_to_liquid = permissions),
+            "ignore_user_splits" => Ok(self.ignore_user_splits = permissions),
             "earnings_fee" => Ok(self.earnings_fee = permissions),
             "withdraw_fee" => Ok(self.withdraw_fee = permissions),
             "deposit_fee" => Ok(self.deposit_fee = permissions),

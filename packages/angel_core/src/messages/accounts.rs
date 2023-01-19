@@ -1,6 +1,6 @@
 use crate::structs::{
-    AccountType, Beneficiary, Categories, DaoSetup, EndowmentFee, EndowmentType, RebalanceDetails,
-    SettingsController, SplitDetails, StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, DaoSetup, EndowmentController, EndowmentFee,
+    EndowmentType, RebalanceDetails, SplitDetails, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -9,8 +9,6 @@ use cw_asset::{Asset, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use super::settings_controller::UpdateMaturityWhitelist;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
@@ -89,8 +87,8 @@ pub enum ExecuteMsg {
         max_general_category_id: Option<u8>,
         ibc_controller: Option<String>,
     },
-    // Update an Endowment owner, beneficiary, and other settings
-    UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
+    // Update an Endowment owner, beneficiary, and other core items
+    UpdateEndowmentDetails(UpdateEndowmentDetailsMsg),
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
@@ -140,8 +138,8 @@ pub struct CreateEndowmentMsg {
     pub aum_fee: Option<EndowmentFee>,
     pub dao: Option<DaoSetup>,      // SubDAO setup options
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
-    pub settings_controller: Option<SettingsController>,
-    pub parent: Option<u64>,
+    pub endowment_controller: Option<EndowmentController>,
+    pub parent: Option<u32>,
     pub split_to_liquid: Option<SplitDetails>,
     pub ignore_user_splits: bool,
     pub referral_id: Option<u32>,
@@ -161,12 +159,10 @@ pub struct Strategy {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentSettingsMsg {
+pub struct UpdateEndowmentDetailsMsg {
     pub id: u32,
     pub owner: Option<String>,
-    pub maturity_time: Option<Option<u64>>, // datetime int of endowment maturity
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
-    pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,
     pub kyc_donors_only: Option<bool>,
     pub endow_type: Option<String>,
@@ -175,11 +171,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub donation_match_active: Option<bool>,
-    pub beneficiaries_allowlist: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub contributors_allowlist: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub maturity_allowlist: Option<UpdateMaturityWhitelist>,
-    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

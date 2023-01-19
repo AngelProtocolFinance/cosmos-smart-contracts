@@ -161,9 +161,9 @@ pub fn update_config(
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
         None => config.halo_token_lp_contract,
     };
-    config.settings_controller = match msg.settings_controller {
+    config.accounts_settings_controller = match msg.accounts_settings_controller {
         Some(addr) => deps.api.addr_validate(&addr).unwrap(),
-        None => config.settings_controller,
+        None => config.accounts_settings_controller,
     };
 
     CONFIG.save(deps.storage, &config)?;

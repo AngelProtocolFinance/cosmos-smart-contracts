@@ -216,7 +216,7 @@ fn new_application_proposal() -> ExecuteMsg {
         aum_fee: None,
         dao: None,
         proposal_link: Some(1),
-        settings_controller: None,
+        endowment_controller: None,
         parent: None,
         split_to_liquid: Some(SplitDetails::default()),
         ignore_user_splits: false,

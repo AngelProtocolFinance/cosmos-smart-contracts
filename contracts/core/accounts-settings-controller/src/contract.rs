@@ -5,13 +5,13 @@ use cosmwasm_std::{
 use cw2::{get_contract_version, set_contract_version};
 
 use angel_core::errors::core::ContractError;
-use angel_core::messages::settings_controller::*;
+use angel_core::messages::accounts_settings_controller::*;
 
 use crate::state::{Config, CONFIG};
 use crate::{executers, queriers};
 
 // version info for future migration info
-const CONTRACT_NAME: &str = "settings-controller";
+const CONTRACT_NAME: &str = "accounts-settings-controller";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
@@ -48,6 +48,9 @@ pub fn execute(
         }
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
+        }
+        ExecuteMsg::UpdateEndowmentController(msg) => {
+            executers::update_endowment_controller(deps, env, info, msg)
         }
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
@@ -86,6 +89,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::EndowmentSettings { id } => {
             to_binary(&queriers::query_endowment_settings(deps, id)?)
+        }
+        QueryMsg::EndowmentController { id } => {
+            to_binary(&queriers::query_endowment_controller(deps, id)?)
         }
         QueryMsg::EndowmentPermissions {
             id,

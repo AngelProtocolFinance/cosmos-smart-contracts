@@ -1,12 +1,11 @@
+use angel_core::responses::accounts_settings_controller::{
+    EndowmentPermissionsResponse, EndowmentSettingsResponse,
+};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::responses::settings_controller::{
-    EndowmentPermissionsResponse, EndowmentSettingsResponse,
-};
 use angel_core::structs::{
-    AcceptedTokens, AccountType, RebalanceDetails, SettingsController, SplitDetails, VaultType,
-    YieldVault,
+    AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -32,11 +31,11 @@ pub enum QueryMsg {
     Fee {
         name: String,
     },
-    // Mock the "settings_controller::EndowmentSettings {id: [EndowmentID]}" query
+    // Mock the "endowment_controller::EndowmentSettings {id: [EndowmentID]}" query
     EndowmentSettings {
         id: u32,
     },
-    // Mock the "settings_controller::EndowmentPermissions {id: [EndowmentID]}" query
+    // Mock the "endowment_controller::EndowmentPermissions {id: [EndowmentID]}" query
     EndowmentPermissions {
         id: u32,
         setting_updater: Addr,
@@ -127,7 +126,7 @@ impl WasmMockQuerier {
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
-                        settings_controller: "settings-controller".to_string(),
+                        accounts_settings_controller: "accounts-settings-controller".to_string(),
                     })
                     .unwrap(),
                 )),
@@ -184,7 +183,6 @@ impl WasmMockQuerier {
                         withdraw_fee: None,
                         deposit_fee: None,
                         aum_fee: None,
-                        settings_controller: SettingsController::default(),
                         parent: None,
                         split_to_liquid: None,
                         ignore_user_splits: false,
@@ -197,12 +195,11 @@ impl WasmMockQuerier {
                     endowment_owner: _,
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentPermissionsResponse {
-                        settings_controller: false,
+                        endowment_controller: false,
                         strategies: false,
                         beneficiaries_allowlist: false,
                         contributors_allowlist: false,
-                        maturity_time: false,
-                        profile: false,
+                        maturity_allowlist: false,
                         earnings_fee: false,
                         withdraw_fee: false,
                         deposit_fee: false,
@@ -212,6 +209,8 @@ impl WasmMockQuerier {
                         image: false,
                         logo: false,
                         categories: false,
+                        ignore_user_splits: false,
+                        split_to_liquid: false,
                     })
                     .unwrap(),
                 )),

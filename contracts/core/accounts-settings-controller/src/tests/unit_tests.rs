@@ -2,14 +2,14 @@ use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 
-use angel_core::messages::settings_controller::{
+use angel_core::messages::accounts_settings_controller::{
     CreateEndowSettingsMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
-    UpdateEndowmentFeesMsg, UpdateEndowmentSettingsMsg, UpdateMaturityWhitelist,
+    UpdateEndowmentFeesMsg, UpdateEndowmentSettingsMsg, UpdateMaturityAllowlist,
 };
-use angel_core::responses::settings_controller::{
+use angel_core::responses::accounts_settings_controller::{
     ConfigResponse, EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
-use angel_core::structs::{EndowmentFee, SettingsController};
+use angel_core::structs::{EndowmentController, EndowmentFee};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Decimal, Event, Reply, StdError, SubMsgResponse, Uint128};
 
@@ -50,8 +50,8 @@ fn test_proper_initialization() {
     .unwrap();
     let permission: EndowmentPermissionsResponse = from_binary(&res).unwrap();
     assert!(!permission.aum_fee);
-    assert!(!permission.settings_controller);
-    assert!(!permission.maturity_time);
+    assert!(!permission.endowment_controller);
+    assert!(!permission.maturity_allowlist);
 }
 
 #[test]
@@ -122,7 +122,7 @@ fn test_create_endowment_settings() {
         beneficiaries_allowlist: vec![PLEB.to_string()],
         contributors_allowlist: vec![DEPOSITOR.to_string()],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: true,
@@ -189,7 +189,6 @@ fn test_create_endowment_settings() {
         msg.contributors_allowlist
     );
     assert_eq!(endow_settings.maturity_allowlist, msg.maturity_allowlist);
-    assert_eq!(endow_settings.settings_controller, msg.settings_controller);
     assert_eq!(endow_settings.parent, msg.parent);
     assert_eq!(endow_settings.split_to_liquid, msg.split_to_liquid);
     assert_eq!(endow_settings.ignore_user_splits, msg.ignore_user_splits);
@@ -216,7 +215,7 @@ fn test_update_endowment_settings() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -236,16 +235,16 @@ fn test_update_endowment_settings() {
     // Only "accounts" contract can call this entry
     let info = mock_info("non-accounts-contract", &[]);
     let mut msg = UpdateEndowmentSettingsMsg {
-        setting_updater: Addr::unchecked("anyone"),
         id: CHARITY_ID,
         donation_match_active: Some(true),
         beneficiaries_allowlist: Some(vec![PLEB.to_string()]),
         contributors_allowlist: Some(vec![DEPOSITOR.to_string()]),
-        maturity_allowlist: Some(UpdateMaturityWhitelist {
+        maturity_allowlist: Some(UpdateMaturityAllowlist {
             add: vec![],
             remove: vec![],
         }),
-        settings_controller: Some(SettingsController::default()),
+        ignore_user_splits: None,
+        split_to_liquid: None,
     };
     let err = execute(
         deps.as_mut(),
@@ -271,7 +270,6 @@ fn test_update_endowment_settings() {
     // "setting_updater" SHOULD be either of "config.owner" or "endowment owner"
     let info = mock_info("accounts-contract", &[]);
     msg.id = 1;
-    msg.setting_updater = Addr::unchecked("anyone");
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -284,7 +282,6 @@ fn test_update_endowment_settings() {
     // Succeed to update the Endowment settings
     let info = mock_info("accounts-contract", &[]);
     msg.id = 1;
-    msg.setting_updater = Addr::unchecked(AP_TEAM);
     let res = execute(
         deps.as_mut(),
         mock_env(),
@@ -303,8 +300,8 @@ fn test_update_endowment_settings() {
     .unwrap();
     let endow_settings: EndowmentSettingsResponse = from_binary(&res).unwrap();
     assert_eq!(
-        endow_settings.settings_controller,
-        msg.settings_controller.clone().unwrap()
+        endow_settings.beneficiaries_allowlist,
+        msg.beneficiaries_allowlist.clone().unwrap()
     );
 }
 
@@ -328,7 +325,7 @@ fn test_update_endowment_fees() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -430,7 +427,7 @@ fn test_update_delegate() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -518,7 +515,7 @@ fn test_setup_dao() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -610,7 +607,7 @@ fn test_setup_donation_match() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -695,7 +692,7 @@ fn test_setup_dao_reply() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -795,7 +792,7 @@ fn test_donation_match_reply() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,
@@ -893,7 +890,7 @@ fn test_migrate() {
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
-        settings_controller: SettingsController::default(),
+        endowment_controller: EndowmentController::default(),
         parent: None,
         split_to_liquid: None,
         ignore_user_splits: false,

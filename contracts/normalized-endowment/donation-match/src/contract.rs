@@ -8,8 +8,8 @@ use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::subdao_bonding_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::responses::accounts_settings_controller::EndowmentSettingsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfig;
-use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{EndowmentStatus, EndowmentType};
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
@@ -136,8 +136,8 @@ fn execute_donor_match(
         &AccountQueryMsg::Endowment { id: endowment_id },
     )?;
     let endow_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.settings_controller,
-        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings {
+        registrar_config.accounts_settings_controller,
+        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings {
             id: endowment_id,
         },
     )?;
