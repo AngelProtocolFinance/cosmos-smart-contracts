@@ -2,8 +2,7 @@ use crate::msg::{
     ConfigResponse, ExecuteMsg, MetaProposalListResponse, MetaProposalResponse, MigrateMsg,
 };
 use crate::state::{
-    next_id, Ballot, Config, OldConfig, Proposal, TempConfig, Votes, BALLOTS, CONFIG,
-    GUARDIAN_BALLOTS, GUARDIAN_PROPOSALS, PROPOSALS, TEMP_CONFIG,
+    next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{EndowmentInstantiateMsg as InstantiateMsg, QueryMsg};
@@ -11,9 +10,9 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, Addr, Binary, BlockInfo, CosmosMsg, Decimal, Deps, DepsMut,
-    Empty, Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult,
-    SubMsg, SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
+    entry_point, to_binary, Addr, Binary, BlockInfo, CosmosMsg, Decimal, Deps, DepsMut, Empty, Env,
+    MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -183,7 +182,6 @@ pub fn cw4_group_reply(
                     threshold: temp.threshold,
                     max_voting_period: temp.max_voting_period,
                     group_addr,
-                    guardians: vec![],
                     require_execution: false, // default to auto-executing passing proposals
                 },
             )?;
@@ -232,7 +230,6 @@ pub fn execute(
             threshold,
             max_voting_period,
             require_execution,
-            guardians,
         } => execute_update_config(
             deps,
             env,
@@ -240,37 +237,11 @@ pub fn execute(
             threshold,
             max_voting_period,
             require_execution,
-            guardians,
         ),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
         ExecuteMsg::MemberChangedHook(MemberChangedHookMsg { diffs }) => {
             execute_membership_hook(deps, env, info, diffs)
-        }
-        // GUARDIAN ENDPOINTS
-        ExecuteMsg::GuardianPropose {
-            title,
-            description,
-            old_member,
-            new_member,
-            latest,
-            meta,
-        } => execute_guardian_propose(
-            deps,
-            env,
-            info,
-            title,
-            description,
-            old_member,
-            new_member,
-            latest,
-            meta,
-        ),
-        ExecuteMsg::GuardianVote { proposal_id, vote } => {
-            execute_guardian_vote(deps, env, info, proposal_id, vote)
-        }
-        ExecuteMsg::GuardianExecute { proposal_id } => {
-            execute_guardian_execute(deps, env, info, proposal_id)
         }
     }
 }
@@ -282,7 +253,6 @@ pub fn execute_update_config(
     threshold: Threshold,
     max_voting_period: Duration,
     require_execution: Option<bool>,
-    guardians: Option<Vec<String>>,
 ) -> Result<Response<Empty>, ContractError> {
     // only the contract can update own configs
     if info.sender != env.contract.address {
@@ -294,16 +264,6 @@ pub fn execute_update_config(
 
     if require_execution != None {
         cfg.require_execution = require_execution.unwrap();
-    }
-
-    if guardians != None {
-        // check that all guardians passed are valid addresses
-        let validated_guardians: Vec<Addr> = guardians
-            .unwrap()
-            .iter()
-            .map(|a| deps.api.addr_validate(&a).unwrap())
-            .collect();
-        cfg.guardians = validated_guardians;
     }
 
     CONFIG.save(deps.storage, &cfg)?;
@@ -646,195 +606,6 @@ pub fn execute_membership_hook(
     Ok(Response::default())
 }
 
-// GUARDIAN RELATED FUNCTIONS
-pub fn execute_guardian_propose(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    title: String,
-    description: String,
-    old_member: String,
-    new_member: String,
-    latest: Option<Expiration>, // we ignore earliest
-    meta: Option<String>,
-) -> Result<Response<Empty>, ContractError> {
-    let cfg = CONFIG.load(deps.storage)?;
-
-    // Only guardian addresses can create a proposal
-    if cfg.guardians.iter().position(|g| g == &info.sender) == None {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // New & Old Members must be valid address
-    let old_addr = deps.api.addr_validate(&old_member)?;
-    let new_addr = deps.api.addr_validate(&new_member)?;
-
-    // Old Member must be currently in the CW4 Group
-    cfg.group_addr
-        .member_at_height(&deps.querier, old_addr.clone(), Some(env.block.height))?
-        .ok_or(ContractError::Unauthorized {})?;
-
-    // max expires also used as default
-    let max_expires = cfg.max_voting_period.after(&env.block);
-    let mut expires = latest.unwrap_or(max_expires);
-    let comp = expires.partial_cmp(&max_expires);
-    if let Some(Ordering::Greater) = comp {
-        expires = max_expires;
-    } else if comp.is_none() {
-        return Err(ContractError::WrongExpiration {});
-    }
-
-    // create a proposal
-    let id = next_id(deps.storage)?;
-    let mut prop = Proposal {
-        title,
-        description,
-        start_height: env.block.height,
-        expires,
-        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: cfg.group_addr.0.to_string(),
-            msg: to_binary(
-                &angel_core::messages::cw4_group::ExecuteMsg::UpdateMembers {
-                    remove: vec![old_member],
-                    add: vec![Member {
-                        addr: new_addr.to_string(),
-                        weight: 1,
-                    }],
-                },
-            )
-            .unwrap(),
-            funds: vec![],
-        })],
-        confirmation_proposal: None,
-        status: Status::Open,
-        votes: Votes::new(1_u64),
-        threshold: Threshold::AbsolutePercentage {
-            percentage: Decimal::percent(75),
-        },
-        total_weight: cfg.guardians.len() as u64, // 1 guardian, 1 vote
-        meta,
-    };
-    prop.update_status(&env.block);
-    GUARDIAN_PROPOSALS.save(deps.storage, id, &prop)?;
-
-    // add the first yes vote from voter
-    GUARDIAN_BALLOTS.save(
-        deps.storage,
-        (id, &info.sender),
-        &Ballot {
-            weight: 1_u64,
-            vote: Vote::Yes,
-        },
-    )?;
-
-    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
-    let mut direct_execute_msgs = vec![];
-    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
-    if auto_execute {
-        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::GuardianExecute { proposal_id: id }).unwrap(),
-            funds: vec![],
-        }));
-    };
-
-    Ok(Response::new()
-        .add_attribute("action", "guardian_propose")
-        .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status))
-        .add_attribute("auto-executed", auto_execute.to_string())
-        .add_messages(direct_execute_msgs))
-}
-
-pub fn execute_guardian_vote(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    proposal_id: u64,
-    vote: Vote,
-) -> Result<Response<Empty>, ContractError> {
-    let cfg = CONFIG.load(deps.storage)?;
-
-    // only guardians of the multisig can vote
-    if cfg.guardians.iter().position(|g| g == &info.sender) == None {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // ensure proposal exists and can be voted on
-    let mut prop = GUARDIAN_PROPOSALS.load(deps.storage, proposal_id)?;
-    if prop.status != Status::Open {
-        return Err(ContractError::NotOpen {});
-    }
-    if prop.expires.is_expired(&env.block) {
-        return Err(ContractError::Expired {});
-    }
-
-    // cast vote if no vote previously cast
-    GUARDIAN_BALLOTS.update(deps.storage, (proposal_id, &info.sender), |bal| match bal {
-        Some(_) => Err(ContractError::AlreadyVoted {}),
-        None => Ok(Ballot {
-            weight: 1_u64,
-            vote,
-        }),
-    })?;
-
-    // update vote tally
-    prop.votes.add_vote(vote, 1_u64);
-    prop.update_status(&env.block);
-    GUARDIAN_PROPOSALS.save(deps.storage, proposal_id, &prop)?;
-
-    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
-    let mut direct_execute_msgs = vec![];
-    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
-    if auto_execute {
-        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::GuardianExecute { proposal_id }).unwrap(),
-            funds: vec![],
-        }));
-    }
-
-    Ok(Response::new()
-        .add_attribute("action", "guardian_vote")
-        .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", proposal_id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status))
-        .add_attribute("auto-executed", auto_execute.to_string())
-        .add_messages(direct_execute_msgs))
-}
-
-pub fn execute_guardian_execute(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    proposal_id: u64,
-) -> Result<Response, ContractError> {
-    // anyone can trigger this if the vote passed
-    // try to look up the proposal from the ID given
-    let mut prop: Proposal = match GUARDIAN_PROPOSALS.load(deps.storage, proposal_id) {
-        Ok(p) => p,
-        _ => return Err(ContractError::Unauthorized {}),
-    };
-
-    // we allow execution even after the proposal "expiration" as long as all vote come in before
-    // that point. If it was approved on time, it can be executed any time.
-    if prop.status != Status::Passed {
-        return Err(ContractError::WrongExecuteStatus {});
-    }
-
-    // set it to executed
-    prop.status = Status::Executed;
-    GUARDIAN_PROPOSALS.save(deps.storage, proposal_id, &prop)?;
-
-    // dispatch all proposed messages
-    Ok(Response::new()
-        .add_attribute("action", "guardian_execute")
-        .add_attribute("sender", info.sender)
-        .add_messages(prop.msgs)
-        .add_attribute("proposal_id", proposal_id.to_string()))
-}
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
@@ -1035,24 +806,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new Config struct and save to storage
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let old_config: OldConfig = from_slice(&data)?;
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            registrar_contract: old_config.registrar_contract,
-            threshold: old_config.threshold,
-            max_voting_period: old_config.max_voting_period,
-            group_addr: old_config.group_addr,
-            require_execution: old_config.require_execution,
-            guardians: vec![],
-        },
-    )?;
 
     Ok(Response::default())
 }
