@@ -13,11 +13,11 @@ use angel_core::structs::{EndowmentController, EndowmentFee};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{from_binary, Addr, Decimal, Event, Reply, StdError, SubMsgResponse, Uint128};
 
-const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
-const CHARITY_ID: u32 = 1;
-const NOT_EXISTING_CHARITY_ID: u32 = 2;
-const REGISTRAR_CONTRACT: &str = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
-const PLEB: &str = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
+const AP_TEAM: &str = "juno1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
+const ENDOW_ID: u32 = 1;
+const NOT_EXISTING_ENDOW_ID: u32 = 2;
+const REGISTRAR_CONTRACT: &str = "juno18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
+const PLEB: &str = "juno17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
 const DEPOSITOR: &str = "depositor";
 
 #[test]
@@ -42,7 +42,7 @@ fn test_proper_initialization() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::EndowmentPermissions {
-            id: CHARITY_ID,
+            id: ENDOW_ID,
             setting_updater: Addr::unchecked("anyone"),
             endowment_owner: Addr::unchecked("endowment-owner"),
         },
@@ -116,7 +116,7 @@ fn test_create_endowment_settings() {
     // Only the "accounts_contract" can call this entry.
     let info = mock_info("non-accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: true,
         donation_match_contract: Some(Addr::unchecked("donation-match-contract")),
         beneficiaries_allowlist: vec![PLEB.to_string()],
@@ -209,10 +209,10 @@ fn test_update_endowment_settings() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
-        beneficiaries_allowlist: vec![],
+        beneficiaries_allowlist: vec![PLEB.to_string()],
         contributors_allowlist: vec![],
         maturity_allowlist: vec![],
         endowment_controller: EndowmentController::default(),
@@ -232,76 +232,66 @@ fn test_update_endowment_settings() {
     )
     .unwrap();
 
-    // Only "accounts" contract can call this entry
-    let info = mock_info("non-accounts-contract", &[]);
     let mut msg = UpdateEndowmentSettingsMsg {
-        id: CHARITY_ID,
+        id: 2,
         donation_match_active: Some(true),
-        beneficiaries_allowlist: Some(vec![PLEB.to_string()]),
+        beneficiaries_allowlist: Some(vec![AP_TEAM.to_string(), PLEB.to_string()]),
         contributors_allowlist: Some(vec![DEPOSITOR.to_string()]),
         maturity_allowlist: Some(UpdateMaturityAllowlist {
             add: vec![],
             remove: vec![],
         }),
-        ignore_user_splits: None,
+        ignore_user_splits: Some(true),
         split_to_liquid: None,
     };
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::UpdateEndowmentSettings(msg.clone()),
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
 
     // Endowment state should be NOT closing
-    let info = mock_info("accounts-contract", &[]);
-    msg.id = 2;
     let err = execute(
         deps.as_mut(),
         mock_env(),
-        info,
+        mock_info("accounts-contract", &[]),
         ExecuteMsg::UpdateEndowmentSettings(msg.clone()),
     )
     .unwrap_err();
     assert_eq!(err, ContractError::UpdatesAfterClosed {});
 
-    // "setting_updater" SHOULD be either of "config.owner" or "endowment owner"
-    let info = mock_info("accounts-contract", &[]);
-    msg.id = 1;
+    // sender SHOULD be either of "endowment owner" or the "endowment gov" contracts (or a delegate address)
+    msg.id = ENDOW_ID;
     let err = execute(
         deps.as_mut(),
         mock_env(),
-        info,
+        mock_info(PLEB, &[]),
         ExecuteMsg::UpdateEndowmentSettings(msg.clone()),
     )
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Succeed to update the Endowment settings
-    let info = mock_info("accounts-contract", &[]);
-    msg.id = 1;
-    let res = execute(
+    let _res = execute(
         deps.as_mut(),
         mock_env(),
-        info,
+        mock_info("endowment-owner", &[]),
         ExecuteMsg::UpdateEndowmentSettings(msg.clone()),
     )
     .unwrap();
-    assert_eq!(0, res.messages.len());
 
     // Check the result of updated endowment settings
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::EndowmentSettings { id: 1 },
+    let endow_settings: EndowmentSettingsResponse = from_binary(
+        &query(
+            deps.as_ref(),
+            mock_env(),
+            QueryMsg::EndowmentSettings { id: ENDOW_ID },
+        )
+        .unwrap(),
     )
     .unwrap();
-    let endow_settings: EndowmentSettingsResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        endow_settings.ignore_user_splits,
+        msg.ignore_user_splits.clone().unwrap()
+    );
     assert_eq!(
         endow_settings.beneficiaries_allowlist,
-        msg.beneficiaries_allowlist.clone().unwrap()
+        vec![AP_TEAM.to_string(), PLEB.to_string()]
     );
 }
 
@@ -319,7 +309,7 @@ fn test_update_endowment_fees() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],
@@ -345,7 +335,7 @@ fn test_update_endowment_fees() {
     // Endowment SHOULD be "Normal" type
     let info = mock_info("anyone", &[]);
     let mut msg = UpdateEndowmentFeesMsg {
-        id: NOT_EXISTING_CHARITY_ID,
+        id: NOT_EXISTING_ENDOW_ID,
         earnings_fee: Some(EndowmentFee {
             payout_address: Addr::unchecked("beneficiary1"),
             fee_percentage: Decimal::percent(10),
@@ -421,7 +411,7 @@ fn test_update_delegate() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],
@@ -451,7 +441,7 @@ fn test_update_delegate() {
         mock_env(),
         info,
         ExecuteMsg::UpdateDelegate {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setting: "any-fee".to_string(),
             action: "set".to_string(),
             delegate_address: "new-delegate-address".to_string(),
@@ -467,7 +457,7 @@ fn test_update_delegate() {
         mock_env(),
         info,
         ExecuteMsg::UpdateDelegate {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setting: "aum_fee".to_string(),
             action: "blahblah".to_string(),
             delegate_address: "new-delegate-address".to_string(),
@@ -484,7 +474,7 @@ fn test_update_delegate() {
         mock_env(),
         info,
         ExecuteMsg::UpdateDelegate {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setting: "aum_fee".to_string(),
             action: "set".to_string(),
             delegate_address: "new-delegate-address".to_string(),
@@ -509,7 +499,7 @@ fn test_setup_dao() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],
@@ -539,7 +529,7 @@ fn test_setup_dao() {
         mock_env(),
         info,
         ExecuteMsg::SetupDao {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setup: angel_core::structs::DaoSetup {
                 quorum: Decimal::percent(10),
                 threshold: Decimal::percent(50),
@@ -566,7 +556,7 @@ fn test_setup_dao() {
         mock_env(),
         info,
         ExecuteMsg::SetupDao {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setup: angel_core::structs::DaoSetup {
                 quorum: Decimal::percent(10),
                 threshold: Decimal::percent(50),
@@ -601,7 +591,7 @@ fn test_setup_donation_match() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],
@@ -631,7 +621,7 @@ fn test_setup_donation_match() {
         mock_env(),
         info,
         ExecuteMsg::SetupDonationMatch {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setup: angel_core::structs::DonationMatch::Cw20TokenReserve {
                 reserve_addr: "reserve-token".to_string(),
                 lp_addr: "lp-token".to_string(),
@@ -648,7 +638,7 @@ fn test_setup_donation_match() {
         mock_env(),
         info,
         ExecuteMsg::SetupDonationMatch {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setup: angel_core::structs::DonationMatch::Cw20TokenReserve {
                 reserve_addr: "reserve-token".to_string(),
                 lp_addr: "lp-token".to_string(),
@@ -664,7 +654,7 @@ fn test_setup_donation_match() {
         mock_env(),
         info,
         ExecuteMsg::SetupDonationMatch {
-            endowment_id: CHARITY_ID,
+            endowment_id: ENDOW_ID,
             setup: angel_core::structs::DonationMatch::HaloTokenReserve {},
         },
     )
@@ -686,7 +676,7 @@ fn test_setup_dao_reply() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],
@@ -722,7 +712,7 @@ fn test_setup_dao_reply() {
 
     // SubMsgResult should be Ok
     let reply_msg = Reply {
-        id: CHARITY_ID as u64,
+        id: ENDOW_ID as u64,
         result: cosmwasm_std::SubMsgResult::Err("error".to_string()),
     };
     let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
@@ -735,7 +725,7 @@ fn test_setup_dao_reply() {
 
     // SubMsgResult should have results in "events"
     let reply_msg = Reply {
-        id: CHARITY_ID as u64,
+        id: ENDOW_ID as u64,
         result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
             events: vec![],
             data: None,
@@ -746,7 +736,7 @@ fn test_setup_dao_reply() {
 
     // Succeed to save Dao info in EndowmentSettings
     let reply_msg = Reply {
-        id: CHARITY_ID as u64,
+        id: ENDOW_ID as u64,
         result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
             events: vec![Event::new("wasm")
                 .add_attribute("endow_id", "1")
@@ -786,7 +776,7 @@ fn test_donation_match_reply() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],
@@ -822,7 +812,7 @@ fn test_donation_match_reply() {
 
     // SubMsgResult should be Ok
     let reply_msg = Reply {
-        id: NOT_EXISTING_CHARITY_ID as u64,
+        id: NOT_EXISTING_ENDOW_ID as u64,
         result: cosmwasm_std::SubMsgResult::Err("error".to_string()),
     };
     let err = reply(deps.as_mut(), mock_env(), reply_msg).unwrap_err();
@@ -835,7 +825,7 @@ fn test_donation_match_reply() {
 
     // SubMsgResult should have results in "events"
     let reply_msg = Reply {
-        id: NOT_EXISTING_CHARITY_ID as u64,
+        id: NOT_EXISTING_ENDOW_ID as u64,
         result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
             events: vec![],
             data: None,
@@ -846,7 +836,7 @@ fn test_donation_match_reply() {
 
     // Succeed to save Dao info in EndowmentSettings
     let reply_msg = Reply {
-        id: NOT_EXISTING_CHARITY_ID as u64,
+        id: NOT_EXISTING_ENDOW_ID as u64,
         result: cosmwasm_std::SubMsgResult::Ok(SubMsgResponse {
             events: vec![Event::new("wasm")
                 .add_attribute("endow_id", "1")
@@ -884,7 +874,7 @@ fn test_migrate() {
     // Succeed to create EndowmentSettings
     let info = mock_info("accounts-contract", &[]);
     let msg = CreateEndowSettingsMsg {
-        id: CHARITY_ID,
+        id: ENDOW_ID,
         donation_match_active: false,
         donation_match_contract: None,
         beneficiaries_allowlist: vec![],

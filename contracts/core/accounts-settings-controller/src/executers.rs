@@ -130,14 +130,13 @@ pub fn create_endowment_settings(
         return Err(ContractError::Unauthorized {});
     }
 
-    SETTINGS.save(
-        deps.storage,
-        msg.id,
-        &EndowmentSettings {
+    SETTINGS.update(deps.storage, msg.id, |existing| match existing {
+        Some(_) => Err(ContractError::AlreadyInUse {}),
+        None => Ok(EndowmentSettings {
             dao: None,
             dao_token: None,
             donation_match_active: msg.donation_match_active,
-            donation_match_contract: msg.donation_match_contract,
+            donation_match_contract: msg.donation_match_contract.clone(),
             beneficiaries_allowlist: msg.beneficiaries_allowlist.clone(),
             contributors_allowlist: msg.contributors_allowlist.clone(),
             maturity_allowlist: vec![],
@@ -148,8 +147,8 @@ pub fn create_endowment_settings(
             parent: msg.parent,
             split_to_liquid: msg.split_to_liquid.clone(),
             ignore_user_splits: msg.ignore_user_splits,
-        },
-    )?;
+        }),
+    })?;
 
     CONTROLLER.save(deps.storage, msg.id, &msg.endowment_controller.clone())?;
 
@@ -176,11 +175,6 @@ pub fn update_endowment_settings(
     )?;
     let accounts_contract = registrar_config.accounts_contract.unwrap();
 
-    // Only the "accounts_contract" can call this entry.
-    if info.sender != accounts_contract {
-        return Err(ContractError::Unauthorized {});
-    }
-
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
         accounts_contract.to_string(),
         &angel_core::messages::accounts::QueryMsg::Endowment { id: msg.id },
@@ -197,10 +191,9 @@ pub fn update_endowment_settings(
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endow_detail.endow_type != EndowmentType::Charity {
-        let endow_mature_time = endow_detail
-            .maturity_time
-            .expect("Cannot get maturity time");
-        if env.block.time.seconds() < endow_mature_time {
+        if endow_detail.maturity_time == None
+            || env.block.time.seconds() < endow_detail.maturity_time.unwrap()
+        {
             if let Some(beneficiaries_allowlist) = msg.beneficiaries_allowlist {
                 if controller.beneficiaries_allowlist.can_change(
                     &info.sender,
@@ -209,6 +202,8 @@ pub fn update_endowment_settings(
                     env.block.time,
                 ) {
                     settings.beneficiaries_allowlist = beneficiaries_allowlist;
+                } else {
+                    return Err(ContractError::Unauthorized {});
                 }
             }
             if let Some(contributors_allowlist) = msg.contributors_allowlist {
@@ -219,24 +214,59 @@ pub fn update_endowment_settings(
                     env.block.time,
                 ) {
                     settings.contributors_allowlist = contributors_allowlist;
+                } else {
+                    return Err(ContractError::Unauthorized {});
                 }
             }
             if let Some(maturity_allowlist) = msg.maturity_allowlist {
-                for addr in maturity_allowlist.add.iter() {
-                    let validated_addr = deps.api.addr_validate(&addr)?;
-                    settings.maturity_allowlist.push(validated_addr);
-                }
-                for addr in maturity_allowlist.remove.iter() {
-                    let validated_addr = deps.api.addr_validate(&addr)?;
-                    let id = settings
-                        .maturity_allowlist
-                        .iter()
-                        .position(|v| *v == validated_addr);
-                    if id != None {
-                        settings.maturity_allowlist.swap_remove(id.unwrap());
+                if controller.maturity_allowlist.can_change(
+                    &info.sender,
+                    &endow_detail.owner,
+                    settings.dao.as_ref(),
+                    env.block.time,
+                ) {
+                    for addr in maturity_allowlist.add.iter() {
+                        let validated_addr = deps.api.addr_validate(&addr)?;
+                        settings.maturity_allowlist.push(validated_addr);
                     }
+                    for addr in maturity_allowlist.remove.iter() {
+                        let validated_addr = deps.api.addr_validate(&addr)?;
+                        let pos = settings
+                            .maturity_allowlist
+                            .iter()
+                            .position(|v| *v == validated_addr);
+                        if pos != None {
+                            settings.maturity_allowlist.swap_remove(pos.unwrap());
+                        }
+                    }
+                } else {
+                    return Err(ContractError::Unauthorized {});
                 }
             }
+        }
+    }
+    if let Some(split_to_liquid) = msg.split_to_liquid {
+        if controller.split_to_liquid.can_change(
+            &info.sender,
+            &endow_detail.owner,
+            settings.dao.as_ref(),
+            env.block.time,
+        ) {
+            settings.split_to_liquid = Some(split_to_liquid);
+        } else {
+            return Err(ContractError::Unauthorized {});
+        }
+    }
+    if let Some(ignore_user_splits) = msg.ignore_user_splits {
+        if controller.ignore_user_splits.can_change(
+            &info.sender,
+            &endow_detail.owner,
+            settings.dao.as_ref(),
+            env.block.time,
+        ) {
+            settings.ignore_user_splits = ignore_user_splits;
+        } else {
+            return Err(ContractError::Unauthorized {});
         }
     }
 

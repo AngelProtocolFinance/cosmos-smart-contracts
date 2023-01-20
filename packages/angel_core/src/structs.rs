@@ -84,17 +84,15 @@ impl SettingsPermissions {
         gov: Option<&Addr>,
         env_time: Timestamp,
     ) -> bool {
-        if !self.modifiable {
-            return false;
-        }
-        if sender == owner && self.owner_controlled
-            || gov.is_some() && self.gov_controlled && sender == gov.unwrap()
-            || self.delegate.is_some()
-                && self
-                    .delegate
-                    .clone()
-                    .unwrap()
-                    .can_take_action(sender, env_time)
+        if self.modifiable
+            && (self.owner_controlled && sender == owner
+                || self.gov_controlled && gov.is_some() && sender == gov.unwrap()
+                || self.delegate.is_some()
+                    && self
+                        .delegate
+                        .clone()
+                        .unwrap()
+                        .can_take_action(sender, env_time))
         {
             return true;
         }

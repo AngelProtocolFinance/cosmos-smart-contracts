@@ -3,8 +3,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::accounts_settings_controller::EndowmentSettingsResponse;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, AccountType, Categories, EndowmentController, OneOffVaults,
-    RebalanceDetails, SplitDetails, VaultType, YieldVault,
+    AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
+    SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{

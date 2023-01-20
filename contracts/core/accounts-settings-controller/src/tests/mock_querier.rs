@@ -228,7 +228,7 @@ impl WasmMockQuerier {
                             status: angel_core::structs::EndowmentStatus::Approved,
                             deposit_approved: true,
                             withdraw_approved: true,
-                            maturity_time: Some(0),
+                            maturity_time: None,
                             strategies: AccountStrategies::default(),
                             oneoff_vaults: OneOffVaults::default(),
                             rebalance: RebalanceDetails::default(),
@@ -242,7 +242,7 @@ impl WasmMockQuerier {
                     2 => SystemResult::Ok(ContractResult::Ok(
                         to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
                             owner: Addr::unchecked("endowment-owner"),
-                            name: "Test Endowment 1".to_string(),
+                            name: "Test Endowment 2".to_string(),
                             categories: Categories::default(),
                             tier: Some(2),
                             endow_type: EndowmentType::Charity,
@@ -251,7 +251,7 @@ impl WasmMockQuerier {
                             status: angel_core::structs::EndowmentStatus::Approved,
                             deposit_approved: true,
                             withdraw_approved: true,
-                            maturity_time: Some(0),
+                            maturity_time: Some(10000000),
                             strategies: AccountStrategies::default(),
                             oneoff_vaults: OneOffVaults::default(),
                             rebalance: RebalanceDetails::default(),
