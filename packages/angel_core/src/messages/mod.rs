@@ -1,4 +1,5 @@
 pub mod accounts;
+pub mod accounts_settings_controller;
 pub mod cw3_apteam;
 pub mod cw3_multisig;
 pub mod cw4_group;
@@ -8,7 +9,6 @@ pub mod fee_distributor;
 pub mod index_fund;
 pub mod registrar;
 pub mod router;
-pub mod settings_controller;
 pub mod subdao;
 pub mod subdao_bonding_token;
 pub mod vault;

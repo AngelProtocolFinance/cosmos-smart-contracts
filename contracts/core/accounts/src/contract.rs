@@ -80,8 +80,8 @@ pub fn execute(
             executers::vault_receipt(deps, env, id, acct_type, info.sender, native_fund)
         }
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
-        ExecuteMsg::UpdateEndowmentSettings(msg) => {
-            executers::update_endowment_settings(deps, env, info, msg)
+        ExecuteMsg::UpdateEndowmentDetails(msg) => {
+            executers::update_endowment_details(deps, env, info, msg)
         }
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)

@@ -4,7 +4,7 @@ use crate::state::Allowances;
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg,
-    Strategy, UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
+    Strategy, UpdateEndowmentDetailsMsg, UpdateEndowmentStatusMsg,
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
@@ -63,7 +63,7 @@ fn create_endowment() -> (
         aum_fee: None,
         dao: None,
         proposal_link: None,
-        settings_controller: None,
+        endowment_controller: None,
         parent: None,
         split_to_liquid: Some(SplitDetails::default()),
         ignore_user_splits: false,
@@ -127,12 +127,12 @@ fn test_proper_initialization() {
 }
 
 #[test]
-fn test_update_endowment_settings() {
+fn test_update_endowment_details() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
     // update the endowment "owner" & "kyc_donors_only"
-    let msg = UpdateEndowmentSettingsMsg {
+    let msg = UpdateEndowmentDetailsMsg {
         id: CHARITY_ID,
         owner: Some(CHARITY_ADDR.to_string()),
         kyc_donors_only: Some(false),
@@ -145,27 +145,20 @@ fn test_update_endowment_settings() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        maturity_time: None,
         strategies: None,
-        locked_endowment_configs: None,
         rebalance: None,
-        donation_match_active: None,
-        beneficiaries_allowlist: None,
-        contributors_allowlist: None,
-        maturity_allowlist: None,
-        settings_controller: None,
     };
     let res = execute(
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateEndowmentSettings(msg),
+        ExecuteMsg::UpdateEndowmentDetails(msg),
     )
     .unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(0, res.messages.len());
 
-    // Not just anyone can update the Endowment's settings! Only Endowment owner can.
-    let msg = UpdateEndowmentSettingsMsg {
+    // Not just anyone can update the Endowment's details! Only Endowment owner can.
+    let msg = UpdateEndowmentDetailsMsg {
         id: CHARITY_ID,
         owner: Some(CHARITY_ADDR.to_string()),
         kyc_donors_only: Some(false),
@@ -178,16 +171,8 @@ fn test_update_endowment_settings() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        maturity_time: None,
         strategies: None,
-        locked_endowment_configs: None,
         rebalance: None,
-
-        donation_match_active: None,
-        beneficiaries_allowlist: None,
-        contributors_allowlist: None,
-        maturity_allowlist: None,
-        settings_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -195,7 +180,7 @@ fn test_update_endowment_settings() {
         deps.as_mut(),
         env.clone(),
         info,
-        ExecuteMsg::UpdateEndowmentSettings(msg),
+        ExecuteMsg::UpdateEndowmentDetails(msg),
     )
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
@@ -642,7 +627,7 @@ fn test_withdraw() {
     //     deps.as_mut(),
     //     env,
     //     info,
-    //     ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
+    //     ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentDetailsMsg {
     //         id: CHARITY_ID,
     //         owner: None,
     //         maturity_time: None,
@@ -661,7 +646,7 @@ fn test_withdraw() {
     //         beneficiaries_allowlist: None,
     //         contributors_allowlist: None,
     //         maturity_allowlist: None,
-    //         settings_controller: None,
+    //         endowment_controller: None,
     //     }),
     // )
     // .unwrap();

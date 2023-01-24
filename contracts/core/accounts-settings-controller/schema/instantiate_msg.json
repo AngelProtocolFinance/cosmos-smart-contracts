@@ -1,33 +1,27 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ConfigResponse",
+  "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "max_general_category_id",
-    "next_account_id",
-    "owner",
-    "registrar_contract",
-    "settings_controller"
+    "owner_sc",
+    "registrar_contract"
   ],
   "properties": {
-    "max_general_category_id": {
-      "type": "integer",
-      "format": "uint8",
-      "minimum": 0.0
-    },
-    "next_account_id": {
-      "type": "integer",
-      "format": "uint32",
-      "minimum": 0.0
-    },
-    "owner": {
+    "owner_sc": {
       "type": "string"
     },
     "registrar_contract": {
       "type": "string"
     },
-    "settings_controller": {
-      "$ref": "#/definitions/SettingsController"
+    "endowment_controller": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/EndowmentController"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "definitions": {
@@ -54,7 +48,7 @@
         }
       }
     },
-    "SettingsController": {
+    "EndowmentController": {
       "type": "object",
       "required": [
         "aum_fee",
@@ -121,7 +115,7 @@
       "type": "object",
       "required": [
         "gov_controlled",
-        "modifiable_after_init",
+        "modifiable",
         "owner_controlled"
       ],
       "properties": {
@@ -138,7 +132,7 @@
         "gov_controlled": {
           "type": "boolean"
         },
-        "modifiable_after_init": {
+        "modifiable": {
           "type": "boolean"
         },
         "owner_controlled": {

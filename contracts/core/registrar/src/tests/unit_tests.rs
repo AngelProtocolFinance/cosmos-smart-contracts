@@ -30,7 +30,7 @@ fn proper_initialization() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -62,7 +62,7 @@ fn update_owner() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -100,7 +100,7 @@ fn update_config() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -142,7 +142,7 @@ fn update_config() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
-        settings_controller: Some("settings-controller".to_string()),
+        accounts_settings_controller: Some("accounts-settings-controller".to_string()),
         tax_rate: Some(Decimal::from_ratio(20_u128, 100_u128)),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
@@ -185,7 +185,7 @@ fn update_config() {
         donation_match_code: None,
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
-        settings_controller: Some("settings-controller".to_string()),
+        accounts_settings_controller: Some("accounts-settings-controller".to_string()),
         tax_rate: Some(Decimal::from_ratio(20_u128, 100_u128)),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
@@ -220,7 +220,7 @@ fn test_add_update_and_remove_vault() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -362,7 +362,7 @@ fn test_add_update_and_remove_accepted_tokens() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -407,7 +407,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         donation_match_code: None,
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
-        settings_controller: Some("settings-controller".to_string()),
+        accounts_settings_controller: Some("accounts-settings-controller".to_string()),
         tax_rate: Some(Decimal::from_ratio(20_u128, 100_u128)),
     };
     let res = execute(
@@ -451,7 +451,7 @@ fn test_add_update_and_remove_network_infos() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -561,7 +561,7 @@ fn test_update_fees() {
             cw20: vec![],
         }),
         swap_factory: None,
-        settings_controller: "settings-controller".to_string(),
+        accounts_settings_controller: "accounts-settings-controller".to_string(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();

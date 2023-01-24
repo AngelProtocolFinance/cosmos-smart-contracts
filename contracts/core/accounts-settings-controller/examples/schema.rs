@@ -1,7 +1,9 @@
-use angel_core::messages::settings_controller::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use angel_core::responses::settings_controller::{ConfigResponse, EndowmentSettingsResponse};
+use accounts_settings_controller::state::Config;
+use angel_core::messages::accounts_settings_controller::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use angel_core::responses::accounts_settings_controller::{
+    ConfigResponse, EndowmentSettingsResponse,
+};
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-use settings_controller::state::Config;
 use std::env::current_dir;
 use std::fs::create_dir_all;
 

@@ -8,7 +8,7 @@
     "next_account_id",
     "owner",
     "registrar_contract",
-    "settings_controller"
+    "endowment_controller"
   ],
   "properties": {
     "ibc_controller": {
@@ -30,8 +30,8 @@
     "registrar_contract": {
       "$ref": "#/definitions/Addr"
     },
-    "settings_controller": {
-      "$ref": "#/definitions/SettingsController"
+    "endowment_controller": {
+      "$ref": "#/definitions/EndowmentController"
     }
   },
   "definitions": {
@@ -58,7 +58,7 @@
         }
       }
     },
-    "SettingsController": {
+    "EndowmentController": {
       "type": "object",
       "required": [
         "aum_fee",
@@ -125,7 +125,7 @@
       "type": "object",
       "required": [
         "gov_controlled",
-        "modifiable_after_init",
+        "modifiable",
         "owner_controlled"
       ],
       "properties": {
@@ -142,7 +142,7 @@
         "gov_controlled": {
           "type": "boolean"
         },
-        "modifiable_after_init": {
+        "modifiable": {
           "type": "boolean"
         },
         "owner_controlled": {

@@ -132,7 +132,7 @@ impl WasmMockQuerier {
                         collector_addr: "collector-addr".to_string(),
                         collector_share: Decimal::percent(50),
                         swap_factory: Some("swap-factory".to_string()),
-                        settings_controller: "settings-controller".to_string(),
+                        accounts_settings_controller: "accounts-settings-controller".to_string(),
                         subdao_gov_code: None,
                         subdao_cw20_token_code: None,
                         subdao_bonding_token_code: None,

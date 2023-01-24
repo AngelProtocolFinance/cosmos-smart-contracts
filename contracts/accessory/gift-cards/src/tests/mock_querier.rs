@@ -97,7 +97,8 @@ impl WasmMockQuerier {
                         collector_addr: "collector-contract-addr".to_string(),
                         collector_share: Decimal::zero(),
                         swap_factory: None,
-                        settings_controller: "settings-controller-addr".to_string(),
+                        accounts_settings_controller: "accounts-settings-controller-addr"
+                            .to_string(),
                     })
                     .unwrap(),
                 )),

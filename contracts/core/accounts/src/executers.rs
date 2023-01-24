@@ -1,21 +1,22 @@
 use crate::state::{Allowances, Endowment, State, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::accounts_settings_controller::CreateEndowSettingsMsg;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
-use angel_core::messages::settings_controller::CreateEndowSettingsMsg;
+use angel_core::responses::accounts_settings_controller::{
+    EndowmentPermissionsResponse, EndowmentSettingsResponse,
+};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::responses::settings_controller::{
-    EndowmentPermissionsResponse, EndowmentSettingsResponse,
-};
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
-    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails,
-    SettingsController, SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived,
+    EndowmentController, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance,
+    OneOffVaults, RebalanceDetails, SplitDetails, StrategyComponent, SwapOperation, VaultType,
+    YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -184,11 +185,11 @@ pub fn create_endowment(
         reply_on: ReplyOn::Success,
     });
 
-    // Create the Endowment settings in "settings_controller" contract
+    // Create the Endowment settings in "endowment_controller" contract
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: registrar_config.settings_controller.clone(),
+        contract_addr: registrar_config.accounts_settings_controller.clone(),
         msg: to_binary(
-            &angel_core::messages::settings_controller::ExecuteMsg::CreateEndowmentSettings(
+            &angel_core::messages::accounts_settings_controller::ExecuteMsg::CreateEndowmentSettings(
                 CreateEndowSettingsMsg {
                     id: config.next_account_id,
                     donation_match_active: false,
@@ -196,10 +197,10 @@ pub fn create_endowment(
                     beneficiaries_allowlist: msg.beneficiaries_allowlist.clone(),
                     contributors_allowlist: msg.contributors_allowlist.clone(),
                     maturity_allowlist: vec![],
-                    settings_controller: msg
-                        .settings_controller
+                    endowment_controller: msg
+                        .endowment_controller
                         .clone()
-                        .unwrap_or(SettingsController::default()),
+                        .unwrap_or(EndowmentController::default()),
                     parent: msg.parent,
                     split_to_liquid: split_settings.0,
                     ignore_user_splits: split_settings.1,
@@ -222,9 +223,9 @@ pub fn create_endowment(
     ) {
         (Some(dao_setup), Some(_token_code), Some(_gov_code)) => {
             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: registrar_config.settings_controller,
+                contract_addr: registrar_config.accounts_settings_controller,
                 msg: to_binary(
-                    &angel_core::messages::settings_controller::ExecuteMsg::SetupDao {
+                    &angel_core::messages::accounts_settings_controller::ExecuteMsg::SetupDao {
                         endowment_id: config.next_account_id,
                         setup: dao_setup,
                     },
@@ -440,28 +441,29 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn update_endowment_settings(
+pub fn update_endowment_details(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: UpdateEndowmentSettingsMsg,
+    msg: UpdateEndowmentDetailsMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
     let registrar_config: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
-    let settings_controller: String = registrar_config.settings_controller;
-    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        settings_controller.clone(),
-        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
-    )?;
     let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
-        settings_controller.clone(),
-        &angel_core::messages::settings_controller::QueryMsg::EndowmentPermissions {
+        registrar_config.accounts_settings_controller.clone(),
+        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentPermissions {
             id: msg.id,
             setting_updater: info.sender.clone(),
             endowment_owner: endowment.owner.clone(),
+        },
+    )?;
+    let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
+        registrar_config.accounts_settings_controller,
+        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings {
+            id: msg.id,
         },
     )?;
 
@@ -508,16 +510,6 @@ pub fn update_endowment_settings(
 
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
-        endowment.maturity_time = match msg.maturity_time {
-            Some(i) => {
-                if endowment_permissions.maturity_time {
-                    i
-                } else {
-                    endowment.maturity_time
-                }
-            }
-            None => endowment.maturity_time,
-        };
         endowment.rebalance = match msg.rebalance {
             Some(i) => i,
             None => endowment.rebalance,
@@ -595,28 +587,7 @@ pub fn update_endowment_settings(
 
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
-    let message = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: settings_controller.to_string(),
-        msg: to_binary(
-            &angel_core::messages::settings_controller::ExecuteMsg::UpdateEndowmentSettings(
-                angel_core::messages::settings_controller::UpdateEndowmentSettingsMsg {
-                    setting_updater: info.sender,
-                    id: msg.id,
-                    donation_match_active: msg.donation_match_active,
-                    beneficiaries_allowlist: msg.beneficiaries_allowlist,
-                    contributors_allowlist: msg.contributors_allowlist,
-                    maturity_allowlist: msg.maturity_allowlist,
-                    settings_controller: msg.settings_controller,
-                },
-            ),
-        )
-        .unwrap(),
-        funds: vec![],
-    });
-
-    Ok(Response::new()
-        .add_attribute("action", "update_endowment_settings")
-        .add_message(message))
+    Ok(Response::new().add_attribute("action", "update_endowment_details"))
 }
 
 pub fn update_strategies(
@@ -1127,8 +1098,10 @@ pub fn deposit(
     )?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.settings_controller,
-        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
+        registrar_config.accounts_settings_controller,
+        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings {
+            id: msg.id,
+        },
     )?;
 
     // check that the Endowment has been approved to receive deposits
@@ -1629,8 +1602,8 @@ pub fn withdraw(
     )?;
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.settings_controller,
-        &angel_core::messages::settings_controller::QueryMsg::EndowmentSettings { id },
+        registrar_config.accounts_settings_controller,
+        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
 
     if !endowment.withdraw_approved {

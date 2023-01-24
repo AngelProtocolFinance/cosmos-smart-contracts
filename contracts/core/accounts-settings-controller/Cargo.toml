@@ -1,5 +1,5 @@
 [package]
-name = "settings-controller"
+name = "accounts-settings-controller"
 version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"

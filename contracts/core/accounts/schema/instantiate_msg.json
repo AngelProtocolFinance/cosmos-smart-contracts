@@ -13,10 +13,10 @@
     "registrar_contract": {
       "type": "string"
     },
-    "settings_controller": {
+    "endowment_controller": {
       "anyOf": [
         {
-          "$ref": "#/definitions/SettingsController"
+          "$ref": "#/definitions/EndowmentController"
         },
         {
           "type": "null"
@@ -48,7 +48,7 @@
         }
       }
     },
-    "SettingsController": {
+    "EndowmentController": {
       "type": "object",
       "required": [
         "aum_fee",
@@ -115,7 +115,7 @@
       "type": "object",
       "required": [
         "gov_controlled",
-        "modifiable_after_init",
+        "modifiable",
         "owner_controlled"
       ],
       "properties": {
@@ -132,7 +132,7 @@
         "gov_controlled": {
           "type": "boolean"
         },
-        "modifiable_after_init": {
+        "modifiable": {
           "type": "boolean"
         },
         "owner_controlled": {

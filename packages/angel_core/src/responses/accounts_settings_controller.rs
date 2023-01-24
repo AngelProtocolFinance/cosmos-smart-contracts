@@ -2,7 +2,7 @@ use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::structs::{EndowmentFee, SettingsController, SplitDetails};
+use crate::structs::{EndowmentFee, SplitDetails};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
@@ -23,20 +23,18 @@ pub struct EndowmentSettingsResponse {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub settings_controller: SettingsController,
-    pub parent: Option<u64>,
+    pub parent: Option<u32>,
     pub split_to_liquid: Option<SplitDetails>,
     pub ignore_user_splits: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct EndowmentPermissionsResponse {
-    pub settings_controller: bool,
+    pub endowment_controller: bool,
     pub strategies: bool,
     pub beneficiaries_allowlist: bool,
     pub contributors_allowlist: bool,
-    pub maturity_time: bool,
-    pub profile: bool,
+    pub maturity_allowlist: bool,
     pub earnings_fee: bool,
     pub withdraw_fee: bool,
     pub deposit_fee: bool,
@@ -46,4 +44,6 @@ pub struct EndowmentPermissionsResponse {
     pub image: bool,
     pub logo: bool,
     pub categories: bool,
+    pub split_to_liquid: bool,
+    pub ignore_user_splits: bool,
 }

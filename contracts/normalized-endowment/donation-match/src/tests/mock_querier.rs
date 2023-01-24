@@ -1,10 +1,10 @@
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
+use angel_core::responses::accounts_settings_controller::EndowmentSettingsResponse;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
-use angel_core::responses::settings_controller::EndowmentSettingsResponse;
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
-    SettingsController, SplitDetails, VaultType, YieldVault,
+    SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -30,7 +30,7 @@ pub enum QueryMsg {
     Vault { vault_addr: String },
     // Mock the `accounts` endowment
     Endowment { id: u32 },
-    // Mock the "settings_controller::EndowmentSettings {id: [EndowmentID]}" query
+    // Mock the "endowment_controller::EndowmentSettings {id: [EndowmentID]}" query
     EndowmentSettings { id: u32 },
 }
 
@@ -195,7 +195,7 @@ impl WasmMockQuerier {
                                     cw20: vec![],
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
-                                settings_controller: "settings-controller".to_string(),
+                                accounts_settings_controller: "accounts-settings-controller".to_string(),
                             })
                             .unwrap()
                         )),
@@ -232,10 +232,9 @@ impl WasmMockQuerier {
                         withdraw_fee: None,
                         deposit_fee: None,
                         aum_fee: None,
-                        settings_controller: SettingsController::default(),
-                        parent: None,
                         split_to_liquid: None,
                         ignore_user_splits: false,
+                        parent: None,
                     })
                     .unwrap(),
                 )),
