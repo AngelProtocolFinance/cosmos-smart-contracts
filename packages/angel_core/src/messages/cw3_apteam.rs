@@ -22,7 +22,8 @@ pub enum ExecuteMsg {
         orig_proposal: u64,
         endowment_id: u32,
         description: String,
-        beneficiary: String,
+        beneficiary_wallet: Option<String>,
+        beneficiary_endow: Option<u32>,
         assets: Vec<AssetUnchecked>,
         // note: we ignore API-spec'd earliest if passed, always opens immediately
         latest: Option<Expiration>,
