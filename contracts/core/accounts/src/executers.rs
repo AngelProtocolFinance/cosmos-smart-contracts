@@ -1758,36 +1758,33 @@ pub fn withdraw(
                     funds: vec![],
                 })));
 
-                match shuffle_to_liquid {
+                let payload = match shuffle_to_liquid {
                     // Build message to transfer CW20 tokens to the Beneficiary
-                    false => messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: addr.to_string(),
-                        msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                            recipient: beneficiary_wallet.clone().unwrap(),
-                            amount: asset.amount - withdraw_fee,
-                        })
+                    false => to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: beneficiary_wallet.clone().unwrap(),
+                        amount: asset.amount - withdraw_fee,
+                    }),
+                    // Build message to deposit funds to beneficiary's liquid account
+                    true => to_binary(&cw20::Cw20ExecuteMsg::Send {
+                        contract: registrar_config.accounts_contract.clone().unwrap(),
+                        amount: asset.amount - withdraw_fee,
+                        msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                            angel_core::messages::accounts::DepositMsg {
+                                id: beneficiary_endow.unwrap(),
+                                locked_percentage: Decimal::zero(),
+                                liquid_percentage: Decimal::one(),
+                            },
+                        ))
                         .unwrap(),
-                        funds: vec![],
-                    }))),
-                    true => messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: addr.clone().to_string(),
-                        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                            contract: registrar_config.accounts_contract.clone().unwrap(),
-                            amount: asset.amount - withdraw_fee,
-                            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-                                angel_core::messages::accounts::DepositMsg {
-                                    id: beneficiary_endow.unwrap(),
-                                    locked_percentage: Decimal::zero(),
-                                    liquid_percentage: Decimal::one(),
-                                },
-                            ))
-                            .unwrap(),
-                        })
-                        .unwrap(),
-                        funds: vec![],
-                    }))),
-                }
-                // Update a CW20 token's Balance in STATE
+                    }),
+                };
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.clone().to_string(),
+                    msg: payload.unwrap(),
+                    funds: vec![],
+                })));
+
+                // Update the CW20 token Balance in STATE
                 state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     amount: asset.amount,
                     address: deps.api.addr_validate(&addr).unwrap(),
