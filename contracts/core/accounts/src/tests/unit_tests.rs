@@ -583,7 +583,8 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Locked,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(100_u128),
@@ -658,7 +659,8 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Locked,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(100_u128),
@@ -674,7 +676,8 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
             amount: Uint128::from(100_u128),
@@ -702,7 +705,8 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
             amount: Uint128::from(100_u128),
@@ -740,7 +744,8 @@ fn test_withdraw_liquid() {
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(1000_u128),
@@ -759,7 +764,8 @@ fn test_withdraw_liquid() {
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(1000_u128),
@@ -773,7 +779,8 @@ fn test_withdraw_liquid() {
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
-        beneficiary: "beneficiary".to_string(),
+        beneficiary_wallet: Some("beneficiary".to_string()),
+        beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(10_u128),

@@ -31,11 +31,12 @@ pub enum ExecuteMsg {
         amount: Uint128,
         vault_addr: String,
     },
-    // Pull funds from Endowment locked/liquid free balances (TOH) to a Beneficiary address
+    // Pull funds from Endowment locked/liquid free balances (TOH) to a Beneficiary address or an AIF
     Withdraw {
         id: u32,
         acct_type: AccountType,
-        beneficiary: String,
+        beneficiary_wallet: Option<String>,
+        beneficiary_endow: Option<u32>,
         assets: Vec<AssetUnchecked>,
     },
     SwapToken {

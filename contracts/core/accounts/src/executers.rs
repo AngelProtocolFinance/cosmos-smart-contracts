@@ -1585,7 +1585,8 @@ pub fn withdraw(
     info: MessageInfo,
     id: u32,
     acct_type: AccountType,
-    beneficiary: String,
+    beneficiary_wallet: Option<String>,
+    beneficiary_endow: Option<u32>,
     assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
     let mut messages: Vec<SubMsg> = vec![];
@@ -1617,23 +1618,32 @@ pub fn withdraw(
     // EndowmentType::Charity =>
     //          AccountType::Locked => Only CONFIG owner can withdraw balances
     //          AccountType::Liquid => Only endowment owner can withdraw balances
-    // EndowmentType::Normal =>
+    // EndowmentType::Normal || Impact =>
     //          AccountType::Locked => Endomwent owner or address in "maturity_allowlist"
     //                      can withdraw the balances AFTER MATURED
     //          AccountType::Liquid => Endowment owner or address in "beneficiaries_allowlist"
     //                      can withdraw the balances
+    let mut shuffle_to_liquid = false;
+    let mut inter_endow_transfer = false;
     match (endowment.endow_type.clone(), acct_type.clone()) {
         (EndowmentType::Charity, AccountType::Locked) => {
             if info.sender != config.owner {
                 return Err(ContractError::Unauthorized {});
             }
+            if beneficiary_endow == None {
+                return Err(ContractError::InvalidInputs {});
+            }
+            shuffle_to_liquid = true;
         }
         (EndowmentType::Charity, AccountType::Liquid) => {
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
+            if beneficiary_wallet == None {
+                return Err(ContractError::InvalidInputs {});
+            }
         }
-        (EndowmentType::Normal, AccountType::Locked) => {
+        (_, AccountType::Locked) => {
             if endowment.maturity_time.is_some()
                 && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
             {
@@ -1646,8 +1656,14 @@ pub fn withdraw(
                     "Sender address is not listed in maturity_allowlist.",
                 )));
             }
+            if beneficiary_wallet == None {
+                return Err(ContractError::InvalidInputs {});
+            }
         }
-        (EndowmentType::Normal, AccountType::Liquid) => {
+        (_, AccountType::Liquid) => {
+            if beneficiary_wallet == None {
+                return Err(ContractError::InvalidInputs {});
+            }
             if !(info.sender == endowment.owner
                 || endowment_settings
                     .beneficiaries_allowlist
@@ -1657,8 +1673,13 @@ pub fn withdraw(
                     "Sender is not Endowment owner or is not listed in whitelist.",
                 )));
             }
+            if beneficiary_endow != None {
+                let benef_aif = ENDOWMENTS.load(deps.storage, beneficiary_endow.unwrap())?;
+                if benef_aif.endow_type == EndowmentType::Impact {
+                    inter_endow_transfer = true;
+                }
+            }
         }
-        (EndowmentType::Impact, _) => todo!(),
     }
 
     let registrar_config: RegistrarConfigResponse =
@@ -1705,28 +1726,27 @@ pub fn withdraw(
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
             AssetInfoBase::Native(denom) => {
-                // add Coin to the native coins vector to have a message built
-                // and all deductions against the state balance done at the end
-                native_coins.push(Coin {
-                    denom: denom.clone(),
-                    amount: asset.amount - withdraw_fee,
-                });
-                native_coins_fees.push(Coin {
-                    denom: denom.clone(),
-                    amount: withdraw_fee,
-                });
+                if inter_endow_transfer {
+                    // add Coin to the native coins vector to have a message built
+                    // but we take no fee deductions
+                    native_coins.push(Coin {
+                        denom: denom.clone(),
+                        amount: asset.amount,
+                    });
+                } else {
+                    // add Coin to the native coins vector to have a message built
+                    // and all deductions against the state balance done at the end
+                    native_coins.push(Coin {
+                        denom: denom.clone(),
+                        amount: asset.amount - withdraw_fee,
+                    });
+                    native_coins_fees.push(Coin {
+                        denom: denom.clone(),
+                        amount: withdraw_fee,
+                    });
+                }
             }
             AssetInfoBase::Cw20(addr) => {
-                // Build message to transfer CW20 tokens to the Beneficiary
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: addr.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                        recipient: beneficiary.to_string(),
-                        amount: asset.amount - withdraw_fee,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                })));
                 // Build message to AP treasury for withdraw fee owned
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: addr.to_string(),
@@ -1737,7 +1757,34 @@ pub fn withdraw(
                     .unwrap(),
                     funds: vec![],
                 })));
-                // Update a CW20 token's Balance in STATE
+
+                let payload = match shuffle_to_liquid {
+                    // Build message to transfer CW20 tokens to the Beneficiary
+                    false => to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: beneficiary_wallet.clone().unwrap(),
+                        amount: asset.amount - withdraw_fee,
+                    }),
+                    // Build message to deposit funds to beneficiary's liquid account
+                    true => to_binary(&cw20::Cw20ExecuteMsg::Send {
+                        contract: registrar_config.accounts_contract.clone().unwrap(),
+                        amount: asset.amount - withdraw_fee,
+                        msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                            angel_core::messages::accounts::DepositMsg {
+                                id: beneficiary_endow.unwrap(),
+                                locked_percentage: Decimal::zero(),
+                                liquid_percentage: Decimal::one(),
+                            },
+                        ))
+                        .unwrap(),
+                    }),
+                };
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.clone().to_string(),
+                    msg: payload.unwrap(),
+                    funds: vec![],
+                })));
+
+                // Update the CW20 token Balance in STATE
                 state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     amount: asset.amount,
                     address: deps.api.addr_validate(&addr).unwrap(),
@@ -1752,16 +1799,53 @@ pub fn withdraw(
         // deduct the native coins withdrawn against balances held in state
         state_bal.deduct_tokens(Balance::from(native_coins.clone()));
         state_bal.deduct_tokens(Balance::from(native_coins_fees.clone()));
-        // Build messages to send all native tokens  via BankMsg::Send to either:
-        // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
-        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: beneficiary,
-            amount: native_coins,
-        })));
-        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: registrar_config.treasury,
-            amount: native_coins_fees,
-        })));
+
+        match (shuffle_to_liquid, inter_endow_transfer) {
+            (false, _) => {
+                // Build messages to send all native tokens  via BankMsg::Send to either:
+                // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
+                messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: beneficiary_wallet.unwrap(),
+                    amount: native_coins,
+                })));
+                messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: registrar_config.treasury,
+                    amount: native_coins_fees,
+                })));
+            }
+            (true, false) => {
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                        angel_core::messages::accounts::DepositMsg {
+                            id: beneficiary_endow.unwrap(),
+                            locked_percentage: Decimal::zero(),
+                            liquid_percentage: Decimal::one(),
+                        },
+                    ))
+                    .unwrap(),
+                    funds: native_coins,
+                })));
+                messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: registrar_config.treasury,
+                    amount: native_coins_fees,
+                })));
+            }
+            (true, true) => {
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                        angel_core::messages::accounts::DepositMsg {
+                            id: beneficiary_endow.unwrap(),
+                            locked_percentage: Decimal::zero(),
+                            liquid_percentage: Decimal::one(),
+                        },
+                    ))
+                    .unwrap(),
+                    funds: native_coins,
+                })));
+            }
+        }
     }
 
     // set the updated balance for the account type
