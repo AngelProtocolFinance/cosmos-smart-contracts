@@ -1313,71 +1313,7 @@ fn test_vaults_redeem() {
 }
 
 #[test]
-fn test_reinvest_to_locked() {
-    let (mut deps, _, _, _) = create_endowment();
 
-    // Fail to invest to locked since no endowment owner calls
-    let info = mock_info("anyone", &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::ReinvestToLocked {
-            id: CHARITY_ID,
-            amount: Uint128::from(1000000_u128),
-            vault_addr: "vault".to_string(),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Fail to invest to locked since no amount
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::ReinvestToLocked {
-            id: CHARITY_ID,
-            amount: Uint128::zero(),
-            vault_addr: "vault".to_string(),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::InvalidInputs {});
-
-    // Fail to invest to locked since acct_type does not match
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::ReinvestToLocked {
-            id: CHARITY_ID,
-            amount: Uint128::zero(),
-            vault_addr: "vault".to_string(),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::InvalidInputs {});
-
-    // Finally, succeed to reinvest to locked vault
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let res = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::ReinvestToLocked {
-            id: CHARITY_ID,
-            amount: Uint128::from(1000000_u128),
-            vault_addr: "liquid-vault".to_string(),
-        },
-    )
-    .unwrap();
-    assert_eq!(res.messages.len(), 1);
-}
-
-#[test]
 fn test_distribute_to_beneficiary() {
     let (mut deps, _, _, _) = create_endowment();
 

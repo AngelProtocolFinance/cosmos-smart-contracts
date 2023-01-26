@@ -25,12 +25,6 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    /// reinvest vault assets from Liquid to Locked
-    ReinvestToLocked {
-        id: u32,
-        amount: Uint128,
-        vault_addr: String,
-    },
     // Pull funds from Endowment locked/liquid free balances (TOH) to a Beneficiary address or an AIF
     Withdraw {
         id: u32,

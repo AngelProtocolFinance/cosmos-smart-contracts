@@ -1033,55 +1033,6 @@ pub fn vault_receipt(
     Ok(Response::new().add_attribute("action", "vault_receipt"))
 }
 
-pub fn reinvest_to_locked(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    id: u32,
-    amount: Uint128,
-    vault_addr: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // ensure we have a non-zero amount and a valid vault target
-    let vault_config: VaultDetailResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Vault {
-                vault_addr: vault_addr.clone(),
-            })?,
-        }))?;
-    let yield_vault: YieldVault = vault_config.vault.clone();
-    if amount.is_zero() || !yield_vault.approved || yield_vault.acct_type.ne(&AccountType::Liquid) {
-        return Err(ContractError::InvalidInputs {});
-    }
-
-    let mut res = Response::new().add_attribute("action", "vault_reinvest_to_locked");
-    match yield_vault.vault_type {
-        VaultType::Native => {
-            res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: vault_addr,
-                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
-                    endowment_id: id,
-                    amount,
-                })
-                .unwrap(),
-                funds: vec![],
-            })));
-        }
-        // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
-        VaultType::Ibc { ica: _ } => unimplemented!(),
-        VaultType::Evm => unimplemented!(),
-    }
-    Ok(res)
-}
-
 pub fn deposit(
     deps: DepsMut,
     _env: Env,
