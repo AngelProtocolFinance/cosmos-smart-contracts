@@ -93,11 +93,6 @@ pub fn execute(
         ExecuteMsg::DistributeToBeneficiary { id } => {
             executers::distribute_to_beneficiary(deps, env, info, id)
         }
-        ExecuteMsg::ReinvestToLocked {
-            id,
-            amount,
-            vault_addr,
-        } => executers::reinvest_to_locked(deps, env, info, id, amount, vault_addr),
         ExecuteMsg::Withdraw {
             id,
             acct_type,
