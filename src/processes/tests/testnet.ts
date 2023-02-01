@@ -10,7 +10,6 @@ import {
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesEndowmentSettings,
-  testCreateEndowmentCw3s,
   testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,

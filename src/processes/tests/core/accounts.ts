@@ -432,53 +432,6 @@ export async function testApTeamChangesEndowmentSettings(
   await sendMessagesViaCw3Proposal(juno, apTeam, cw3ApTeam, "Make changes to several Endowments' Settings", final_msgs);
 }
 
-export async function testCreateEndowmentCw3s(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  registrar: string,
-  accounts: string,
-  msgs: any[],
-): Promise<void> {
-  process.stdout.write("Test - Create a number of new Endowment CW3s\n");
-  const reg_config = await juno.queryContractSmart(registrar, { config: {} });
-  const cw3_code = parseInt(reg_config.cw3_code);
-  const cw4_code = parseInt(reg_config.cw4_code);
-
-  let prom = Promise.resolve();
-  msgs.forEach((msg) => {
-    // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(
-      () =>
-        new Promise(async (resolve, reject) => {
-          try {
-            console.log(chalk.yellow(`Creating a CW3 for Endowment ID: ${msg.id}`));
-            // grab current state data from existing CW3
-            const endow = await juno.queryContractSmart(accounts, { endowment: { id: msg.id } });
-            const old_members = await juno.queryContractSmart(endow.owner, { list_voters: {} });
-            const old_settings = await juno.queryContractSmart(endow.owner, { config: {} });
-            // create the CW3
-            const res = await instantiateContract(juno, apTeam, apTeam, cw3_code, {
-              id: msg.id,
-              registrar_contract: registrar,
-              threshold: old_settings.threshold,
-              max_voting_period: old_settings.max_voting_period,
-              // allow us to override taking the old members list with new members (as needed)
-              // ex. Multisig setup/changes to wrong members wallets, needs new CW3 with corrected wallet members
-              cw4_members: ("new_members" in msg) ? msg.new_members : old_members.voters,
-              cw4_code,
-            });
-            const new_cw3 = res.contractAddress as string;
-            console.log(chalk.blue(`New Contract: ${new_cw3}`));
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        })
-    );
-  });
-  await prom;
-}
-
 //----------------------------------------------------------------------------------------
 // TEST: Endowment created from the Registrar
 //
