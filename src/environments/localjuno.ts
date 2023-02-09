@@ -57,7 +57,9 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let donationMatching: string;
 let swapRouter: string;
+let settingsController: string;
 let giftcards: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
@@ -152,7 +154,9 @@ async function initialize() {
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
+  donationMatching = config.contracts.donationMatching;
   swapRouter = config.contracts.swapRouter;
+  settingsController = config.contracts.settingsController;
   giftcards = config.contracts.giftcards;
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
@@ -165,6 +169,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
   console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
+  console.log(`Using ${chalk.cyan(donationMatching)} as DonationMatching`);
   console.log(`Using ${chalk.cyan(swapRouter)} as SwapRouter`);
   console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
@@ -310,7 +315,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
-    config.networkInfo,
+    config.networkInfo.url,
     juno,
     // wallets
     {
@@ -566,6 +571,7 @@ export async function startMigrateCore(): Promise<void> {
     cw4GrpReviewTeam,
     cw3ReviewTeam,
     swapRouter,
+    settingsController,
     giftcards,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
@@ -635,6 +641,8 @@ export async function startTests(): Promise<void> {
     vaultLocked2,
     vaultLiquid2,
     accounts,
+    settingsController,
+    donationMatching,
     endowId1,
     endowId2,
     endowId3,

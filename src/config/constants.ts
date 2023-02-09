@@ -38,6 +38,7 @@ export const testnet = {
     vaultLiquid1: "juno1gjg0m75mnav5xftgwjxded5v0shlsj3vk8uh4adk9k7a33034wmssyfupc",
     vaultLocked2: "juno1durey747cm82sfqm0ph93wk63ljnm4j60euyp2y3krj8dnfqzacquzwu5l",
     vaultLiquid2: "juno158z8a7mnmj7qulqvvcu07wu3mh245tlymynycczsfm7hdcur2k4sr2azen",
+    settingsController: "",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
@@ -70,6 +71,15 @@ export const testnet = {
     loop_juno_pair_contract: "",
     loop_juno_pair_lp_token: "",
     initial_loop_supply: "1000000000000000",
+    // loop_liquidity: "200000000",
+    // juno_liquidity: "100000000",
+
+    // halo_token_contract: "",
+    // halo_juno_pair_contract: "",
+    // halo_juno_pair_lp_token: "",
+    // initial_halo_supply: "1000000000000000",
+    // halo_liquidity: "200000000",
+    // native_liquidity: "100000000",
     lj_pair_loop_liquidity: "200000000",
     lj_pair_juno_liquidity: "100000000",
 
@@ -133,7 +143,9 @@ export const mainnet = {
     cw4GrpReviewTeam: "juno1a22f8dxevu3er7vs4lkrca9n8rgf8uvgjd8s2p5eq787vmczq59syuplqx",
     cw3ReviewTeam: "juno1vp2q50smgzw64xm2j2ksntej34pnnedaz4qkwdh8zah9kjcaas6s8g92t8",
     swapRouter: "",
+    donationMatching: "",
     giftcards: "juno17pghl3qreyqnjlq6hun5ymshl0dkfeelcy738dkgk602lzmgcvaq2e4xav",
+    settingsController: "",
     vaults: [],
   },
   members: [

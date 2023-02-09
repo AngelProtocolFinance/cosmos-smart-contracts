@@ -154,3 +154,7 @@ npm run test:localjuno-tests
 **ALSO NOTE:** To run the above on other networks, simply swap out the network option in the npm command.
 
 We are building off the excellent work done by 0xLarry (from whom we lovingly :heart: ~~stole~~ borrowed).
+
+**ALSO NOTE:** From `v2`, the test scripts related to `lbp` contracts are not maintained.
+The reason is that they are no more needed from `v2`.
+We just keep them for completeness.

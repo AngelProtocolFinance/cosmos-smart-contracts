@@ -17,9 +17,7 @@ import {
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
-  testQueryAccountsEndowmentList,
   testEndowmentVaultsRedeem,
-  testQueryAccountsTokenAmount,
   testSendRestitutionFundsToEndowments,
   // buildNewEndowmentCw3sAndChangeOwner,
 } from "./core/accounts";
@@ -130,6 +128,9 @@ export async function testExecute(
   registrar: string,
   indexFund: string,
   accounts: string,
+  settingsController: string,
+  donationMatching: string,
+  endowmentID: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
   cw4GrpReviewTeam: string,
@@ -381,7 +382,7 @@ export async function testExecute(
   //   "5000000000", // deposit
   //   100800, // snapshot period
   //   undefined, // unbonding period
-  //   undefined // gov_hodler
+  //   undefined // gov_hodler_contract
   // );
   // await testGovResetClaims(juno, apTeamAddr, haloGov, [apTeamAddr]);
   // await testQueryGovConfig(juno, haloGov);

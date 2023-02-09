@@ -58,7 +58,9 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let donationMatching: string;
 let swapRouter: string;
+let settingsController: string;
 let giftcards: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
@@ -148,6 +150,7 @@ async function initialize() {
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
+  donationMatching = config.contracts.donationMatching;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
@@ -155,6 +158,7 @@ async function initialize() {
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
   swapRouter = config.contracts.swapRouter;
+  settingsController = config.contracts.settingsController;
   giftcards = config.contracts.giftcards;
   vaultLocked1 = config.contracts.vaultLocked1;
   vaultLiquid1 = config.contracts.vaultLiquid1;
@@ -168,6 +172,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
   console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
+  console.log(`Using ${chalk.cyan(donationMatching)} as DonationMatching`);
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
@@ -176,6 +181,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
   console.log(`Using ${chalk.cyan(swapRouter)} as SwapRouter`);
+  console.log(`Using ${chalk.cyan(settingsController)} as SettingsController`);
   console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
   console.log(`Using ${chalk.cyan(vaultLocked1)} as Vault_Locked_1`);
   console.log(`Using ${chalk.cyan(vaultLiquid1)} as Vault_Liquid_1`);
@@ -554,6 +560,7 @@ export async function startMigrateCore(): Promise<void> {
     cw4GrpReviewTeam,
     cw3ReviewTeam,
     swapRouter,
+    settingsController,
     giftcards,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
@@ -622,6 +629,8 @@ export async function startTests(): Promise<void> {
     vaultLocked2,
     vaultLiquid2,
     accounts,
+    settingsController,
+    donationMatching,
     endowId1,
     endowId2,
     endowId3,

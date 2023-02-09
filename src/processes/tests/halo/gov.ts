@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction, toEncodedBinary } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
@@ -88,6 +88,20 @@ export async function testTransferStake(
   staker_info: string[][]
 ): Promise<void> {
   process.stdout.write("Test - Execute transfer of staker balances to a new contract");
+  let exec_results: Promise<ExecuteResult>[] = [];
+  staker_info.forEach((info) => {
+    exec_results.push(
+      sendTransaction(juno, apTeam, oldGov, {
+        transfer_stake: {
+          new_gov_contract: newGov,
+          address: info[0],
+          amount: info[1],
+        }
+      })
+    );
+  });
+  let results = await Promise.all(exec_results);
+  console.log(results);
   // let msgs: Msg[] = [];
   // staker_info.forEach((info) => {
   //   msgs.push(

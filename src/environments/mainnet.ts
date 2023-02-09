@@ -39,7 +39,10 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let donationMatching: string;
+let endowmentIDs: number[];
 let swapRouter: string;  // FIXME: Add the scripts to initialize this variable.
+let settingsController: string;  // FIXME: Add the scripts to initialize this variable.
 let giftcards: string;
 let apTreasury: string;
 
@@ -69,11 +72,15 @@ async function initialize() {
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
+  donationMatching = config.contracts.donationMatching;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
+  endowmentIDs = [...config.contracts.endowmentIDs];
+  // members = [...config.members];
+  // tcaMembers = [];
   giftcards = config.contracts.giftcards;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
@@ -120,13 +127,13 @@ export async function startSetupCore(): Promise<void> {
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(juno, apTeam, apTreasuryAccount, {
     tax_rate: "0.2", // tax rate
-    threshold_absolute_percentage: "0.5", // threshold absolute percentage for "apteam-cw3" & "reviewteam-cw3"
-    max_voting_period_height: 100000, // max voting period height for "apteam-cw3" & "reviewteam-cw3"
-    fund_rotation: undefined, // blocks of time for each active fund rotation
+    threshold_absolute_percentage: "0.50", // threshold absolute percentage for "ap-cw3"
+    max_voting_period_height: 100000, // max voting period height for "ap-cw3"
+    fund_rotation: 10, // index fund rotation
     fund_member_limit: 10, // fund member limit
-    funding_goal: "50000000000", // funding goal limit to trigger active fund rotation
+    funding_goal: "50000000", // funding goal
     accepted_tokens: {
-      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034'],
+      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
       cw20: [],
     }
   });
@@ -262,7 +269,8 @@ export async function startMigrateCore(): Promise<void> {
     cw3ApTeam,
     cw4GrpReviewTeam,
     cw3ReviewTeam,
-    swapRouter,
+    swapRouter,<<<<<<< RC-v2
+    settingsController,
     giftcards,
     [],
   );
@@ -312,6 +320,9 @@ export async function startTests(): Promise<void> {
     registrar,
     indexFund,
     accounts,
+    settingsController,
+    donationMatching,
+    endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,
     cw4GrpReviewTeam,

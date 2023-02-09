@@ -30,6 +30,70 @@ export async function testUpdatingRegistrarConfigs(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: AP Team and trigger harvesting of Accounts for a Vault(s)
+//
+// SCENARIO:
+// AP team needs to send a message to a Vault to trigger a rebalance of Endowment funds,
+// moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
+//
+//----------------------------------------------------------------------------------------
+export async function testCronstringCanDirectlyHarvestVault(
+  juno: SigningCosmWasmClient,
+  cron: string,
+  vault: string,
+  collector_address: string,
+  collector_share: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Cron wallet triggers harvest of single Vault (Locked to Liquid Account)"
+  );
+  await expect(
+    sendTransaction(juno, cron, vault, {
+      harvest: {
+        collector_address,
+        collector_share,
+      },
+    })
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testAngelTeamCanTriggerVaultsHarvest(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  charity1: string,
+  registrar: string,
+  collector_address: string,
+  collector_share: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)"
+  );
+  await expect(
+    sendTransaction(juno, charity1, registrar, {
+      harvest: {
+        collector_address,
+        collector_share,
+      },
+    })
+  ).to.be.rejectedWith("Request failed with status code 400");
+  console.log(chalk.green(" Failed!"));
+
+  process.stdout.write(
+    "Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)"
+  );
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+      harvest: {
+        collector_address,
+        collector_share,
+      },
+    })
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: Update registrar network connections
 //
 // SCENARIO:
@@ -55,6 +119,33 @@ export async function testUpdatingRegistrarNetworkConnections(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Only owner can update the "Fees"
+//
+// SCENARIO:
+// (config)Owner updates both "Fees"
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateFees(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  info: any,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can update EndowTypeFees in Registrar"
+  );
+
+  const config = await juno.queryContractSmart(registrar, { config: {} });
+  const cw3 = await config.owner as string;
+
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, registrar, {
+    update_fees: {
+      fees: info.fees,
+    }
+  });
+  console.log(chalk.green(" Passed!"));
+}
+
 // TEST: Update registrar owner
 //
 // SCENARIO:
