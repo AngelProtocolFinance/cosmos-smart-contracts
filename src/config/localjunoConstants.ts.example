@@ -21,6 +21,7 @@ export const localjuno = {
     charity3: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
     pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
 
   denoms: {
@@ -41,7 +42,6 @@ export const localjuno = {
     settingsController: "",
     donationMatching: "",
     giftcards: "",
-
     vaultLocked1: "",
     vaultLiquid1: "",
     vaultLocked2: "",

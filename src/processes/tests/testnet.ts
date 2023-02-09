@@ -10,7 +10,6 @@ import {
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesEndowmentSettings,
-  testCreateEndowmentCw3s,
   testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
@@ -64,6 +63,7 @@ import {
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
+  testUpdateCw3ApplicationsConfig,
   testAddMemberToC4Group,
   testProposalApprovingEndowment,
   testCw3CastVote,
@@ -75,6 +75,7 @@ import {
   testQueryGroupMembersList,
   testQueryProposal,
   testQueryProposalList,
+  testQueryMultisigConfig,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -166,6 +167,14 @@ import {
   testInstantiateSubDaoToken,
   testInstantiateDonationMatchContract,
 } from "./core/subdao";
+import {
+  testSendDepositToGiftcards,
+  testClaimGiftcardsDeposit,
+  testSpendGiftcardsBalance,
+  testQueryGiftcardsBalance,
+  testQueryGiftcardsConfig,
+  testQueryGiftcardsDeposit 
+} from "./core/accessories";
 import { localjuno } from "../../config/localjunoConstants";
 import { localibc } from "../../config/localIbcConstants";
 
@@ -215,6 +224,7 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  giftcards: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 2. Setting up signing clients for all possible actors"));
   const networkInfo = config.networkInfo;
@@ -250,6 +260,15 @@ export async function testExecute(
   // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
+  // await testQueryMultisigConfig(actors.apTeam.client, cw3ReviewTeam);
+
+  /* --- GIFTCARD contract --- */
+  // await testSendDepositToGiftcards(actors.apTeam.client, actors.apTeam.addr, giftcards, { denom: "ujunox", amount: "4206900" });
+  // await testClaimGiftcardsDeposit(actors.apTeam.client, actors.apTeam.addr, giftcards, 1, actors.apTeam2.addr);
+  // await testSpendGiftcardsBalance(actors.apTeam2.client, actors.apTeam2.addr, giftcards, "ujunox", "100000", 22, "0", "1");
+  // await testQueryGiftcardsConfig(actors.apTeam.client, giftcards);
+  // await testQueryGiftcardsBalance(actors.apTeam.client, giftcards, actors.apTeam2.addr);
+  // await testQueryGiftcardsDeposit(actors.apTeam.client, giftcards, 1);
 
   /* --- INDEXFUND contract --- */
   // await testUpdatingIndexFundOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, cw3ApTeam);

@@ -14,6 +14,7 @@ import { migrateCore } from "../processes/migrate/core";
 
 import { setupCore } from "../processes/setup/core/mainnet";
 import { setupEndowments } from "../processes/setup/endowments/endowments";
+import { setupGiftcards } from "../processes/setup/accessories/giftcards";
 // import { setupJunoSwap } from "../processes/setup/junoswap/realnet";
 // import { setupHalo } from "../processes/setup/halo";
 
@@ -29,6 +30,7 @@ let apTeam: DirectSecp256k1HdWallet;
 // wallet addresses
 let apTeamAccount: string;
 let apTreasuryAccount: string;
+let keeperAccount: string;
 
 let registrar: string;
 let cw4GrpApTeam: string;
@@ -41,6 +43,7 @@ let donationMatching: string;
 let endowmentIDs: number[];
 let swapRouter: string;  // FIXME: Add the scripts to initialize this variable.
 let settingsController: string;  // FIXME: Add the scripts to initialize this variable.
+let giftcards: string;
 let apTreasury: string;
 
 // Angel/HALO contracts
@@ -61,9 +64,11 @@ async function initialize() {
   apTeamAccount = await getWalletAddress(apTeam);
   // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
   apTreasuryAccount = config.mnemonicKeys.apTreasury;
+  keeperAccount = config.mnemonicKeys.keeper;
 
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);
+  console.log(`Using ${chalk.cyan(keeperAccount)} as AWS Keeper`);
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
@@ -76,6 +81,7 @@ async function initialize() {
   endowmentIDs = [...config.contracts.endowmentIDs];
   // members = [...config.members];
   // tcaMembers = [];
+  giftcards = config.contracts.giftcards;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
@@ -83,6 +89,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
+  console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -163,6 +170,27 @@ export async function startSetupEndowments(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
+// setup accessories contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupGiftcards(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Gift Cards Contract Setup"));
+  await setupGiftcards(
+    config.networkInfo.chainId,
+    juno,
+    apTeam,
+    keeperAccount,
+    registrar    
+  );
+}
+
+// -------------------------------------------------------------------------------------
 // setup JunoSwap contracts
 // -------------------------------------------------------------------------------------
 // export async function startSetupJunoSwap(): Promise<void> {
@@ -239,9 +267,11 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
     cw3ReviewTeam,
-    swapRouter,
+    swapRouter,<<<<<<< RC-v2
     settingsController,
+    giftcards,
     [],
   );
 }
@@ -304,5 +334,6 @@ export async function startTests(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting,
+    giftcards,
   );
 }

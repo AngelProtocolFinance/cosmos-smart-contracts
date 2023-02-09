@@ -13,12 +13,13 @@ export enum VoteOption {
   NO,
 }
 export type Endowment = {
+  ref_id: string,
   name: string;
   owner: string;
   tier: number;
   overview: string;
   url: string;
-  un_sdg: number;
+  un_sdgs: number[];
   logo: string;
   image: string;
   email: string;
@@ -33,6 +34,7 @@ export type Endowment = {
   annual_revenue: string;
   average_annual_budget: string;
   kyc_donors_only: boolean;
+  meta: string,
 };
 
 export type Member = {
@@ -389,6 +391,7 @@ export async function sendApplicationViaCw3Proposal(
   cw3: string,
   target_contract: string,
   ref_id: string,
+  meta: string | undefined,
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[],
 ): Promise<number> {

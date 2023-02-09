@@ -8,10 +8,36 @@ import { sendTransaction, toEncodedBinary, VoteOption } from "../../../utils/jun
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-// export enum VoteOption {
-//   YES,
-//   NO,
-// }
+
+export enum VoteOption {
+  YES,
+  NO,
+}
+
+export async function testQueryMultisigConfig(
+  juno: SigningCosmWasmClient,
+  cw3: string,
+): Promise<void> {
+  process.stdout.write("Test - Query multisig config");
+  const result: any = await juno.queryContractSmart(cw3, {config: {}});
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryProposal(
+  juno: SigningCosmWasmClient,
+  cw3: string,
+  proposal_id: number
+): Promise<void> {
+  process.stdout.write("Test - Query proposal by id");
+  const result: any = await juno.queryContractSmart(cw3, {
+    proposal: { proposal_id },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
 
 export async function testQueryProposalList(
   juno: SigningCosmWasmClient,
@@ -222,6 +248,47 @@ export async function testUpdateCw3Config(
                   threshold: { absolute_percentage: { percentage: threshold } },
                   max_voting_period: { height: max_voting_period },
                   require_execution: require_execution,
+                },
+              }),
+            },
+          },
+        },
+      ],
+    },
+  });
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testUpdateCw3ApplicationsConfig(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  threshold: string,
+  max_voting_period: number,
+  seed_amount: string,
+  seed_split_to_liquid: string,
+  dust_amount: string,
+): Promise<void> {
+  process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
+
+  const proposal = await sendTransaction(juno, apTeam, cw3, {
+    propose: {
+      title: "Update CW3 Configurations",
+      description: "Changing the max voting period to 48 hours",
+      msgs: [
+        {
+          wasm: {
+            execute: {
+              contract_addr: cw3,
+              funds: [],
+              msg: toEncodedBinary({
+                update_config: {
+                  threshold: { absolute_percentage: { percentage: threshold } },
+                  max_voting_period: { height: max_voting_period },
+                  require_execution: false,
+                  seed_asset: { info: { native: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034" }, amount: seed_amount },
+                  seed_split_to_liquid,
+                  new_endow_gas_money: { denom: "ujuno", amount: dust_amount },
                 },
               }),
             },

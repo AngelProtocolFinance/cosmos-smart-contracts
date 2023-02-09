@@ -7,7 +7,6 @@ import {
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesEndowmentSettings,
-  testCreateEndowmentCw3s,
   testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
@@ -41,6 +40,7 @@ import {
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
+  testUpdateCw3ApplicationsConfig,
   testAddMemberToC4Group,
   testProposalApprovingEndowment,
   testCw3CastVote,
@@ -48,7 +48,9 @@ import {
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
-  testCw3CastApplicationVote,
+  testQueryProposal,
+  testQueryProposalList,
+  testQueryMultisigConfig,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -140,11 +142,15 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  giftcards: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddMemberToC4Group(juno, apTeamAddr, cw3ReviewTeam, cw4GrpReviewTeam, "juno1h27pex3z3mm97gwfdhan8cfak8yzvtvprjlcz7");
-  // await testCw3ExecutePoll(juno, apTeamAddr, cw3ApTeam, 2);
+  // await testQueryMultisigConfig(juno, cw3ReviewTeam);
+  // await testUpdateCw3ApplicationsConfig(juno, apTeamAddr, cw3ReviewTeam, "0.3", 50000, "100000000", "0", "180000");
+  // await testCw3ExecutePoll(juno, apTeamAddr, cw3ReviewTeam, 178);
   // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
+  // await testQueryProposal(juno, cw3ReviewTeam, 181);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
   // await testQueryMultisigThreshold(juno, cw3ReviewTeam);
 
@@ -345,6 +351,7 @@ export async function testExecute(
   // await testQueryAccountsEndowmentList(juno, accounts, 1, 20);
   // await testQueryAccountsState(juno, accounts, 1);
   // await testQueryAccountsEndowment(juno, accounts, 1);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, accounts);

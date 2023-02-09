@@ -14,6 +14,7 @@ import { migrateCore } from "../processes/migrate/core";
 
 import { setupCore } from "../processes/setup/core/testnet";
 import { setupEndowments } from "../processes/setup/endowments/endowments";
+import { setupGiftcards } from "../processes/setup/accessories/giftcards";
 import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
 import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
 import { setupLoopVaults } from "../processes/setup/vaults/loop";
@@ -46,6 +47,7 @@ let charity2Account: string;
 let charity3Account: string;
 let plebAccount: string;
 let tcaAccount: string;
+let keeperAccount: string;
 
 // Core contracts
 let registrar: string;
@@ -58,6 +60,7 @@ let accounts: string;
 let donationMatching: string;
 let swapRouter: string;
 let settingsController: string;
+let giftcards: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -131,7 +134,8 @@ async function initialize() {
   charity3Account = await getWalletAddress(charity3);
   plebAccount = await getWalletAddress(pleb);
   tcaAccount = await getWalletAddress(tca);
-
+  keeperAccount = config.mnemonicKeys.keeper;
+  
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTeam2Account)} as Angel Team #2`);
   console.log(`Using ${chalk.cyan(apTeam3Account)} as Angel Team #3`);
@@ -141,6 +145,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(charity3Account)} as Charity #3`);
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
+  console.log(`Using ${chalk.cyan(keeperAccount)} as AWS Keeper`);
 
   registrar = config.contracts.registrar;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
@@ -152,6 +157,7 @@ async function initialize() {
   donationMatching = config.contracts.donationMatching;
   swapRouter = config.contracts.swapRouter;
   settingsController = config.contracts.settingsController;
+  giftcards = config.contracts.giftcards;
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
@@ -165,6 +171,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
   console.log(`Using ${chalk.cyan(donationMatching)} as DonationMatching`);
   console.log(`Using ${chalk.cyan(swapRouter)} as SwapRouter`);
+  console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
@@ -368,6 +375,27 @@ export async function startSetupEndowments(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
+// setup accessories contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupGiftcards(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Gift Cards Contract Setup"));
+  await setupGiftcards(
+    config.networkInfo.chainId,
+    juno,
+    apTeam,
+    keeperAccount,
+    registrar    
+  );
+}
+
+// -------------------------------------------------------------------------------------
 // setup mock vault contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupMockVaults(): Promise<void> {
@@ -540,9 +568,11 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
     cw3ReviewTeam,
     swapRouter,
     settingsController,
+    giftcards,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
@@ -631,5 +661,6 @@ export async function startTests(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting,
+    giftcards,
   );
 }

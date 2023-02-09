@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
   networkInfo: {
-    url: "https://rpc.uni.juno.deuslabs.fi",
+    url: "https://juno-testnet-rpc.polkachu.com",
     chainId: "uni-5",
     walletPrefix: "juno",
     nativeToken: "ujunox",
@@ -21,6 +21,7 @@ export const testnet = {
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
 
     junoIbcClient: "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
@@ -36,6 +37,7 @@ export const testnet = {
     vaultLiquid1: "juno1w3jj4l4xjs0as9hgkjd0lmchl2ygcprfvhlua97tzgtk9pddeujsrh5c7e",
     vaultLocked2: "juno1k2wx9r9409wqguwwmwrfz2u6kptmtlcsusfmqe8yaqec5f4tzujqskrw9p",
     vaultLiquid2: "juno14kq7mcpdgzu7dmgnj7j9p4ucg5tnqne78dc6hqy6sdxhjpswzn3se5j809",
+    giftcards: "juno1q5q8fgw83fusujz7x339yq352tlxdk2f0q2a6qz72dl0r9lk5y7qwf6w3u",
     swapRouter: "",
     settingsController: "",
     endowId1: 1,
@@ -130,19 +132,20 @@ export const mainnet = {
   mnemonicKeys: {
     apTeam: "",
     apTreasury: "juno1fz8jx4qhkgdrm5vm3s20n670mf872xsp2c0a6cl0yuncquzmj4jss2cfgj", // this is the CW3 of the AP Endowment
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
-    registrar: "",
-    accounts: "",
-    donationMatching: "",
-    indexFund: "",
-    cw4GrpApTeam: "",
-    cw3ApTeam: "",
-    cw4GrpReviewTeam: "",
-    cw3ReviewTeam: "",
-    endowmentIDs: [],
+    registrar: "juno17emcut72n6ycmf54qd0l4mzsefqxnqdhqxzlczxstlkkatdlst5qf9s3qr",
+    accounts: "juno1e0w8892n60v0juuugvwptj8f6v3ad56ydr3cgxstmpkggjrqzfhsaqh38c",
+    indexFund: "juno1yrahlxavwr7juyrty580d24mgvmhknn6h3sgepjtkyg7udvj2l2sujdlqn",
+    cw4GrpApTeam: "juno15g9u395kprfhxxzfqhfw56rvwfhjzg8k6mjq82u3yg7fxkhprv8stsu8mm",
+    cw3ApTeam: "juno1sae4p8crnac0h9m27psn205d6k586f7cnm4eshws623v05g95teqvj2s8q",
+    cw4GrpReviewTeam: "juno1a22f8dxevu3er7vs4lkrca9n8rgf8uvgjd8s2p5eq787vmczq59syuplqx",
+    cw3ReviewTeam: "juno1vp2q50smgzw64xm2j2ksntej34pnnedaz4qkwdh8zah9kjcaas6s8g92t8",
     swapRouter: "",
+    donationMatching: "",
+    giftcards: "juno17pghl3qreyqnjlq6hun5ymshl0dkfeelcy738dkgk602lzmgcvaq2e4xav",
     settingsController: "",
     vaults: [],
   },

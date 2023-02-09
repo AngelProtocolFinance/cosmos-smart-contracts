@@ -17,22 +17,26 @@ export async function migrateCore(
   accounts: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw4GrpReviewTeam: string,
   cw3ReviewTeam: string,
   swapRouter: string,
   settingsController: string,
+  giftcards: string,
   vaultContracts: string[],
 ): Promise<void> {
   // run the migrations desired
   // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 0);
   // await migrateVaults(juno, apTeam, vaultContracts);
   // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm', { fee_charity: '0.2', fee_normal: '0.2', settings_controller_contract: settingsController });
+  // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
+  // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
+  // await storeAndMigrateContract(juno, apTeam, cw4GrpReviewTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
-  // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
-  // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
   // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
   // await storeAndMigrateContract(juno, apTeam, settingsController, 'settings_controller.wasm');
+  // await storeAndMigrateContract(juno, apTeam, giftcards, 'gift_cards.wasm');
 }
 
 // -------------------------------------------------
@@ -96,7 +100,7 @@ async function migrateEndowmentCw3s(
   process.stdout.write("Ensure Registrar has the latest Endowment CW3 Wasm code set");
   await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, { update_config: { cw3_code: codeId } });
 
-  process.stdout.write("Migrate all Endowment CW3 contracts\n");
+  process.stdout.write(`Migrate all Endowment CW3 contracts (max id: ${max_id})\n`);
   let prom = Promise.resolve();
   let final_msgs: any[] = [];
   const ids_range = new Array(max_id).fill(0).map((d, i) => i + 1);

@@ -14,6 +14,7 @@ import { migrateCore } from "../processes/migrate/core";
 
 import { setupCore } from "../processes/setup/core/testnet";
 import { setupEndowments } from "../processes/setup/endowments/endowments";
+import { setupGiftcards } from "../processes/setup/accessories/giftcards";
 import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
 import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
 import { setupLoopVaults } from "../processes/setup/vaults/loop";
@@ -47,6 +48,7 @@ let charity2Account: string;
 let charity3Account: string;
 let plebAccount: string;
 let tcaAccount: string;
+let keeperAccount: string;
 
 // Core contracts
 let registrar: string;
@@ -59,6 +61,7 @@ let accounts: string;
 let donationMatching: string;
 let swapRouter: string;
 let settingsController: string;
+let giftcards: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -132,6 +135,7 @@ async function initialize() {
   charity3Account = await getWalletAddress(charity3);
   plebAccount = await getWalletAddress(pleb);
   tcaAccount = await getWalletAddress(tca);
+  keeperAccount = config.mnemonicKeys.keeper;
 
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTeam2Account)} as Angel Team #2`);
@@ -142,6 +146,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(charity3Account)} as Charity #3`);
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
+  console.log(`Using ${chalk.cyan(keeperAccount)} as AWS Keeper`);
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
@@ -154,6 +159,7 @@ async function initialize() {
   accounts = config.contracts.accounts;
   swapRouter = config.contracts.swapRouter;
   settingsController = config.contracts.settingsController;
+  giftcards = config.contracts.giftcards;
   vaultLocked1 = config.contracts.vaultLocked1;
   vaultLiquid1 = config.contracts.vaultLiquid1;
   vaultLocked2 = config.contracts.vaultLocked2;
@@ -176,6 +182,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
   console.log(`Using ${chalk.cyan(swapRouter)} as SwapRouter`);
   console.log(`Using ${chalk.cyan(settingsController)} as SettingsController`);
+  console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
   console.log(`Using ${chalk.cyan(vaultLocked1)} as Vault_Locked_1`);
   console.log(`Using ${chalk.cyan(vaultLiquid1)} as Vault_Liquid_1`);
   console.log(`Using ${chalk.cyan(vaultLocked2)} as Vault_Locked_2`);
@@ -408,6 +415,27 @@ export async function startSetupMockVaults(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
+// setup accessories contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupGiftcards(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Gift Cards Contract Setup"));
+  await setupGiftcards(
+    config.networkInfo.chainId,
+    juno,
+    apTeam,
+    keeperAccount,
+    registrar    
+  );
+}
+
+// -------------------------------------------------------------------------------------
 // setup LOOP vault contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupLoopVaults(): Promise<void> {
@@ -529,9 +557,11 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
     cw3ReviewTeam,
     swapRouter,
     settingsController,
+    giftcards,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
@@ -619,5 +649,6 @@ export async function startTests(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting,
+    giftcards,
   );
 }
