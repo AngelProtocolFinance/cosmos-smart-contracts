@@ -16,7 +16,6 @@ use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived,
     EndowmentController, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance,
     OneOffVaults, RebalanceDetails, SplitDetails, StrategyComponent, SwapOperation, VaultType,
-    YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,

@@ -20,7 +20,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-angel-core = { path = "../../../packages/angel_core" }
+angel-core = { path = "../../packages/angel_core" }
 cosmwasm-std = "1.0.0"
 cosmwasm-schema = "1.0.0"
 cw-storage-plus = "0.13.4"

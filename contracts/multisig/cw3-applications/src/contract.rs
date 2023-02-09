@@ -717,6 +717,11 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let cfg = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         registrar_contract: cfg.registrar_contract.to_string(),
+        version: format!(
+            "{}-{}",
+            get_contract_version(deps.storage)?.contract,
+            get_contract_version(deps.storage)?.version
+        ),
         threshold: cfg.threshold,
         max_voting_period: cfg.max_voting_period,
         group_addr: cfg.group_addr.0.to_string(),

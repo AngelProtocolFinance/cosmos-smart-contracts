@@ -71,6 +71,7 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub struct ConfigResponse {
     pub registrar_contract: String,
+    pub version: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: String,

@@ -47,27 +47,9 @@ pub enum ExecuteMsg {
         threshold: Threshold,
         max_voting_period: Duration,
         require_execution: Option<bool>,
-        guardians: Option<Vec<String>>,
     },
     /// Handles update hook messages from the group contract
     MemberChangedHook(MemberChangedHookMsg),
-    // Guardian messages
-    GuardianPropose {
-        title: String,
-        description: String,
-        old_member: String,
-        new_member: String,
-        // note: we ignore API-spec'd earliest if passed, always opens immediately
-        latest: Option<Expiration>,
-        meta: Option<String>,
-    },
-    GuardianVote {
-        proposal_id: u64,
-        vote: Vote,
-    },
-    GuardianExecute {
-        proposal_id: u64,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

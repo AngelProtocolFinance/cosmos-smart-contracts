@@ -1313,7 +1313,6 @@ fn test_vaults_redeem() {
 }
 
 #[test]
-
 fn test_distribute_to_beneficiary() {
     let (mut deps, _, _, _) = create_endowment();
 

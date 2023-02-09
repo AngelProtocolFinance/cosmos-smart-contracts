@@ -21,7 +21,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-angel-core = { path = "../../../packages/angel_core" }
+angel-core = { path = "../../packages/angel_core" }
 halo-token = { path = "../../../packages/halo_token" }
 
 cosmwasm-std = { version = "1.0.0",  features = ["abort"] } 

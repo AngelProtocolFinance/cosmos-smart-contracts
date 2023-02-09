@@ -1,6 +1,6 @@
 [package]
 name = "cw3-endowment"
-version = "2.0.3"
+version = "2.0.4"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -22,7 +22,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-angel-core = { path = "../../../packages/angel_core" }
+angel-core = { path = "../../packages/angel_core" }
 cw2 = "0.13.4"
 cw3 = "0.13.4"
 cw4 = "0.13.4"
