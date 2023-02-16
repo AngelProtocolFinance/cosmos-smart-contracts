@@ -4,8 +4,7 @@ use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentBalanceResponse, EndowmentType,
-    StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, EndowmentType, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -1127,11 +1126,11 @@ fn test_swap_receipt() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Balance { id: CHARITY_ID },
+        QueryMsg::State { id: CHARITY_ID },
     )
     .unwrap();
-    let bal: EndowmentBalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(bal.tokens_on_hand.liquid.cw20.len(), 1);
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.tokens_on_hand.liquid.cw20.len(), 1);
 }
 
 #[test]
