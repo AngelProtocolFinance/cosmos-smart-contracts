@@ -1,6 +1,6 @@
 use crate::structs::{
-    AccountStrategies, Beneficiary, Categories, DonationsReceived, EndowmentEntry, EndowmentStatus,
-    EndowmentType, OneOffVaults, RebalanceDetails,
+    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentEntry,
+    EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
 };
 
 use cosmwasm_std::Addr;
@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct StateResponse {
+    pub tokens_on_hand: BalanceInfo,
     pub donations_received: DonationsReceived,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<Beneficiary>,

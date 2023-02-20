@@ -1,7 +1,6 @@
 use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
-use angel_core::structs::{AccountType, EndowmentBalanceResponse, EndowmentEntry, Tier};
-use angel_core::utils::vault_endowment_balance;
+use angel_core::structs::{AccountType, EndowmentEntry, Tier};
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw2::get_contract_version;
 use cw_asset::AssetInfo;
@@ -26,35 +25,10 @@ pub fn query_state(deps: Deps, id: u32) -> StdResult<StateResponse> {
     let state = STATES.load(deps.storage, id)?;
 
     Ok(StateResponse {
+        tokens_on_hand: state.balances,
         donations_received: state.donations_received,
         closing_endowment: state.closing_endowment,
         closing_beneficiary: state.closing_beneficiary,
-    })
-}
-
-pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanceResponse> {
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let state = STATES.load(deps.storage, id)?;
-
-    // setup the basic response object w/ account's balances locked & liquid (held by this contract)
-    let tokens_on_hand = state.balances;
-
-    // process all one-off vaults
-    let mut invested_locked = vec![];
-    for vault in endowment.oneoff_vaults.locked.into_iter() {
-        let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        invested_locked.push((vault.to_string(), vault_bal));
-    }
-    let mut invested_liquid = vec![];
-    for vault in endowment.oneoff_vaults.liquid.into_iter() {
-        let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        invested_liquid.push((vault.to_string(), vault_bal));
-    }
-
-    Ok(EndowmentBalanceResponse {
-        tokens_on_hand,
-        invested_locked,
-        invested_liquid,
     })
 }
 
