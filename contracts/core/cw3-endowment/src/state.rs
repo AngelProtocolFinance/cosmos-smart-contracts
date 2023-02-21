@@ -12,6 +12,15 @@ use std::convert::TryInto;
 // we multiply by this when calculating needed_votes in order to round up properly
 // Note: `10u128.pow(9)` fails as "u128::pow` is not yet stable as a const fn"
 const PRECISION_FACTOR: u128 = 1_000_000_000;
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct OldConfig {
+    pub registrar_contract: Addr,
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+    pub group_addr: Cw4Contract,
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Config {
     pub registrar_contract: Addr,
