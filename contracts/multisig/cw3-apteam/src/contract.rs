@@ -1,5 +1,7 @@
 use crate::msg::{InstantiateMsg, MigrateMsg};
-use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
+use crate::state::{
+    next_id, Ballot, Config, OldConfig, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
+};
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
 use angel_core::messages::cw3_apteam::ExecuteMsg;
@@ -9,8 +11,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::AccountType;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-    Order, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
+    entry_point, from_slice, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
+    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -638,6 +640,23 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // setup the new config struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let old_config: OldConfig = from_slice(&data)?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            registrar_contract: old_config.registrar_contract,
+            threshold: old_config.threshold,
+            max_voting_period: old_config.max_voting_period,
+            group_addr: old_config.group_addr,
+            require_execution: false, // default to auto-execute
+        },
+    )?;
 
     Ok(Response::default())
 }
