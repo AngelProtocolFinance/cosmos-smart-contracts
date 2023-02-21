@@ -259,6 +259,7 @@ impl WasmMockQuerier {
                         cw4_code: None,
                         accepted_tokens: AcceptedTokens::default(),
                         applications_review: "applications_review".to_string(),
+                        applications_impact_review: "applications_impact_review".to_string(),
                         swaps_router: None,
                     })
                     .unwrap(),

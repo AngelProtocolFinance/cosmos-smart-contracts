@@ -10,16 +10,16 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
-    entry_point, to_binary, Addr, Binary, BlockInfo, CosmosMsg, Decimal, Deps, DepsMut, Empty, Env,
-    MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
-    SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
+    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
+    Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult,
+    WasmMsg, WasmMsg::Execute, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
     Status, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail, VoterListResponse,
     VoterResponse,
 };
-use cw4::{Cw4Contract, Member, MemberChangedHookMsg, MemberDiff};
+use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
 use cw_asset::AssetUnchecked;
 use cw_storage_plus::Bound;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
