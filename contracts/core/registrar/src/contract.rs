@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, OldConfig, CONFIG, FEES, NETWORK_CONNECTIONS};
+use crate::state::{Config, CONFIG, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
@@ -34,7 +34,8 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
-        applications_review: info.sender,
+        applications_review: info.sender.clone(),
+        applications_impact_review: info.sender,
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
@@ -134,7 +135,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -152,36 +153,14 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // setup the new config struct and save to storage
+    // update config struct and save to storage
     let data = deps
         .storage
         .get("config".as_bytes())
         .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let old_config: OldConfig = from_slice(&data)?;
-    deps.storage.set(
-        "config".as_bytes(),
-        &to_vec(&Config {
-            owner: old_config.owner,
-            applications_review: old_config.applications_review,
-            index_fund_contract: old_config.index_fund_contract,
-            accounts_contract: old_config.accounts_contract,
-            treasury: old_config.treasury,
-            rebalance: old_config.rebalance,
-            split_to_liquid: old_config.split_to_liquid,
-            halo_token: old_config.halo_token,
-            gov_contract: old_config.gov_contract,
-            charity_shares_contract: old_config.charity_shares_contract,
-            swaps_router: old_config.swaps_router,
-            cw3_code: old_config.cw3_code,
-            cw4_code: old_config.cw4_code,
-            accepted_tokens: old_config.accepted_tokens,
-        })?,
-    );
-
-    // Move the `tax_rate` value to new `FEES` map
-    let tax_rate_map_key = FEES.key("vaults_harvest");
-    deps.storage
-        .set(&tax_rate_map_key, &to_vec(&old_config.tax_rate)?);
+    let mut config: Config = from_slice(&data)?;
+    config.applications_impact_review = deps.api.addr_validate(&msg.applications_impact_review)?;
+    deps.storage.set("config".as_bytes(), &to_vec(&config)?);
 
     Ok(Response::default())
 }

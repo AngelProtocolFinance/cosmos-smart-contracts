@@ -3,7 +3,6 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
@@ -68,14 +67,23 @@ pub fn create_endowment(
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
     // Charity endowments must be created through the CW3 Review Applications
-    if msg.endow_type == EndowmentType::Charity
-        && info.sender.to_string() != registrar_config.applications_review
-    {
-        return Err(ContractError::Unauthorized {});
+    // Impact endowments must be created through the CW3 Review Impact Applications
+    match msg.endow_type {
+        EndowmentType::Charity => {
+            if info.sender.to_string() != registrar_config.applications_review {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        EndowmentType::Impact => {
+            if info.sender.to_string() != registrar_config.applications_impact_review {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        _ => (),
     }
 
     if !msg.categories.general.is_empty() {

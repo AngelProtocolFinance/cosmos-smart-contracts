@@ -618,7 +618,14 @@ fn test_migrate() {
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
 
     // Try to migrate
-    let err = migrate(deps.as_mut(), mock_env(), MigrateMsg {}).unwrap_err();
+    let err = migrate(
+        deps.as_mut(),
+        mock_env(),
+        MigrateMsg {
+            applications_impact_review: AP_TEAM.to_string(),
+        },
+    )
+    .unwrap_err();
     assert_eq!(
         err,
         ContractError::Std(StdError::GenericErr {
