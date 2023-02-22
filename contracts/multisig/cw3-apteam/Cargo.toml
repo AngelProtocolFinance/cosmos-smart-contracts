@@ -1,6 +1,6 @@
 [package]
 name = "cw3-apteam"
-version = "1.9.1"
+version = "1.9.3"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
