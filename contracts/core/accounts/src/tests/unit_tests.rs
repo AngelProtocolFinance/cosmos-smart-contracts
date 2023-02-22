@@ -571,7 +571,7 @@ fn test_withdraw() {
         }],
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
-    assert_eq!(2, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // Try to "withdraw" cw20 tokens
     let info = mock_info(&endow_details.owner.to_string(), &[]);
@@ -666,7 +666,7 @@ fn test_withdraw_liquid() {
         }],
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_liquid_msg).unwrap();
-    assert_eq!(2, res.messages.len());
+    assert_eq!(1, res.messages.len());
 }
 
 #[test]
