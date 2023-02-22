@@ -18,6 +18,7 @@ const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ID: u32 = 1;
 const CHARITY_ADDR: &str = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
 const REGISTRAR_CONTRACT: &str = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
+const APPLICATIONS_IMPACT_REVIEW: &str = "applications_impact_review";
 const PLEB: &str = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
 const DEPOSITOR: &str = "depositor";
 
@@ -31,9 +32,9 @@ fn create_endowment() -> (
     let create_endowment_msg = CreateEndowmentMsg {
         owner: CHARITY_ADDR.to_string(),
         name: "Test Endowment".to_string(),
-        endow_type: EndowmentType::Normal,
+        endow_type: EndowmentType::Impact,
         categories: Categories {
-            sdgs: vec![2],
+            sdgs: vec![],
             general: vec![],
         },
         tier: Some(3),
@@ -54,7 +55,7 @@ fn create_endowment() -> (
         owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
     };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+    let info = mock_info(APPLICATIONS_IMPACT_REVIEW, &coins(100000, "earth"));
     let env = mock_env();
     let acct_contract = env.contract.address.to_string();
     let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();

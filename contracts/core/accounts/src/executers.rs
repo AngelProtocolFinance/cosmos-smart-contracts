@@ -83,7 +83,8 @@ pub fn create_endowment(
                 return Err(ContractError::Unauthorized {});
             }
         }
-        _ => (),
+        // Catch all for EndowmentType::Normal & any future types added
+        _ => todo!(),
     }
 
     if !msg.categories.general.is_empty() {
@@ -1423,13 +1424,13 @@ pub fn withdraw(
                 return Err(ContractError::Unauthorized {});
             }
         } else {
-            if info.sender != endowment.owner {
-                return Err(ContractError::Unauthorized {});
-            }
             if !endowment.is_expired(&env) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
+            }
+            if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
             }
         }
     }
