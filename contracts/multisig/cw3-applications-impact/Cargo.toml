@@ -1,6 +1,6 @@
 [package]
-name = "registrar"
-version = "1.9.3"
+name = "cw3-applications-impact"
+version = "1.9.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -17,23 +17,25 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 # for more explicit tests, cargo test --features=backtraces
-backtraces = ["cosmwasm-std/backtraces", "cosmwasm-vm/backtraces"]
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
 
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
-accounts = { path = "../../../contracts/core/accounts" }
-cosmwasm-std = { version = "1.0.0", features = ["staking", "abort"] }
-cw-storage-plus = { version = "0.13.4", features = ["iterator"] }
 cw2 = "0.13.4"
 cw20 = "0.13.4"
-cw20-base = { version = "0.13.4", features = ["library"] }
+cw3 = "0.13.4"
 cw4 = "0.13.4"
 cw-utils = "0.13.4"
-cw4-group = "0.13.4"
+cw-storage-plus = "0.13.4"
+cw-asset = "2.2.0"
+cosmwasm-std = "1.0.0"
 schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }
 thiserror = "1.0.24"
 
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"
-cosmwasm-vm = { version = "1.0.0", default-features = false, features = ["iterator"] }
+cw4-group = "0.13.4"
+cw-multi-test = "0.13.4"

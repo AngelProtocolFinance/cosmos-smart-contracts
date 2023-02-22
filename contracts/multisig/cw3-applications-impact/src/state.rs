@@ -1,13 +1,15 @@
 use cosmwasm_std::{
-    Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
+    Addr, BlockInfo, Coin, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
 use cw3::{Status, Vote};
 use cw4::Cw4Contract;
+use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
 use cw_utils::{Duration, Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
+use std::fmt;
 
 // we multiply by this when calculating needed_votes in order to round up properly
 // Note: `10u128.pow(9)` fails as "u128::pow` is not yet stable as a const fn"
@@ -20,25 +22,20 @@ pub struct Config {
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
     pub require_execution: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct TempConfig {
-    pub registrar_contract: Addr,
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
+    pub seed_asset: Option<Asset>,
+    pub seed_split_to_liquid: Decimal,
+    pub new_endow_gas_money: Option<Coin>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Proposal {
+    pub proposal_type: ProposalType,
     pub title: String,
     pub description: String,
     pub start_height: u64,
     pub expires: Expiration,
     pub msgs: Vec<CosmosMsg<Empty>>,
     pub status: Status,
-    /// Confirmation Proposal ID needed for Early Locked Withdraw requests (set by reply)
-    pub confirmation_proposal: Option<u64>,
     /// pass requirements
     pub threshold: Threshold,
     // the total weight when the proposal started (used to calculate percentages)
@@ -47,6 +44,26 @@ pub struct Proposal {
     pub votes: Votes,
     /// metadata field allows for a UI to easily set and display data about the proposal
     pub meta: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProposalType {
+    Normal = 0,
+    Application = 1,
+}
+
+impl fmt::Display for ProposalType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ProposalType::Normal => "normal",
+                ProposalType::Application => "application",
+            }
+        )
+    }
 }
 
 // weight of votes for each option
@@ -159,7 +176,6 @@ pub struct Ballot {
 // unique items
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
-pub const TEMP_CONFIG: Item<TempConfig> = Item::new("temp_config");
 
 // multiple-item map
 pub const BALLOTS: Map<(u64, &Addr), Ballot> = Map::new("votes");
@@ -226,6 +242,7 @@ mod test {
             false => Expiration::AtHeight(block.height + 100),
         };
         let prop = Proposal {
+            proposal_type: ProposalType::Normal,
             title: "Demo".to_string(),
             description: "Info".to_string(),
             start_height: 100,
@@ -235,7 +252,6 @@ mod test {
             threshold,
             total_weight,
             votes,
-            confirmation_proposal: None,
             meta: Some("".to_string()),
         };
         prop.is_passed(&block)

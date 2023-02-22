@@ -34,7 +34,8 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
-        applications_review: info.sender,
+        applications_review: info.sender.clone(),
+        applications_impact_review: info.sender,
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
@@ -134,7 +135,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -152,7 +153,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // setup the new config struct and save to storage
+    // update config struct and save to storage
     let data = deps
         .storage
         .get("config".as_bytes())
@@ -175,13 +176,9 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             cw3_code: old_config.cw3_code,
             cw4_code: old_config.cw4_code,
             accepted_tokens: old_config.accepted_tokens,
+            applications_impact_review: deps.api.addr_validate(&msg.applications_impact_review)?,
         })?,
     );
-
-    // Move the `tax_rate` value to new `FEES` map
-    let tax_rate_map_key = FEES.key("vaults_harvest");
-    deps.storage
-        .set(&tax_rate_map_key, &to_vec(&old_config.tax_rate)?);
 
     Ok(Response::default())
 }

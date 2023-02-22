@@ -22,31 +22,6 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct OldEndowment {
-    pub owner: Addr,
-    pub name: String,
-    pub categories: Categories,
-    pub tier: Option<u8>,
-    pub endow_type: EndowmentType,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub status: EndowmentStatus,
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
-    pub withdraw_before_maturity: bool,
-    pub maturity_time: Option<u64>,
-    pub maturity_height: Option<u64>,
-    pub strategies: AccountStrategies,
-    pub oneoff_vaults: OneOffVaults,
-    pub rebalance: RebalanceDetails,
-    pub kyc_donors_only: bool,
-    pub pending_redemptions: u8,
-    pub copycat_strategy: Option<u32>,
-    pub proposal_link: Option<u64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub struct Endowment {
     pub owner: Addr,
     pub name: String,           // name of the Endowment

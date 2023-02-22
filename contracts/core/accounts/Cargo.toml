@@ -1,6 +1,6 @@
 [package]
 name = "accounts"
-version = "1.9.4"
+version = "1.9.5"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 

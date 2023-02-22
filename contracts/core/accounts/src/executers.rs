@@ -3,7 +3,6 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
@@ -68,14 +67,24 @@ pub fn create_endowment(
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
     // Charity endowments must be created through the CW3 Review Applications
-    if msg.endow_type == EndowmentType::Charity
-        && info.sender.to_string() != registrar_config.applications_review
-    {
-        return Err(ContractError::Unauthorized {});
+    // Impact endowments must be created through the CW3 Review Impact Applications
+    match msg.endow_type {
+        EndowmentType::Charity => {
+            if info.sender.to_string() != registrar_config.applications_review {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        EndowmentType::Impact => {
+            if info.sender.to_string() != registrar_config.applications_impact_review {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        // Catch all for EndowmentType::Normal & any future types added
+        _ => todo!(),
     }
 
     if !msg.categories.general.is_empty() {
@@ -1396,7 +1405,7 @@ pub fn withdraw(
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATES.load(deps.storage, id)?;
     let mut state_bal: GenericBalance = state.balances.get(&acct_type);
-    let mut messages: Vec<SubMsg> = vec![];
+    let mut messages: Vec<CosmosMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
     let mut native_coins_fees: Vec<Coin> = vec![];
 
@@ -1415,13 +1424,13 @@ pub fn withdraw(
                 return Err(ContractError::Unauthorized {});
             }
         } else {
-            if info.sender != endowment.owner {
-                return Err(ContractError::Unauthorized {});
-            }
             if !endowment.is_expired(&env) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
+            }
+            if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
             }
         }
     }
@@ -1482,14 +1491,17 @@ pub fn withdraw(
                     denom: denom.clone(),
                     amount: asset.amount - withdraw_fee,
                 });
-                native_coins_fees.push(Coin {
-                    denom: denom.clone(),
-                    amount: withdraw_fee,
-                });
+                // don't push a fee asset in unless we need to send something
+                if withdraw_fee > Uint128::zero() {
+                    native_coins_fees.push(Coin {
+                        denom: denom.clone(),
+                        amount: withdraw_fee,
+                    });
+                }
             }
             AssetInfoBase::Cw20(addr) => {
                 // Build message to transfer CW20 tokens to the Beneficiary
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                         recipient: beneficiary.to_string(),
@@ -1497,9 +1509,9 @@ pub fn withdraw(
                     })
                     .unwrap(),
                     funds: vec![],
-                })));
+                }));
                 // Build message to AP treasury for withdraw fee owned
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                         recipient: registrar_config.treasury.to_string(),
@@ -1507,7 +1519,7 @@ pub fn withdraw(
                     })
                     .unwrap(),
                     funds: vec![],
-                })));
+                }));
                 // Update a CW20 token's Balance in STATE
                 state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     amount: asset.amount,
@@ -1525,14 +1537,17 @@ pub fn withdraw(
         state_bal.deduct_tokens(Balance::from(native_coins_fees.clone()));
         // Build messages to send all native tokens  via BankMsg::Send to either:
         // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
-        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        messages.push(CosmosMsg::Bank(BankMsg::Send {
             to_address: beneficiary,
             amount: native_coins,
-        })));
-        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: registrar_config.treasury,
-            amount: native_coins_fees,
-        })));
+        }));
+        // if we have any non-zero fees to send build that message now
+        if native_coins_fees.is_empty() {
+            messages.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: registrar_config.treasury,
+                amount: native_coins_fees,
+            }));
+        }
     }
 
     // set the updated balance for the account type
@@ -1543,7 +1558,7 @@ pub fn withdraw(
     STATES.save(deps.storage, id, &state)?;
 
     Ok(Response::new()
-        .add_submessages(messages)
+        .add_messages(messages)
         .add_attribute("action", "withdraw"))
 }
 

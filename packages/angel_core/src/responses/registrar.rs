@@ -28,6 +28,7 @@ pub struct ConfigResponse {
     pub cw4_code: Option<u64>,
     pub accepted_tokens: AcceptedTokens,
     pub applications_review: String,
+    pub applications_impact_review: String,
     pub swaps_router: Option<String>,
 }
 
