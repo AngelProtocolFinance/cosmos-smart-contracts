@@ -10,6 +10,9 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  defaults:
+    run:
+      working-directory: ./cosmwasm
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -19,7 +22,6 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Run cargo-tarpaulin
-      working-directory: ./cosmwasm
       uses: actions-rs/tarpaulin@v0.1
       with:
         version: '0.15.0'
