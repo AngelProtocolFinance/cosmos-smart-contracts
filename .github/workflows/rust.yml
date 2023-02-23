@@ -11,8 +11,7 @@ env:
 
 defaults:
   run:
-    shell: bash
-    working-directory: cosmwasm
+    working-directory: ./cosmwasm
 
 jobs:
   build:
