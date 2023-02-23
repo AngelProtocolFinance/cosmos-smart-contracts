@@ -4,7 +4,6 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::accounts_settings_controller::CreateEndowSettingsMsg;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::accounts_settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
@@ -73,14 +72,24 @@ pub fn create_endowment(
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
     // Charity endowments must be created through the CW3 Review Applications
-    if msg.endow_type == EndowmentType::Charity
-        && info.sender.to_string() != registrar_config.applications_review
-    {
-        return Err(ContractError::Unauthorized {});
+    // Impact endowments must be created through the CW3 Review Impact Applications
+    match msg.endow_type {
+        EndowmentType::Charity => {
+            if info.sender.to_string() != registrar_config.applications_review {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        EndowmentType::Impact => {
+            if info.sender.to_string() != registrar_config.applications_impact_review {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        // Catch all for EndowmentType::Normal & any future types added
+        _ => todo!(),
     }
 
     if !msg.categories.general.is_empty() {
@@ -246,24 +255,6 @@ pub fn create_endowment(
     CONFIG.save(deps.storage, &config)?;
 
     Ok(res)
-}
-
-pub fn update_owner(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_owner: String,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.owner = deps.api.addr_validate(&new_owner)?;
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::default())
 }
 
 pub fn update_endowment_status(
@@ -1539,7 +1530,7 @@ pub fn withdraw(
     beneficiary_endow: Option<u32>,
     assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
-    let mut messages: Vec<SubMsg> = vec![];
+    let mut messages: Vec<CosmosMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
     let mut native_coins_fees: Vec<Coin> = vec![];
 
@@ -1556,6 +1547,10 @@ pub fn withdraw(
         registrar_config.accounts_settings_controller,
         &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
+
+    if (beneficiary_wallet == None && beneficiary_endow == None) || assets.is_empty() {
+        return Err(ContractError::InvalidInputs {});
+    }
 
     if !endowment.withdraw_approved {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1580,23 +1575,15 @@ pub fn withdraw(
             if info.sender != config.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if beneficiary_endow == None {
-                return Err(ContractError::InvalidInputs {});
-            }
             shuffle_to_liquid = true;
         }
         (EndowmentType::Charity, AccountType::Liquid) => {
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if beneficiary_wallet == None {
-                return Err(ContractError::InvalidInputs {});
-            }
         }
         (_, AccountType::Locked) => {
-            if endowment.maturity_time.is_some()
-                && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
-            {
+            if !endowment.is_expired(&env) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
@@ -1605,29 +1592,24 @@ pub fn withdraw(
                 return Err(ContractError::Std(StdError::generic_err(
                     "Sender address is not listed in maturity_allowlist.",
                 )));
-            }
-            if beneficiary_wallet == None {
-                return Err(ContractError::InvalidInputs {});
+            } else if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
             }
         }
         (_, AccountType::Liquid) => {
-            if beneficiary_wallet == None {
-                return Err(ContractError::InvalidInputs {});
-            }
-            if !(info.sender == endowment.owner
-                || endowment_settings
-                    .beneficiaries_allowlist
-                    .contains(&info.sender.to_string()))
-            {
-                return Err(ContractError::Std(StdError::generic_err(
-                    "Sender is not Endowment owner or is not listed in whitelist.",
-                )));
-            }
             if beneficiary_endow != None {
                 let benef_aif = ENDOWMENTS.load(deps.storage, beneficiary_endow.unwrap())?;
                 if benef_aif.endow_type == EndowmentType::Impact {
                     inter_endow_transfer = true;
                 }
+            } else if !(info.sender == endowment.owner
+                || endowment_settings
+                    .beneficiaries_allowlist
+                    .contains(&info.sender.to_string()))
+            {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Sender is not Endowment owner or is not listed in beneficiary whitelist.",
+                )));
             }
         }
     }
@@ -1690,6 +1672,9 @@ pub fn withdraw(
                         denom: denom.clone(),
                         amount: asset.amount - withdraw_fee,
                     });
+                }
+                // don't push a fee asset in unless we need to send something
+                if withdraw_fee > Uint128::zero() {
                     native_coins_fees.push(Coin {
                         denom: denom.clone(),
                         amount: withdraw_fee,
@@ -1697,17 +1682,18 @@ pub fn withdraw(
                 }
             }
             AssetInfoBase::Cw20(addr) => {
-                // Build message to AP treasury for withdraw fee owned
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: addr.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                        recipient: registrar_config.treasury.to_string(),
-                        amount: withdraw_fee,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                })));
-
+                if withdraw_fee > Uint128::zero() {
+                    // Build message to AP treasury for withdraw fee owned
+                    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: addr.to_string(),
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                            recipient: registrar_config.treasury.to_string(),
+                            amount: withdraw_fee,
+                        })
+                        .unwrap(),
+                        funds: vec![],
+                    }));
+                }
                 let payload = match shuffle_to_liquid {
                     // Build message to transfer CW20 tokens to the Beneficiary
                     false => to_binary(&cw20::Cw20ExecuteMsg::Transfer {
@@ -1728,11 +1714,11 @@ pub fn withdraw(
                         .unwrap(),
                     }),
                 };
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: addr.clone().to_string(),
                     msg: payload.unwrap(),
                     funds: vec![],
-                })));
+                }));
 
                 // Update the CW20 token Balance in STATE
                 state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
@@ -1740,7 +1726,7 @@ pub fn withdraw(
                     address: deps.api.addr_validate(&addr).unwrap(),
                 }));
             }
-            _ => unreachable!(),
+            _ => unimplemented!(),
         }
     }
 
@@ -1754,17 +1740,20 @@ pub fn withdraw(
             (false, _) => {
                 // Build messages to send all native tokens  via BankMsg::Send to either:
                 // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
-                messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                messages.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: beneficiary_wallet.unwrap(),
                     amount: native_coins,
-                })));
-                messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                    to_address: registrar_config.treasury,
-                    amount: native_coins_fees,
-                })));
+                }));
+                // if we have any non-zero fees to send build that message now
+                if native_coins_fees.is_empty() {
+                    messages.push(CosmosMsg::Bank(BankMsg::Send {
+                        to_address: registrar_config.treasury,
+                        amount: native_coins_fees,
+                    }));
+                }
             }
             (true, false) => {
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
                     msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
                         angel_core::messages::accounts::DepositMsg {
@@ -1775,14 +1764,14 @@ pub fn withdraw(
                     ))
                     .unwrap(),
                     funds: native_coins,
-                })));
-                messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                }));
+                messages.push(CosmosMsg::Bank(BankMsg::Send {
                     to_address: registrar_config.treasury,
                     amount: native_coins_fees,
-                })));
+                }));
             }
             (true, true) => {
-                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
                     msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
                         angel_core::messages::accounts::DepositMsg {
@@ -1793,7 +1782,7 @@ pub fn withdraw(
                     ))
                     .unwrap(),
                     funds: native_coins,
-                })));
+                }));
             }
         }
     }
@@ -1806,7 +1795,7 @@ pub fn withdraw(
     STATES.save(deps.storage, id, &state)?;
 
     Ok(Response::new()
-        .add_submessages(messages)
+        .add_messages(messages)
         .add_attribute("action", "withdraw"))
 }
 

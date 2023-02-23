@@ -1,6 +1,6 @@
 [package]
 name = "cw3-endowment"
-version = "2.0.4"
+version = "2.0.7"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 

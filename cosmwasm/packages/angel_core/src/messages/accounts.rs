@@ -198,9 +198,7 @@ pub struct DepositMsg {
 pub enum QueryMsg {
     // Get all Config details for the contract
     Config {},
-    // Get the Endowment balance
-    Balance { id: u32 },
-    // Get state details (like total donations received so far)
+    // Get state details (like tokens on hand balances, total donations received, etc)
     State { id: u32 },
     // Get all Endowment details
     Endowment { id: u32 },

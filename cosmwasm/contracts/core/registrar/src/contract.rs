@@ -33,7 +33,8 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
-        applications_review: info.sender,
+        applications_review: info.sender.clone(),
+        applications_impact_review: info.sender,
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
@@ -162,11 +163,19 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         &Config {
             owner: old_config.owner,
             applications_review: old_config.applications_review,
+            applications_impact_review: old_config.applications_impact_review,
             index_fund_contract: old_config.index_fund_contract,
             accounts_contract: old_config.accounts_contract,
             treasury: old_config.treasury,
             cw3_code: old_config.cw3_code,
             cw4_code: old_config.cw4_code,
+            split_to_liquid: old_config.split_to_liquid,
+            halo_token: old_config.halo_token,
+            gov_contract: old_config.gov_contract,
+            charity_shares_contract: old_config.charity_shares_contract,
+            accepted_tokens: old_config.accepted_tokens,
+            rebalance: old_config.rebalance,
+            swaps_router: old_config.swaps_router,
             subdao_gov_code: None,
             subdao_cw20_token_code: None,
             subdao_bonding_token_code: None,
@@ -174,25 +183,14 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             subdao_distributor_code: None,
             donation_match_code: None,
             donation_match_charites_contract: None,
-            split_to_liquid: old_config.split_to_liquid,
-            halo_token: old_config.halo_token,
             halo_token_lp_contract: None,
-            gov_contract: old_config.gov_contract,
             collector_addr: None,
-            collector_share: Decimal::zero(), // SHOULD be checked
-            charity_shares_contract: old_config.charity_shares_contract,
-            accepted_tokens: old_config.accepted_tokens,
+            collector_share: Decimal::zero(),
             swap_factory: None,
             fundraising_contract: None,
-            rebalance: old_config.rebalance,
-            swaps_router: old_config.swaps_router,
             accounts_settings_controller,
         },
     )?;
-
-    // setup first fees
-    FEES.save(deps.storage, &"endowtype_charity", &msg.fee_charity)?;
-    FEES.save(deps.storage, &"endowtype_normal", &msg.fee_normal)?;
 
     Ok(Response::default())
 }

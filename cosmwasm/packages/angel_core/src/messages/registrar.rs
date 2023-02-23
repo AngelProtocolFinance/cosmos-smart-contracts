@@ -7,11 +7,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-
 pub struct MigrateMsg {
-    // EndowmentTypeFees
-    pub fee_charity: Decimal,
-    pub fee_normal: Decimal,
     pub accounts_settings_controller: String,
 }
 

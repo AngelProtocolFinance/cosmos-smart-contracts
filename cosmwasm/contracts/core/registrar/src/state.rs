@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct OldConfig {
-    pub owner: Addr,               // AP TEAM MULTISIG
-    pub applications_review: Addr, // Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
+    pub owner: Addr,                      // AP TEAM MULTISIG
+    pub applications_review: Addr, // Charity Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
+    pub applications_impact_review: Addr, // Impact Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
@@ -28,8 +29,9 @@ pub struct OldConfig {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,               // AP TEAM MULTISIG
-    pub applications_review: Addr, // Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
+    pub owner: Addr,                      // AP TEAM MULTISIG
+    pub applications_review: Addr, // Charity Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
+    pub applications_impact_review: Addr, // Impact Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,

@@ -8,8 +8,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct StateResponse {
+    pub tokens_on_hand: BalanceInfo,
     pub donations_received: DonationsReceived,
-    pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<Beneficiary>,
 }

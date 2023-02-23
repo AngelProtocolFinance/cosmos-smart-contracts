@@ -85,6 +85,7 @@ impl WasmMockQuerier {
                             cw20: vec!["test-cw20".to_string()],
                         },
                         applications_review: "applications-review".to_string(),
+                        applications_impact_review: "applications-impact-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         subdao_gov_code: None,
                         subdao_cw20_token_code: None,

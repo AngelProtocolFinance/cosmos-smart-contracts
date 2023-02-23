@@ -210,6 +210,7 @@ impl WasmMockQuerier {
                         },
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
+                        applications_impact_review: "applications_impact_review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: "accounts-settings-controller".to_string(),
                     })
@@ -271,7 +272,7 @@ impl WasmMockQuerier {
                                 locked: Uint128::from(1000000_u128),
                                 liquid: Uint128::from(1000000_u128),
                             },
-                            balances: BalanceInfo::default(),
+                            tokens_on_hand: BalanceInfo::default(),
                             closing_endowment: false,
                             closing_beneficiary: None,
                         })
@@ -283,7 +284,7 @@ impl WasmMockQuerier {
                                 locked: Uint128::from(1000000_u128),
                                 liquid: Uint128::from(1000000_u128),
                             },
-                            balances: BalanceInfo::default(),
+                            tokens_on_hand: BalanceInfo::default(),
                             closing_endowment: true,
                             closing_beneficiary: None,
                         })
