@@ -21,9 +21,5 @@ jobs:
         toolchain:
           - nightly
     steps:
-    - uses: actions/checkout@v3
-    - name: Run cargo-tarpaulin
-      uses: actions-rs/tarpaulin@v0.1
-      with:
-        version: latest
-        args: '-- --test-threads 1'
+    - name: Run cargo test
+    - run: cargo test --verbose
