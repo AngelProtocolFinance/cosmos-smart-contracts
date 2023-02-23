@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ main, RC-v1.9, RC-v2 ]
+    branches: [ main, RC-v2 ]
   pull_request:
-    branches: [ main, RC-v1.9, RC-v2 ]
+    branches: [ main, RC-v2 ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,6 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Run cargo-tarpaulin
+      working-directory: ./cosmwasm
       uses: actions-rs/tarpaulin@v0.1
       with:
         version: '0.15.0'
