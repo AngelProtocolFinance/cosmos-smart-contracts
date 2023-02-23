@@ -21,5 +21,8 @@ jobs:
         toolchain:
           - nightly
     steps:
-    - name: Run cargo test
-    - run: cargo test --verbose
+      - uses: actions/checkout@v3
+      - name: Build the contracts code
+        run: cargo build --verbose
+      - name: Run tests for contracts
+        run: cargo test --verbose
