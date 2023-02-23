@@ -9,10 +9,12 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+defaults:
+  run:
+    shell: bash
+    working-directory: cosmwasm
+
 jobs:
-  defaults:
-    run:
-      working-directory: ./cosmwasm
   build:
     runs-on: ubuntu-latest
     strategy:
