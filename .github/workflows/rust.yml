@@ -2,12 +2,16 @@ name: Rust
 
 on:
   push:
-    branches: [ main, RC-v1.9, RC-v2 ]
+    branches: [ main, RC-v2 ]
   pull_request:
-    branches: [ main, RC-v1.9, RC-v2 ]
+    branches: [ main, RC-v2 ]
 
 env:
   CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: ./cosmwasm
 
 jobs:
   build:
@@ -17,9 +21,8 @@ jobs:
         toolchain:
           - nightly
     steps:
-    - uses: actions/checkout@v3
-    - name: Run cargo-tarpaulin
-      uses: actions-rs/tarpaulin@v0.1
-      with:
-        version: '0.15.0'
-        args: '-- --test-threads 1'
+      - uses: actions/checkout@v3
+      - name: Build the contracts code
+        run: cargo build --verbose
+      - name: Run tests for contracts
+        run: cargo test --verbose

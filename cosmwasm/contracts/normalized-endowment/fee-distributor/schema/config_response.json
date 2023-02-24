@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConfigResponse",
+  "type": "object",
+  "required": ["dao_token", "owner", "terraswap_factory", "ve_token"],
+  "properties": {
+    "dao_token": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "terraswap_factory": {
+      "type": "string"
+    },
+    "ve_token": {
+      "type": "string"
+    }
+  }
+}

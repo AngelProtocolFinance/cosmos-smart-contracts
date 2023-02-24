@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "tax_rate",
+    "treasury"
+  ],
+  "properties": {
+    "accepted_tokens": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/AcceptedTokens"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "rebalance": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RebalanceDetails"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "split_to_liquid": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SplitDetails"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "swap_factory": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tax_rate": {
+      "$ref": "#/definitions/Decimal"
+    },
+    "treasury": {
+      "type": "string"
+    }
+  },
+  "definitions": {
+    "AcceptedTokens": {
+      "type": "object",
+      "required": [
+        "cw20",
+        "native"
+      ],
+      "properties": {
+        "cw20": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "native": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
+    "RebalanceDetails": {
+      "type": "object",
+      "required": [
+        "interest_distribution",
+        "locked_interests_to_liquid",
+        "locked_principle_to_liquid",
+        "principle_distribution",
+        "rebalance_liquid_invested_profits"
+      ],
+      "properties": {
+        "interest_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "locked_interests_to_liquid": {
+          "type": "boolean"
+        },
+        "locked_principle_to_liquid": {
+          "type": "boolean"
+        },
+        "principle_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "rebalance_liquid_invested_profits": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SplitDetails": {
+      "type": "object",
+      "required": [
+        "default",
+        "max",
+        "min"
+      ],
+      "properties": {
+        "default": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "max": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "min": {
+          "$ref": "#/definitions/Decimal"
+        }
+      }
+    }
+  }
+}
