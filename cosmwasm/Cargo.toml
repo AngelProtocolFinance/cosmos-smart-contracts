@@ -9,7 +9,6 @@ members = [
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-apteam",
     "contracts/multisig/cw3-applications",
-    "contracts/multisig/cw3-applications-impact",
     "contracts/multisig/cw3-generic",
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/cw900-lv",

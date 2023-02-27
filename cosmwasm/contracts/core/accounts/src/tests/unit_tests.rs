@@ -38,7 +38,7 @@ fn create_endowment() -> (
     let create_endowment_msg = CreateEndowmentMsg {
         owner: CHARITY_ADDR.to_string(),
         name: "Test Endowment".to_string(),
-        endow_type: EndowmentType::Impact,
+        endow_type: EndowmentType::Normal,
         categories: Categories {
             sdgs: vec![],
             general: vec![],

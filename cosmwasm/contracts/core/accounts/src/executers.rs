@@ -21,7 +21,7 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg, WasmQuery,
+    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
@@ -76,20 +76,14 @@ pub fn create_endowment(
         }))?;
 
     // Charity endowments must be created through the CW3 Review Applications
-    // Impact endowments must be created through the CW3 Review Impact Applications
     match msg.endow_type {
         EndowmentType::Charity => {
             if info.sender.to_string() != registrar_config.applications_review {
                 return Err(ContractError::Unauthorized {});
             }
         }
-        EndowmentType::Impact => {
-            if info.sender.to_string() != registrar_config.applications_impact_review {
-                return Err(ContractError::Unauthorized {});
-            }
-        }
         // Catch all for EndowmentType::Normal & any future types added
-        _ => todo!(),
+        _ => (),
     }
 
     if !msg.categories.general.is_empty() {
@@ -472,7 +466,9 @@ pub fn update_endowment_details(
 
     // Only config.owner can update owner, tier and endowment_type fields
     if info.sender == config.owner {
-        endowment.tier = msg.tier;
+        if let Some(tier) = msg.tier {
+            endowment.tier = Some(tier);
+        }
         if let Some(owner) = msg.owner {
             endowment.owner = deps.api.addr_validate(&owner)?;
         }
@@ -1599,7 +1595,7 @@ pub fn withdraw(
         (_, AccountType::Liquid) => {
             if beneficiary_endow != None {
                 let benef_aif = ENDOWMENTS.load(deps.storage, beneficiary_endow.unwrap())?;
-                if benef_aif.endow_type == EndowmentType::Impact {
+                if benef_aif.endow_type == EndowmentType::Normal {
                     inter_endow_transfer = true;
                 }
             } else if !(info.sender == endowment.owner
@@ -1625,7 +1621,6 @@ pub fn withdraw(
         msg: to_binary(&RegistrarQuerier::Fee {
             name: match endowment.endow_type {
                 EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
-                EndowmentType::Impact => "accounts_withdraw_impact".to_string(),
                 EndowmentType::Normal => "accounts_withdraw_normal".to_string(),
             },
         })?,
