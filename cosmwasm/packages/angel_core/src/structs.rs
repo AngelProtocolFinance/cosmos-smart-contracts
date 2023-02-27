@@ -493,7 +493,6 @@ pub enum Beneficiary {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentType {
     Charity,
-    Impact,
     Normal,
 }
 
@@ -504,7 +503,6 @@ impl fmt::Display for EndowmentType {
             "{}",
             match self {
                 EndowmentType::Charity => "charity",
-                EndowmentType::Impact => "impact",
                 EndowmentType::Normal => "normal",
             }
         )
