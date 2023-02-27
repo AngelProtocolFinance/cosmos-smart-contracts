@@ -466,7 +466,9 @@ pub fn update_endowment_details(
 
     // Only config.owner can update owner, tier and endowment_type fields
     if info.sender == config.owner {
-        endowment.tier = msg.tier;
+        if let Some(tier) = msg.tier {
+            endowment.tier = Some(tier);
+        }
         if let Some(owner) = msg.owner {
             endowment.owner = deps.api.addr_validate(&owner)?;
         }
