@@ -1,3 +1,4 @@
+    "packages/halo_token",
 [workspace]
 members = [
     "packages/angel_core",
@@ -15,13 +16,6 @@ members = [
     "contracts/normalized-endowment/fee-distributor",
     "contracts/accessory/fundraising",
     "contracts/accessory/gift-cards",
-]
-
-exclude = [
-    "contracts/normalized-endowment/cw900-lv",
-    "contracts/normalized-endowment/subdao",
-    "contracts/normalized-endowment/subdao-bonding-token",
-    "packages/halo_token",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
@@ -30,6 +24,12 @@ exclude = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
+]
+
+exclude = [
+    "contracts/normalized-endowment/cw900-lv",
+    "contracts/normalized-endowment/subdao",
+    "contracts/normalized-endowment/subdao-bonding-token",
     "contracts/vaults/astroport",
     "contracts/vaults/junoswap",
     "contracts/vaults/loop",

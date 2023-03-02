@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "owner_sc",
+    "registrar_contract"
+  ],
+  "properties": {
+    "owner_sc": {
+      "type": "string"
+    },
+    "registrar_contract": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
