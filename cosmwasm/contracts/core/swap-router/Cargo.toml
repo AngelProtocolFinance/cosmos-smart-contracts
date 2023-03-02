@@ -1,8 +1,9 @@
 [package]
 name = "swap-router"
 version = "1.9.1"
-authors = ["Angel Ventures LLC"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+licence.workspace = true
 description = "A swap router contract for Angel Protocol Endowments - manages multi-step swap operations to abstract away swaping complexity"
 
 exclude = [

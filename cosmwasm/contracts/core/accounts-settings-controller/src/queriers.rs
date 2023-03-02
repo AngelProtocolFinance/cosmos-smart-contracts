@@ -1,5 +1,5 @@
 use crate::state::{CONFIG, CONTROLLER, SETTINGS};
-use angel_core::responses::accounts_settings_controller::{
+use angel_core::msgs::accounts_settings_controller::{
     ConfigResponse, EndowmentPermissionsResponse,
 };
 use angel_core::structs::{EndowmentController, EndowmentSettings};

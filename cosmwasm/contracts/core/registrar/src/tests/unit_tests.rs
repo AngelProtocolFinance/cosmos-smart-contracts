@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
-use angel_core::messages::registrar::*;
-use angel_core::responses::registrar::*;
+use angel_core::msgs::registrar::*;
+use angel_core::msgs::registrar::*;
 use angel_core::structs::{
     AcceptedTokens, AccountType, NetworkInfo, RebalanceDetails, SplitDetails, VaultType,
 };

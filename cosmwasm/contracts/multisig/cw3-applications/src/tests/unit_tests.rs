@@ -1,6 +1,6 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use angel_core::messages::accounts::CreateEndowmentMsg;
-use angel_core::messages::cw3_multisig::QueryMsg;
+use angel_core::msgs::accounts::CreateEndowmentMsg;
+use angel_core::msgs::cw3_multisig::QueryMsg;
 use angel_core::structs::{Categories, EndowmentType, SplitDetails};
 use cosmwasm_std::{
     coin, coins, Addr, BankMsg, BlockInfo, Coin, CosmosMsg, Decimal, Empty, Timestamp,

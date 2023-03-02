@@ -1,9 +1,9 @@
 [package]
 name = "fee-distributor"
 version = "1.0.0"
-authors = ["Angel Ventures LLC"]
-edition = "2018"
-license = "Apache-2.0"
+authors.workspace = true
+edition.workspace = true
+licence.workspace = true
 description = "A fee distributor contract for Angel Protocol - allows for HALO to be distributed among veHALO holders proportionally to their veHALO balances"
 
 exclude = [

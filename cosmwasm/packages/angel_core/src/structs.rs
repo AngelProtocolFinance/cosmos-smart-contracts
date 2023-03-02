@@ -1,6 +1,6 @@
 use crate::errors::core::ContractError;
-use crate::messages::subdao_bonding_token::CurveType;
-use cosmwasm_schema::{cw_serde};
+use crate::msgs::subdao_bonding_token::CurveType;
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
@@ -240,63 +240,63 @@ impl EndowmentController {
             "strategies" => {
                 self.strategies = permissions;
                 Ok(())
-            },
+            }
             "beneficiaries_allowlist" => {
                 self.beneficiaries_allowlist = permissions;
                 Ok(())
-            },
+            }
             "contributors_allowlist" => {
                 self.contributors_allowlist = permissions;
                 Ok(())
-            },
+            }
             "maturity_allowlist" => {
                 self.maturity_allowlist = permissions;
                 Ok(())
-            },
+            }
             "split_to_liquid" => {
                 self.split_to_liquid = permissions;
                 Ok(())
-            },
+            }
             "ignore_user_splits" => {
                 self.ignore_user_splits = permissions;
                 Ok(())
-            },
+            }
             "earnings_fee" => {
                 self.earnings_fee = permissions;
                 Ok(())
-            },
+            }
             "withdraw_fee" => {
                 self.withdraw_fee = permissions;
                 Ok(())
-            },
+            }
             "deposit_fee" => {
                 self.deposit_fee = permissions;
                 Ok(())
-            },
+            }
             "aum_fee" => {
                 self.aum_fee = permissions;
                 Ok(())
-            },
+            }
             "kyc_donors_only" => {
                 self.kyc_donors_only = permissions;
                 Ok(())
-            },
+            }
             "name" => {
                 self.name = permissions;
                 Ok(())
-            },
+            }
             "image" => {
                 self.image = permissions;
                 Ok(())
-            },
+            }
             "logo" => {
                 self.logo = permissions;
                 Ok(())
-            },
+            }
             "categories" => {
                 self.categories = permissions;
                 Ok(())
-            },
+            }
             _ => Err(ContractError::InvalidInputs {}),
         }
     }

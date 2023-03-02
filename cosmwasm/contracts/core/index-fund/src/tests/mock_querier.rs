@@ -1,8 +1,6 @@
 // Contains mock functionality to test multi-contract scenarios
-// use angel_core::messages::accounts::ReceiveMsg::SwapReceipt;
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
-};
+// use angel_core::msgs::accounts::ReceiveMsg::SwapReceipt;
+use angel_core::msgs::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
 };

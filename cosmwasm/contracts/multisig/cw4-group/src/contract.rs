@@ -1,6 +1,6 @@
 use crate::error::ContractError;
 use crate::state::{ADMIN, HOOKS, MEMBERS, TOTAL};
-use angel_core::messages::cw4_group::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use angel_core::msgs::cw4_group::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response,
     StdError, StdResult, SubMsg,

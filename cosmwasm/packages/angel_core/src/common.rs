@@ -1,5 +1,4 @@
-use cosmwasm_schema::{cw_serde};
-
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Order;
 
 #[cw_serde]

@@ -2,7 +2,7 @@ use crate::executers;
 use crate::queriers;
 use crate::state::{Config, OldConfig, CONFIG, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::registrar::*;
+use angel_core::msgs::registrar::*;
 use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{

@@ -1,7 +1,7 @@
 use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
-use angel_core::messages::donation_match::*;
+use angel_core::msgs::donation_match::*;
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr, Uint128};
 

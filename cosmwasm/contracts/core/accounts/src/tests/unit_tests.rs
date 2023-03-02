@@ -2,11 +2,11 @@ use super::mock_querier::{mock_dependencies, WasmMockQuerier};
 use crate::contract::{execute, instantiate, migrate, query};
 use crate::state::Allowances;
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::{
+use angel_core::msgs::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
+use angel_core::msgs::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg,
     Strategy, UpdateEndowmentDetailsMsg, UpdateEndowmentStatusMsg,
 };
-use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
     AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyInvestment,
     SwapOperation,

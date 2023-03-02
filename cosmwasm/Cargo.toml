@@ -35,6 +35,14 @@ exclude = [
     "contracts/vaults/loop",
 ]
 
+[workspace.package]
+name = "angel-protocol-cosmwasm-smart-contracts"
+version = "2.1.0"
+authors = ["Angel Ventures LLC"]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/AngelProtocolFinance/cosmos-smart-contracts"
+
 [profile.release]
 opt-level = 'z'
 debug = false

@@ -1,12 +1,12 @@
 use crate::msg::{InstantiateMsg, MigrateMsg};
 use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
 use angel_core::errors::multisig::ContractError;
-use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
-use angel_core::messages::cw3_apteam::ExecuteMsg;
-use angel_core::messages::cw3_multisig::*;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::responses::accounts::EndowmentDetailsResponse;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::accounts::EndowmentDetailsResponse;
+use angel_core::msgs::accounts::QueryMsg::Endowment as EndowmentDetails;
+use angel_core::msgs::cw3_apteam::ExecuteMsg;
+use angel_core::msgs::cw3_multisig::*;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::structs::AccountType;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
@@ -186,7 +186,7 @@ pub fn execute_propose_locked_withdraw(
         expires,
         msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: accounts_contract,
-            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Withdraw {
+            msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Withdraw {
                 id: endowment_id,
                 acct_type: AccountType::Locked,
                 beneficiary_wallet,

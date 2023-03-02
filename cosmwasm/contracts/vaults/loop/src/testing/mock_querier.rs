@@ -13,7 +13,7 @@ use terraswap::asset::{AssetInfo, PairInfo};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
+use angel_core::msgs::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
 };
@@ -161,7 +161,7 @@ impl WasmMockQuerier {
                     // Simulating the `registrar::QueryMsg::Config {}`
                     QueryMsg::Config {} => match contract_addr.as_str() {
                         "locked_sibling_vault" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&angel_core::responses::vault::ConfigResponse {
+                            to_binary(&angel_core::msgs::vault::ConfigResponse {
                                 owner: "owner".to_string(),
                                 acct_type: angel_core::structs::AccountType::Locked,
                                 sibling_vault: MOCK_CONTRACT_ADDR.to_string(),
@@ -186,7 +186,7 @@ impl WasmMockQuerier {
                             .unwrap(),
                         )),
                         "liquid_sibling_vault" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&angel_core::responses::vault::ConfigResponse {
+                            to_binary(&angel_core::msgs::vault::ConfigResponse {
                                 owner: "owner".to_string(),
                                 acct_type: angel_core::structs::AccountType::Liquid,
                                 sibling_vault: MOCK_CONTRACT_ADDR.to_string(),

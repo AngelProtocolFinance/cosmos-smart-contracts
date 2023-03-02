@@ -1,5 +1,5 @@
 use crate::state::{Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
-use angel_core::responses::accounts::*;
+use angel_core::msgs::accounts::*;
 use angel_core::structs::Allowances;
 use cosmwasm_std::{Deps, Order, StdResult};
 use cw2::get_contract_version;

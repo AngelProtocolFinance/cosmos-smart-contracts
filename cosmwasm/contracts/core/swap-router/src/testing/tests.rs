@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, migrate, query};
 use crate::testing::mock_querier::mock_dependencies;
 use angel_core::errors::core::ContractError;
-use angel_core::messages::router::{
+use angel_core::msgs::router::{
     ConfigResponse,
     Cw20HookMsg,
     ExecuteMsg,

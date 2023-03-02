@@ -1,4 +1,4 @@
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, Categories, DonationsReceived, EndowmentType, Investments,
     RebalanceDetails, SplitDetails, StrategyAllocation,
@@ -216,7 +216,7 @@ impl WasmMockQuerier {
                 )),
                 QueryMsg::Endowment { id } => match id {
                     1 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
+                        to_binary(&angel_core::msgs::accounts::EndowmentDetailsResponse {
                             owner: Addr::unchecked("endowment-owner"),
                             name: "Test Endowment 1".to_string(),
                             categories: Categories::default(),
@@ -239,7 +239,7 @@ impl WasmMockQuerier {
                         .unwrap(),
                     )),
                     2 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
+                        to_binary(&angel_core::msgs::accounts::EndowmentDetailsResponse {
                             owner: Addr::unchecked("endowment-owner"),
                             name: "Test Endowment 2".to_string(),
                             categories: Categories::default(),
@@ -265,7 +265,7 @@ impl WasmMockQuerier {
                 },
                 QueryMsg::State { id } => match id {
                     1 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::StateResponse {
+                        to_binary(&angel_core::msgs::accounts::StateResponse {
                             donations_received: DonationsReceived {
                                 locked: Uint128::from(1000000_u128),
                                 liquid: Uint128::from(1000000_u128),
@@ -277,7 +277,7 @@ impl WasmMockQuerier {
                         .unwrap(),
                     )),
                     2 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::StateResponse {
+                        to_binary(&angel_core::msgs::accounts::StateResponse {
                             donations_received: DonationsReceived {
                                 locked: Uint128::from(1000000_u128),
                                 liquid: Uint128::from(1000000_u128),

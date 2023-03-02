@@ -1,8 +1,9 @@
 [package]
 name = "angel-core"
-version = "2.0.0"
-authors = ["Angel Ventures LLC"]
-edition = "2018"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+licence.workspace = true
 metadata = {}
 
 [features]
@@ -25,6 +26,7 @@ cw20-base = { version = "1.0.1", features = ["library"] }
 cosmwasm-std = "1.2.1"
 cosmwasm-schema = "1.2.1"
 cosmwasm-storage = "1.2.1"
+cw-controllers = "1.0.1"
 cw-storage-plus = "1.0.1"
 cw-asset = "3.0.0"
 cw-utils = "1.0.0"

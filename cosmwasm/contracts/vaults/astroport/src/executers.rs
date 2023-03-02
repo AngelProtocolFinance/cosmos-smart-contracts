@@ -1263,7 +1263,7 @@ pub fn send_asset(
             /*
                 Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: beneficiary.to_string(),
-                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
+                    msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::VaultReceipt {
                         id,
                         acct_type: config.acct_type,
                     })
@@ -1302,7 +1302,7 @@ pub fn send_asset(
                         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                             contract: beneficiary.to_string(),
                             amount: send_amount,
-                            msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
+                            msg: to_binary(&angel_core::msgs::accounts::ReceiveMsg::VaultReceipt {
                                 id,
                                 acct_type: config.acct_type,
                             })

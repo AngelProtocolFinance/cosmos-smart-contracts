@@ -1,7 +1,8 @@
 use crate::errors::core::{ContractError, PaymentError};
-use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::QueryMsg as VaultQuerier;
-use crate::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use crate::msgs::registrar::{
+    ConfigResponse as RegistrarConfigResponse, QueryMsg as RegistrarQuerier,
+};
+use crate::msgs::vault::QueryMsg as VaultQuerier;
 use crate::structs::{GenericBalance, SplitDetails};
 use cosmwasm_std::{
     to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, Decimal, Deps, DepsMut, Empty, Event,

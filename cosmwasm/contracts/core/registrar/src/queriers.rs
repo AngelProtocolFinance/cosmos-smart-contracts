@@ -1,5 +1,5 @@
 use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, STRATEGIES};
-use angel_core::responses::registrar::*;
+use angel_core::msgs::registrar::*;
 use cosmwasm_std::{Decimal, Deps, StdResult};
 use cw2::get_contract_version;
 

@@ -1,6 +1,6 @@
 use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, STRATEGIES};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::registrar::*;
+use angel_core::msgs::registrar::*;
 use angel_core::structs::{NetworkInfo, StrategyApprovalState, StrategyParams};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdResult};

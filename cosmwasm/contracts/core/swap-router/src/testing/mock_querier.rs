@@ -1,5 +1,5 @@
-use angel_core::messages::dexs::InfoResponse;
-use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::msgs::dexs::InfoResponse;
+use angel_core::msgs::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};

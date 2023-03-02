@@ -2,7 +2,7 @@ use crate::executers;
 use crate::queriers;
 use crate::state::{Config, OldConfig, State, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::index_fund::*;
+use angel_core::msgs::index_fund::*;
 use cosmwasm_std::{
     entry_point, from_binary, from_slice, to_binary, Binary, Deps, DepsMut, Env, MessageInfo,
     Response, StdError, StdResult, Uint128,

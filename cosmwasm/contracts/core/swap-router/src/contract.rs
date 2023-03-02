@@ -1,17 +1,17 @@
 use crate::operations::{assert_minium_receive, execute_swap_operation, send_swap_receipt};
 use crate::state::{pair_key, Config, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::dexs::{
+use angel_core::msgs::dexs::{
     InfoResponse, JunoSwapQueryMsg, LoopQueryMsg, SimulationResponse, Token1ForToken2PriceResponse,
     Token2ForToken1PriceResponse,
 };
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::router::{
+use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::msgs::registrar::{
+    ConfigResponse as RegistrarConfigResponse, StrategyDetailResponse,
+};
+use angel_core::msgs::swap_router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
     SimulateSwapOperationsResponse,
-};
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, StrategyDetailResponse,
 };
 use angel_core::structs::{AccountType, Pair, StrategyApprovalState, SwapOperation};
 use cosmwasm_std::{

@@ -11,7 +11,7 @@ use cosmwasm_storage::to_length_prefixed;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
+use angel_core::msgs::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
 };

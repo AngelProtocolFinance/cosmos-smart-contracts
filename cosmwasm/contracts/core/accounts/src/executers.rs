@@ -1,17 +1,17 @@
 use crate::ibc::{AxelarGeneralMessage, MsgTransfer};
 use crate::state::{Endowment, State, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::*;
-use angel_core::messages::accounts_settings_controller::CreateEndowSettingsMsg;
-use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
-use angel_core::responses::accounts_settings_controller::{
+use angel_core::msgs::accounts::*;
+use angel_core::msgs::accounts_settings_controller::CreateEndowSettingsMsg;
+use angel_core::msgs::accounts_settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
-use angel_core::responses::registrar::{
+use angel_core::msgs::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
+use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::msgs::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, StrategyDetailResponse,
 };
+use angel_core::msgs::swap_router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::structs::{
     AccountType, Allowances, BalanceInfo, Beneficiary, DonationsReceived, EndowmentController,
     EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, Investments, RebalanceDetails,
@@ -192,7 +192,7 @@ pub fn create_endowment(
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: registrar_config.accounts_settings_controller.clone(),
         msg: to_binary(
-            &angel_core::messages::accounts_settings_controller::ExecuteMsg::CreateEndowmentSettings(
+            &angel_core::msgs::accounts_settings_controller::ExecuteMsg::CreateEndowmentSettings(
                 CreateEndowSettingsMsg {
                     id: config.next_account_id,
                     donation_match_active: false,
@@ -228,7 +228,7 @@ pub fn create_endowment(
             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: registrar_config.accounts_settings_controller,
                 msg: to_binary(
-                    &angel_core::messages::accounts_settings_controller::ExecuteMsg::SetupDao {
+                    &angel_core::msgs::accounts_settings_controller::ExecuteMsg::SetupDao {
                         endowment_id: config.next_account_id,
                         setup: dao_setup,
                     },
@@ -325,14 +325,12 @@ pub fn update_endowment_status(
                 beneficiary = msg.beneficiary.unwrap();
             } else {
                 // query the Index Fund SC to find the Fund that this Endowment is a member of
-                let fund_list: angel_core::responses::index_fund::FundListResponse =
+                let fund_list: angel_core::msgs::index_fund::FundListResponse =
                     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                         contract_addr: index_fund_contract.clone(),
-                        msg: to_binary(
-                            &angel_core::messages::index_fund::QueryMsg::InvolvedFunds {
-                                endowment_id: msg.endowment_id,
-                            },
-                        )?,
+                        msg: to_binary(&angel_core::msgs::index_fund::QueryMsg::InvolvedFunds {
+                            endowment_id: msg.endowment_id,
+                        })?,
                     }))?;
                 // send funds to the first index fund in list if found
                 if !fund_list.funds.is_empty() {
@@ -353,8 +351,8 @@ pub fn update_endowment_status(
                 // trigger the removal of this endowment from all Index Funds
                 SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: index_fund_contract,
-                    msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
-                        angel_core::messages::index_fund::RemoveMemberMsg {
+                    msg: to_binary(&angel_core::msgs::index_fund::ExecuteMsg::RemoveMember(
+                        angel_core::msgs::index_fund::RemoveMemberMsg {
                             member: msg.endowment_id,
                         },
                     ))
@@ -364,12 +362,10 @@ pub fn update_endowment_status(
                 // start redemption of Account SC's Strategy holdings to final beneficiary/index fund
                 SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: env.contract.address.to_string(),
-                    msg: to_binary(
-                        &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
-                            id: endowment_id,
-                            beneficiary,
-                        },
-                    )
+                    msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::CloseEndowment {
+                        id: endowment_id,
+                        beneficiary,
+                    })
                     .unwrap(),
                     funds: vec![],
                 })),
@@ -439,7 +435,7 @@ pub fn update_endowment_details(
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
     let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
         registrar_config.accounts_settings_controller.clone(),
-        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentPermissions {
+        &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentPermissions {
             id: msg.id,
             setting_updater: info.sender.clone(),
             endowment_owner: endowment.owner.clone(),
@@ -447,9 +443,7 @@ pub fn update_endowment_details(
     )?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
         registrar_config.accounts_settings_controller,
-        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings {
-            id: msg.id,
-        },
+        &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
     let state = STATES.load(deps.storage, msg.id)?;
@@ -842,10 +836,10 @@ pub fn distribute_to_beneficiary(
                     msg: to_binary(&RegistrarQuerier::Config {})?,
                 }))?;
             // get index fund members list & count
-            let index_fund: angel_core::responses::index_fund::FundDetailsResponse =
+            let index_fund: angel_core::msgs::index_fund::FundDetailsResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: registrar_config.index_fund.unwrap(),
-                    msg: to_binary(&angel_core::messages::index_fund::QueryMsg::FundDetails {
+                    msg: to_binary(&angel_core::msgs::index_fund::QueryMsg::FundDetails {
                         fund_id: id,
                     })?,
                 }))?;
@@ -961,9 +955,7 @@ pub fn deposit(
     let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
         registrar_config.accounts_settings_controller,
-        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings {
-            id: msg.id,
-        },
+        &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
     // check that the Endowment has been approved to receive deposits
@@ -1165,7 +1157,7 @@ pub fn strategies_invest(
             StrategyLocale::Native => {
                 res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: registrar_config.vault_router.clone().unwrap().to_string(),
-                    msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
+                    msg: to_binary(&angel_core::msgs::vault::ExecuteMsg::Deposit {
                         endowment_id: id,
                         // TO DO: Add Vault Router to handle passing the message to the Vaults
                         // locked_amount: investment.locked_amount,
@@ -1191,7 +1183,7 @@ pub fn strategies_invest(
                 let msg = &AxelarGeneralMessage {
                     destination_chain: strategy_params.chain,
                     destination_address: chain_info.network_connection.router_contract.unwrap(),
-                    payload: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
+                    payload: to_binary(&angel_core::msgs::vault::ExecuteMsg::Deposit {
                         endowment_id: id,
                         // TO DO: Add Vault Router to handle passing the message to the Vaults
                         // locked_amount: investment.locked_amount,
@@ -1349,11 +1341,11 @@ pub fn strategies_redeem(
                 // Check the vault token(VT) balance
                 let available_vt_locked: Uint128 = deps.querier.query_wasm_smart(
                     strategy_params.locked_addr.unwrap().to_string(),
-                    &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
+                    &angel_core::msgs::vault::QueryMsg::Balance { endowment_id: id },
                 )?;
                 let available_vt_liquid: Uint128 = deps.querier.query_wasm_smart(
                     strategy_params.liquid_addr.unwrap().to_string(),
-                    &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
+                    &angel_core::msgs::vault::QueryMsg::Balance { endowment_id: id },
                 )?;
                 if investment.locked_amount > available_vt_locked
                     || investment.liquid_amount > available_vt_liquid
@@ -1362,7 +1354,7 @@ pub fn strategies_redeem(
                 }
                 res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: registrar_config.vault_router.clone().unwrap().to_string(),
-                    msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+                    msg: to_binary(&angel_core::msgs::vault::ExecuteMsg::Redeem {
                         endowment_id: id,
                         amount: investment.locked_amount + investment.liquid_amount,
                         // TO DO: Add Router Contract to handle passing messages on to vaults
@@ -1386,7 +1378,7 @@ pub fn strategies_redeem(
                 let msg = AxelarGeneralMessage {
                     destination_chain: strategy_params.chain,
                     destination_address: chain_info.network_connection.router_contract.unwrap(),
-                    payload: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+                    payload: to_binary(&angel_core::msgs::vault::ExecuteMsg::Redeem {
                         endowment_id: id,
                         amount: investment.locked_amount + investment.liquid_amount,
                         // TO DO: Add Router Contract to handle passing messages on to vaults
@@ -1440,7 +1432,7 @@ pub fn withdraw(
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
         registrar_config.accounts_settings_controller,
-        &angel_core::messages::accounts_settings_controller::QueryMsg::EndowmentSettings { id },
+        &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
 
     if (beneficiary_wallet == None && beneficiary_endow == None) || assets.is_empty() {
@@ -1598,8 +1590,8 @@ pub fn withdraw(
                     true => to_binary(&cw20::Cw20ExecuteMsg::Send {
                         contract: registrar_config.accounts_contract.clone().unwrap(),
                         amount: asset.amount - withdraw_fee,
-                        msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-                            angel_core::messages::accounts::DepositMsg {
+                        msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
+                            angel_core::msgs::accounts::DepositMsg {
                                 id: beneficiary_endow.unwrap(),
                                 locked_percentage: Decimal::zero(),
                                 liquid_percentage: Decimal::one(),
@@ -1649,8 +1641,8 @@ pub fn withdraw(
             (true, false) => {
                 messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
-                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-                        angel_core::messages::accounts::DepositMsg {
+                    msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
+                        angel_core::msgs::accounts::DepositMsg {
                             id: beneficiary_endow.unwrap(),
                             locked_percentage: Decimal::zero(),
                             liquid_percentage: Decimal::one(),
@@ -1667,8 +1659,8 @@ pub fn withdraw(
             (true, true) => {
                 messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
-                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-                        angel_core::messages::accounts::DepositMsg {
+                    msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
+                        angel_core::msgs::accounts::DepositMsg {
                             id: beneficiary_endow.unwrap(),
                             locked_percentage: Decimal::zero(),
                             liquid_percentage: Decimal::one(),
@@ -1734,7 +1726,7 @@ pub fn close_endowment(
         let vault_balance = vault_endowment_balance(deps.as_ref(), vault.clone(), id);
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault.to_string(),
-            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+            msg: to_binary(&angel_core::msgs::vault::ExecuteMsg::Redeem {
                 endowment_id: id,
                 amount: vault_balance,
             })
@@ -1770,7 +1762,7 @@ pub fn harvest(
             id: 0,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr.to_string(),
-                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
+                msg: to_binary(&angel_core::msgs::vault::ExecuteMsg::Harvest {}).unwrap(),
                 funds: vec![],
             }),
             gas_limit: None,

@@ -11,8 +11,8 @@ use cosmwasm_storage::to_length_prefixed;
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::responses::vault::InfoResponse;
+use angel_core::msgs::registrar::{ConfigResponse, EndowmentListResponse};
+use angel_core::msgs::vault::InfoResponse;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
 
 #[cw_serde]

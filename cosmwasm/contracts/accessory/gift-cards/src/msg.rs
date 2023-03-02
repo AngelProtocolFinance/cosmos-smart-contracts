@@ -1,4 +1,6 @@
-use cosmwasm_schema::{cw_serde};
+use crate::state::{Config, Deposit};
+use angel_core::structs::GenericBalance;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use cw_asset::Asset;
@@ -46,8 +48,12 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(GenericBalance)]
     Balance { address: String },
+    #[returns(Config)]
     Config {},
+    #[returns(Deposit)]
     Deposit { deposit_id: u64 },
 }

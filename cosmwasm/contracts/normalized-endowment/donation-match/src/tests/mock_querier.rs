@@ -1,7 +1,7 @@
-use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::msgs::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
-use angel_core::responses::accounts_settings_controller::EndowmentSettingsResponse;
-use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::msgs::accounts_settings_controller::EndowmentSettingsResponse;
+use angel_core::msgs::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountType, Categories, Investments, RebalanceDetails, SplitDetails,
     StrategyAllocation, VaultType, YieldVault,
@@ -152,7 +152,7 @@ impl WasmMockQuerier {
                 QueryMsg::Config {} => {
                     match contract_addr.as_str() {
                         "accounts-contract" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&angel_core::responses::accounts::ConfigResponse {
+                            to_binary(&angel_core::msgs::accounts::ConfigResponse {
                                 owner: "owner".to_string(),
                                 version: "accounts-v2.0.0".to_string(),
                                 registrar_contract: "registrar-contract".to_string(),

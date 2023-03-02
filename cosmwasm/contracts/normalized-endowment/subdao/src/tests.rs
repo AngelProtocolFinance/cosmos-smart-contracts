@@ -2,12 +2,12 @@ use crate::contract::{execute, instantiate, query};
 use crate::state::{config_read, poll_voter_read, state_read, Config, State};
 use angel_core::common::OrderBy;
 use angel_core::errors::dao::ContractError;
-use angel_core::messages::subdao::{
+use angel_core::msgs::subdao::{
     ConfigResponse, Cw20HookMsg, DaoBondingConfig, DaoToken, ExecuteMsg, InstantiateMsg,
     PollExecuteMsg, PollResponse, PollStatus, PollsResponse, QueryMsg, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
-use angel_core::messages::subdao_bonding_token::CurveType;
+use angel_core::msgs::subdao_bonding_token::CurveType;
 use angel_core::structs::EndowmentType;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{

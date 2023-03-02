@@ -1,4 +1,4 @@
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AcceptedTokens, RebalanceDetails, SplitDetails};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{

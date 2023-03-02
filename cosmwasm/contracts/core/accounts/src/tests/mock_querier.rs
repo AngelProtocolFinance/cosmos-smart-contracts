@@ -1,9 +1,7 @@
-use angel_core::responses::accounts_settings_controller::{
+use angel_core::msgs::accounts_settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
-};
+use angel_core::msgs::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
 };

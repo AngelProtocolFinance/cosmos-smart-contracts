@@ -1,12 +1,11 @@
 use crate::state::ProposalType;
-use angel_core::messages::accounts::CreateEndowmentMsg;
-use cosmwasm_schema::{cw_serde};
+use angel_core::msgs::accounts::CreateEndowmentMsg;
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Coin, CosmosMsg, Decimal, Empty};
 use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
 use cw_asset::Asset;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
-
 
 /// We currently take no arguments for migrations
 #[cw_serde]

@@ -1,6 +1,6 @@
 use crate::msg::InstantiateMsg;
-use angel_core::messages::cw3_apteam::ExecuteMsg;
-use angel_core::messages::cw3_multisig::QueryMsg;
+use angel_core::msgs::cw3_apteam::ExecuteMsg;
+use angel_core::msgs::cw3_multisig::QueryMsg;
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};

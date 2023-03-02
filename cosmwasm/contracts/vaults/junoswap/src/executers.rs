@@ -6,14 +6,14 @@ use cw20::Denom;
 use cw_controllers::ClaimsResponse;
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{
+use angel_core::msgs::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::msgs::registrar::{ConfigResponse, EndowmentListResponse};
+use angel_core::msgs::vault::{
     AccountWithdrawMsg, DaoStakeCw20ExecuteMsg, DaoStakeCw20GetConfigResponse,
     DaoStakeCw20QueryMsg, DaoStakeCw20ReceiveMsg, ExecuteMsg, RemoveLiquidAction, TokenSelect,
     UpdateConfigMsg, WasmSwapExecuteMsg, WasmSwapQueryMsg,
 };
-use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
+use angel_core::msgs::vault::{InfoResponse, Token2ForToken1PriceResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 

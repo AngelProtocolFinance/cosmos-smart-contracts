@@ -1,7 +1,7 @@
 use crate::state::{pair_key, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::ExecuteMsg as AccountsExecuteMsg;
-use angel_core::messages::dexs::{
+use angel_core::msgs::accounts::ExecuteMsg as AccountsExecuteMsg;
+use angel_core::msgs::dexs::{
     InfoResponse, JunoSwapExecuteMsg, JunoSwapQueryMsg, LoopExecuteMsg, TokenSelect,
 };
 use angel_core::structs::{AccountType, Pair, SwapOperation};

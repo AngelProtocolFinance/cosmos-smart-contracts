@@ -1,9 +1,8 @@
-use cosmwasm_schema::{cw_serde};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal as StdDecimal, Uint128};
 use integer_cbrt::IntegerCubeRoot;
 use integer_sqrt::IntegerSquareRoot;
-use rust_decimal::prelude::ToPrimitive;
-use rust_decimal::Decimal;
+use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::str::FromStr;
 
 pub trait Curve {

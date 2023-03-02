@@ -4,7 +4,7 @@ use cosmwasm_std::{coins, from_binary, to_binary, Decimal, OverflowError, StdErr
 use cw20::{BalanceResponse, Cw20ReceiveMsg};
 
 use crate::contract::{execute, instantiate, query};
-use angel_core::messages::subdao_bonding_token::{
+use angel_core::msgs::subdao_bonding_token::{
     CurveInfoResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 
@@ -22,7 +22,7 @@ fn test_proper_initialization() {
         decimals: 6,
         reserve_denom: "reserve-token-address".to_string(),
         reserve_decimals: 6,
-        curve_type: angel_core::messages::subdao_bonding_token::CurveType::Constant {
+        curve_type: angel_core::msgs::subdao_bonding_token::CurveType::Constant {
             value: Uint128::from(10_u128),
             scale: 1,
         },
@@ -55,7 +55,7 @@ fn test_claim_tokens() {
         decimals: 6,
         reserve_denom: "reserve-token-address".to_string(),
         reserve_decimals: 6,
-        curve_type: angel_core::messages::subdao_bonding_token::CurveType::Constant {
+        curve_type: angel_core::msgs::subdao_bonding_token::CurveType::Constant {
             value: Uint128::from(10_u128),
             scale: 1,
         },
@@ -131,7 +131,7 @@ fn test_buy() {
         decimals: 6,
         reserve_denom: "reserve-token-address".to_string(),
         reserve_decimals: 6,
-        curve_type: angel_core::messages::subdao_bonding_token::CurveType::Constant {
+        curve_type: angel_core::msgs::subdao_bonding_token::CurveType::Constant {
             value: Uint128::from(10_u128),
             scale: 1,
         },
@@ -212,7 +212,7 @@ fn test_sell() {
         decimals: 6,
         reserve_denom: "reserve-token-address".to_string(),
         reserve_decimals: 6,
-        curve_type: angel_core::messages::subdao_bonding_token::CurveType::Constant {
+        curve_type: angel_core::msgs::subdao_bonding_token::CurveType::Constant {
             value: Uint128::from(10_u128),
             scale: 1,
         },
@@ -291,7 +291,7 @@ fn test_transfer() {
         decimals: 6,
         reserve_denom: "reserve-token-address".to_string(),
         reserve_decimals: 6,
-        curve_type: angel_core::messages::subdao_bonding_token::CurveType::Constant {
+        curve_type: angel_core::msgs::subdao_bonding_token::CurveType::Constant {
             value: Uint128::from(10_u128),
             scale: 1,
         },
@@ -348,7 +348,7 @@ fn test_donor_match() {
         decimals: 6,
         reserve_denom: "reserve-token-address".to_string(),
         reserve_decimals: 6,
-        curve_type: angel_core::messages::subdao_bonding_token::CurveType::Constant {
+        curve_type: angel_core::msgs::subdao_bonding_token::CurveType::Constant {
             value: Uint128::from(10_u128),
             scale: 1,
         },

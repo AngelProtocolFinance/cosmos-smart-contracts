@@ -9,7 +9,7 @@ use crate::state::{
 use angel_core::errors::cw900::ContractError;
 use cosmwasm_std::entry_point;
 
-use angel_core::messages::ve_token::{
+use angel_core::msgs::ve_token::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse,
     StateResponse,
 };

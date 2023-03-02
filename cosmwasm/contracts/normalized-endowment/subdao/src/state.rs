@@ -1,5 +1,5 @@
 use angel_core::common::OrderBy;
-use angel_core::messages::subdao::{PollStatus, VoterInfo};
+use angel_core::msgs::subdao::{PollStatus, VoterInfo};
 use angel_core::utils::{
     calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
 };

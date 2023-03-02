@@ -1,8 +1,9 @@
 [package]
 name = "halo-vesting"
 version = "2.0.0"
-authors = ["Angel Ventures LLC"]
-edition = "2018"
+authors.workspace = true
+edition.workspace = true
+licence.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]

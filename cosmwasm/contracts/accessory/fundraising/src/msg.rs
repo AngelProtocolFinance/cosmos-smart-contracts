@@ -1,6 +1,6 @@
 use crate::state::Campaign;
 use angel_core::structs::GenericBalance;
-use cosmwasm_schema::{cw_serde};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal};
 use cw20::Cw20ReceiveMsg;
 
@@ -99,19 +99,20 @@ pub fn is_valid_name(name: &str) -> bool {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Show campaigns that meet optional filter criteria.
-    /// Return type: ListResponse.
+    #[returns(ListResponse)]
     List {
         creator: Option<Addr>,
         open: Option<bool>,
         success: Option<bool>,
     },
     /// Show campaigns that a given address has contributed to
-    /// Return type: ListResponse.
+    #[returns(ListResponse)]
     ContributorCampaigns { contributor: String },
     /// Returns the details of the named campaign, error if not created
-    /// Return type: DetailsResponse.
+    #[returns(DetailsResponse)]
     Details { id: u64 },
 }
 

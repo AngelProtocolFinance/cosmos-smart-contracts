@@ -1,4 +1,4 @@
-use angel_core::messages::ve_token::{StakerResponse, StateResponse};
+use angel_core::msgs::ve_token::{StakerResponse, StateResponse};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
