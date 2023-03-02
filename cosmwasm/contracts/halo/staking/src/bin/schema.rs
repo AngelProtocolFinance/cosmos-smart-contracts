@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use halo_token::messages::staking::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use halo_token::staking::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 fn main() {
     write_api! {

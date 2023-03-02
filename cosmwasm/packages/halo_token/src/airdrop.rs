@@ -27,10 +27,15 @@ pub enum ExecuteMsg {
 pub struct MigrateMsg {}
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(MerkleRootResponse)]
     MerkleRoot { stage: u8 },
+    #[returns(LatestStageResponse)]
     LatestStage {},
+    #[returns(IsClaimedResponse)]
     IsClaimed { stage: u8, address: String },
 }
 

@@ -1,5 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Decimal;
+use cw_asset::AssetInfo;
 
 #[cw_serde]
 pub struct InstantiateMsg {
@@ -26,8 +27,11 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(AssetInfo)]
     Pair { denom: String },
 }
 

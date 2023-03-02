@@ -1,4 +1,4 @@
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Deps, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use halo_token::common::OrderBy;

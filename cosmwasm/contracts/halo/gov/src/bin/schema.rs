@@ -1,5 +1,5 @@
 use cosmwasm_schema::write_api;
-use halo_token::messages::gov::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use halo_token::gov::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 
 fn main() {
     write_api! {

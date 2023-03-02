@@ -44,11 +44,13 @@ pub struct VestingInfo {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
-    VestingAccount {
-        address: String,
-    },
+    #[returns(VestingAccountResponse)]
+    VestingAccount { address: String },
+    #[returns(VestingAccountsResponse)]
     VestingAccounts {
         start_after: Option<String>,
         limit: Option<u32>,

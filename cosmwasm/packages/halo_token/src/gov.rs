@@ -1,8 +1,9 @@
 use crate::common::OrderBy;
+use crate::staking::StakerInfoResponse;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
-use cw_controllers::Claim;
+use cw_controllers::{Claim, ClaimsResponse};
 use cw_utils::Duration;
 use std::fmt;
 
@@ -87,25 +88,27 @@ pub struct PollExecuteMsg {
 }
 
 #[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ConfigResponse)]
     Config {},
+    #[returns(StateResponse)]
     State {},
     /// Claims shows the number of tokens this address can access when they are done unbonding
-    Claims {
-        address: String,
-    },
-    Staker {
-        address: String,
-    },
-    Poll {
-        poll_id: u64,
-    },
+    #[returns(ClaimsResponse)]
+    Claims { address: String },
+    #[returns(StakerInfoResponse)]
+    Staker { address: String },
+    #[returns(PollResponse)]
+    Poll { poll_id: u64 },
+    #[returns(PollsResponse)]
     Polls {
         filter: Option<PollStatus>,
         start_after: Option<u64>,
         limit: Option<u32>,
         order_by: Option<OrderBy>,
     },
+    #[returns(VotersResponse)]
     Voters {
         poll_id: u64,
         start_after: Option<String>,
