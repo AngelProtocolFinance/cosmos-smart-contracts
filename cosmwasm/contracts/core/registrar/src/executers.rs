@@ -1,9 +1,9 @@
-use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, STRATEGIES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{EndowmentType, NetworkInfo, VaultType, YieldVault};
+use angel_core::structs::{NetworkInfo, StrategyApprovalState, StrategyParams};
 use angel_core::utils::{percentage_checks, split_checks};
-use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdResult};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -171,11 +171,12 @@ pub fn update_config(
     Ok(Response::new().add_attribute("action", "update_config"))
 }
 
-pub fn vault_add(
+pub fn strategy_add(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
-    msg: VaultAddMsg,
+    strategy_key: String,
+    strategy: StrategyParams,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
@@ -183,84 +184,56 @@ pub fn vault_add(
         return Err(ContractError::Unauthorized {});
     }
 
-    // validate the passed address
-    let addr = deps.api.addr_validate(&msg.vault_addr)?;
-
     // check that the vault does not already exist for a given address in storage
-    if VAULTS.load(deps.storage, addr.as_bytes()).is_ok() {
+    if STRATEGIES
+        .load(deps.storage, &strategy_key.as_bytes())
+        .is_ok()
+    {
         return Err(ContractError::VaultAlreadyExists {});
     }
 
-    // check that valid network connection info is provided for a vault
-    let vault_network = msg.network.unwrap_or(env.block.chain_id);
-    let network = NETWORK_CONNECTIONS.load(deps.storage, &vault_network)?;
+    // check that an approved network connection was set for the StrategyParams
+    let _network = NETWORK_CONNECTIONS.load(deps.storage, &strategy.chain)?;
 
-    // if non-native vault type, ensure the NetworkInfo has IBC configured
-    if msg.vault_type != VaultType::Native && network.ibc_channel.is_none() {
-        return Err(ContractError::Std(StdError::generic_err(
-            "IBC Channel must be configured before adding a non-Native Vault",
-        )));
-    }
-
-    // save the new vault to storage
-    VAULTS.save(
-        deps.storage,
-        addr.as_bytes(),
-        &YieldVault {
-            network: vault_network,
-            address: addr.to_string(),
-            input_denom: msg.input_denom,
-            yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
-            approved: true,
-            restricted_from: msg.restricted_from,
-            acct_type: msg.acct_type,
-            vault_type: msg.vault_type,
-        },
-    )?;
+    // save the new strategy to storage
+    STRATEGIES.save(deps.storage, &strategy_key.as_bytes(), &strategy)?;
     Ok(Response::default())
 }
 
-pub fn vault_remove(
+pub fn strategy_remove(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    vault_addr: String,
+    strategy_key: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    // validate the passed address
-    let _addr = deps.api.addr_validate(&vault_addr)?;
-
-    // remove the vault from storage
-    VAULTS.remove(deps.storage, vault_addr.as_bytes());
+    // remove the Strategy from storage
+    STRATEGIES.remove(deps.storage, &strategy_key.as_bytes());
     Ok(Response::default())
 }
 
-pub fn vault_update(
+pub fn strategy_update(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    vault_addr: String,
-    approved: bool,
-    restricted_from: Vec<EndowmentType>,
+    strategy_key: String,
+    approval_state: StrategyApprovalState,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    // try to look up the given vault in Storage
-    let addr = deps.api.addr_validate(&vault_addr)?;
-    let mut vault = VAULTS.load(deps.storage, addr.as_bytes())?;
+    // try to look up the given strategy in Storage
+    let mut strategy = STRATEGIES.load(deps.storage, strategy_key.as_bytes())?;
 
-    // update new vault approval status attribute from passed arg
-    vault.approved = approved;
-    // set any restricted endowment types
-    vault.restricted_from = restricted_from;
-    VAULTS.save(deps.storage, addr.as_bytes(), &vault)?;
+    // update strategy with approval state from passed arg
+    strategy.approval_state = approval_state;
+    STRATEGIES.save(deps.storage, strategy_key.as_bytes(), &strategy)?;
 
     Ok(Response::default())
 }
@@ -269,6 +242,7 @@ pub fn update_network_connections(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    chain_id: String,
     network_info: NetworkInfo,
     action: String,
 ) -> Result<Response, ContractError> {
@@ -280,10 +254,10 @@ pub fn update_network_connections(
 
     if action == *"post" {
         // Add/Overwrite the network_info to NETWORK_CONNECTIONS
-        NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain_id, &network_info)?;
+        NETWORK_CONNECTIONS.save(deps.storage, &chain_id, &network_info)?;
     } else if action == *"delete" {
         // Remove the network_info from NETWORK_CONNECTIONS
-        NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain_id);
+        NETWORK_CONNECTIONS.remove(deps.storage, &chain_id);
     } else {
         return Err(ContractError::InvalidInputs {});
     }

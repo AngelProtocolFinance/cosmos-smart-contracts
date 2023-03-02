@@ -1,8 +1,9 @@
 use cosmwasm_std::StdError;
 use cw20_base::ContractError as cw20ContractError;
+use cw_asset::AssetError;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
@@ -62,6 +63,15 @@ impl From<cw20ContractError> for ContractError {
             }),
             cw20ContractError::Std(e) => ContractError::Std(e),
             cw20ContractError::Unauthorized {} => ContractError::Unauthorized {},
+            cw20ContractError::InvalidExpiration {} => todo!(),
         }
+    }
+}
+
+impl From<AssetError> for ContractError {
+    fn from(_error: AssetError) -> Self {
+        ContractError::Std(StdError::GenericErr {
+            msg: "An asset error occured".to_string(),
+        })
     }
 }

@@ -31,6 +31,8 @@ fn proper_initialization() {
         }),
         swap_factory: None,
         accounts_settings_controller: "accounts-settings-controller".to_string(),
+        axelar_gateway: todo!(),
+        vault_router: todo!(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -110,7 +112,6 @@ fn update_config() {
     let update_config_message = UpdateConfigMsg {
         accounts_contract: Some("accounts_contract_addr".to_string()),
         index_fund_contract: Some(index_fund_contract.clone()),
-        approved_charities: None,
         treasury: Some(ap_team.clone()),
         rebalance: Some(RebalanceDetails {
             rebalance_liquid_invested_profits: true,
@@ -154,7 +155,6 @@ fn update_config() {
         accounts_contract: Some("accounts_contract_addr".to_string()),
         index_fund_contract: Some(index_fund_contract.clone()),
         fundraising_contract: None,
-        approved_charities: None,
         treasury: Some(ap_team.clone()),
         rebalance: Some(RebalanceDetails {
             rebalance_liquid_invested_profits: true,
@@ -379,7 +379,6 @@ fn test_add_update_and_remove_accepted_tokens() {
         accounts_contract: None,
         index_fund_contract: None,
         fundraising_contract: None,
-        approved_charities: None,
         treasury: None,
         rebalance: None,
         split_max: None,
@@ -427,13 +426,10 @@ fn test_add_update_and_remove_accepted_tokens() {
 
 #[test]
 fn test_add_update_and_remove_network_infos() {
+    let mock_chain_id = "juno-1".to_string();
     let mock_network_info = NetworkInfo {
-        name: "juno mainnet".to_string(),
-        chain_id: "juno-1".to_string(),
-        ibc_channel: None,
-        transfer_channel: None,
-        ibc_host_contract: None,
-        gas_limit: None,
+        router_contract: None, // router must exist if vaults exist on that chain
+        accounts_contract: Some("accounts_contract_addr".to_string()), // accounts contract may exist if endowments are on that chain
     };
 
     let mut deps = mock_dependencies();
@@ -462,7 +458,7 @@ fn test_add_update_and_remove_network_infos() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::NetworkConnection {
-            chain_id: mock_network_info.chain_id.to_string(),
+            chain_id: mock_chain_id.to_string(),
         },
     )
     .unwrap_err();
@@ -470,6 +466,7 @@ fn test_add_update_and_remove_network_infos() {
     // Only owner can update the network info
     let info = mock_info("anyone", &coins(1000, "earth"));
     let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        chain_id: mock_chain_id.clone(),
         network_info: mock_network_info.clone(),
         action: "blahblah".to_string(),
     };
@@ -487,6 +484,7 @@ fn test_add_update_and_remove_network_infos() {
     // Should fail since invalid action mode
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        chain_id: mock_chain_id.clone(),
         network_info: mock_network_info.clone(),
         action: "blahblah".to_string(),
     };
@@ -501,6 +499,7 @@ fn test_add_update_and_remove_network_infos() {
 
     // Succeed to add the network_info
     let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        chain_id: mock_chain_id.clone(),
         network_info: mock_network_info.clone(),
         action: "post".to_string(),
     };
@@ -512,7 +511,7 @@ fn test_add_update_and_remove_network_infos() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::NetworkConnection {
-            chain_id: mock_network_info.chain_id.to_string(),
+            chain_id: mock_chain_id.clone(),
         },
     )
     .unwrap();
@@ -526,6 +525,7 @@ fn test_add_update_and_remove_network_infos() {
     // Succeed to remove the network_info
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        chain_id: mock_chain_id.clone(),
         network_info: mock_network_info.clone(),
         action: "delete".to_string(),
     };
@@ -538,7 +538,7 @@ fn test_add_update_and_remove_network_infos() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::NetworkConnection {
-            chain_id: mock_network_info.chain_id.to_string(),
+            chain_id: mock_chain_id.clone(),
         },
     )
     .unwrap_err();

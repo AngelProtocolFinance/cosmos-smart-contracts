@@ -1,9 +1,8 @@
 use cosmwasm_std::StdError;
+use cw_controllers::{AdminError, HookError};
 use thiserror::Error;
 
-use cw_controllers::{AdminError, HookError};
-
-#[derive(Error, Debug, PartialEq)]
+#[derive(Debug, Error)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),

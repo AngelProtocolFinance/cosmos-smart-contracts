@@ -11,9 +11,6 @@ members = [
     "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-generic",
     "contracts/normalized-endowment/cw3-endowment",
-    "contracts/normalized-endowment/cw900-lv",
-    "contracts/normalized-endowment/subdao",
-    "contracts/normalized-endowment/subdao-bonding-token",
     "contracts/normalized-endowment/donation-match",
     "contracts/normalized-endowment/fee-distributor",
     "contracts/accessory/fundraising",
@@ -21,7 +18,9 @@ members = [
 ]
 
 exclude = [
-    "packages/ica_vaults",
+    "contracts/normalized-endowment/cw900-lv",
+    "contracts/normalized-endowment/subdao",
+    "contracts/normalized-endowment/subdao-bonding-token",
     "packages/halo_token",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
@@ -31,8 +30,6 @@ exclude = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-    "contracts/ica/ica-controller",
-    "contracts/ica/ica-host",
     "contracts/vaults/astroport",
     "contracts/vaults/junoswap",
     "contracts/vaults/loop",

@@ -1,8 +1,7 @@
 use core::fmt;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal256, Uint128, Uint256};
 use cw_storage_plus::{Item, Map, SnapshotItem, SnapshotMap};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
@@ -29,7 +28,8 @@ pub const STATE: SnapshotItem<State> = SnapshotItem::new(
     "state__changelog",
     cw_storage_plus::Strategy::EveryBlock,
 );
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+
+#[cw_serde]
 pub struct QuadraticEquationCoefficients {
     pub quad_coefficient: Decimal256,
     pub linear_coefficient: Decimal256,
@@ -130,7 +130,7 @@ impl SubAssign for QuadraticEquationCoefficients {
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct UserLockedBalance {
     // Locked balance info
     pub deposited_amount: Uint128,
@@ -321,13 +321,13 @@ impl UserLockedBalance {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub cw20_address: Option<Addr>,
     pub owner: Addr,
 }
 
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct State {
     /// Total voting power function definition
     pub voting_power_coefficients: QuadraticEquationCoefficients,

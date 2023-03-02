@@ -1,12 +1,11 @@
 use angel_core::messages::ve_token::{StakerResponse, StateResponse};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Coin, ContractResult, Empty, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 // use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
@@ -33,7 +32,7 @@ pub struct WasmMockQuerier {
     token_querier: TokenQuerier,
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct TokenQuerier {
     // this lets us iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -78,8 +77,7 @@ impl Querier for WasmMockQuerier {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     // Pair {
     //     asset_infos: [AssetInfo; 2],

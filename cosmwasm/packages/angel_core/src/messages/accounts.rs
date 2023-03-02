@@ -1,26 +1,25 @@
+use crate::responses::accounts::*;
 use crate::structs::{
-    AccountType, Beneficiary, Categories, DaoSetup, EndowmentController, EndowmentFee,
-    EndowmentType, RebalanceDetails, SplitDetails, StrategyComponent, SwapOperation,
+    AccountType, Allowances, Beneficiary, Categories, DaoSetup, EndowmentController, EndowmentFee,
+    EndowmentType, RebalanceDetails, SplitDetails, StrategyInvestment, SwapOperation,
 };
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
@@ -52,17 +51,15 @@ pub enum ExecuteMsg {
         id: u32,
         acct_type: AccountType,
     },
-    // Invest TOH funds into Vaults
-    VaultsInvest {
+    // Invest TOH funds into Strategies
+    StrategiesInvest {
         id: u32,
-        acct_type: AccountType,
-        vaults: Vec<(String, Asset)>,
+        strategies: Vec<StrategyInvestment>,
     },
-    // Redeem TOH funds from Vaults
-    VaultsRedeem {
+    // Redeem TOH funds from Strategies
+    StrategiesRedeem {
         id: u32,
-        acct_type: AccountType,
-        vaults: Vec<(String, Uint128)>,
+        strategies: Vec<StrategyInvestment>,
     },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
@@ -86,12 +83,6 @@ pub enum ExecuteMsg {
     UpdateEndowmentDetails(UpdateEndowmentDetailsMsg),
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
-    // Replace an Account's Strategy with that given.
-    UpdateStrategies {
-        id: u32,
-        acct_type: AccountType,
-        strategies: Vec<Strategy>,
-    },
     // Manage the allowances for the 3rd_party wallet to withdraw
     // the endowment TOH liquid balances without the proposal
     Allowance {
@@ -108,7 +99,7 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct CreateEndowmentMsg {
     pub owner: String, // address that originally setup the endowment account
     pub maturity_time: Option<u64>, // datetime int of endowment maturity
@@ -140,24 +131,17 @@ pub struct CreateEndowmentMsg {
     pub referral_id: Option<u32>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_id: u32,
     pub status: u8,
     pub beneficiary: Option<Beneficiary>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct Strategy {
-    pub vault: String,       // Vault SC Address
-    pub percentage: Decimal, // percentage of funds to invest
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateEndowmentDetailsMsg {
     pub id: u32,
     pub owner: Option<String>,
-    pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: Option<RebalanceDetails>,
     pub kyc_donors_only: Option<bool>,
     pub endow_type: Option<String>,
@@ -168,8 +152,7 @@ pub struct UpdateEndowmentDetailsMsg {
     pub image: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
@@ -186,24 +169,29 @@ pub enum ReceiveMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct DepositMsg {
     pub id: u32,
     pub locked_percentage: Decimal,
     pub liquid_percentage: Decimal,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     // Get all Config details for the contract
+    #[returns(ConfigResponse)]
     Config {},
     // Get state details (like tokens on hand balances, total donations received, etc)
+    #[returns(StateResponse)]
     State { id: u32 },
     // Get all Endowment details
+    #[returns(EndowmentDetailsResponse)]
     Endowment { id: u32 },
     // Gets the Endowment by "proposal_link"
+    #[returns(EndowmentDetailsResponse)]
     EndowmentByProposalLink { proposal_link: u64 },
     // Get the Allowances for Endowment
+    #[returns(Allowances)]
     Allowances { id: u32, spender: String },
 }

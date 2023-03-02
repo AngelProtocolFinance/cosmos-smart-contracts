@@ -77,7 +77,14 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            executers::vault_receipt(deps, env, id, acct_type, info.sender, native_fund)
+            executers::vault_receipt(
+                deps,
+                env,
+                id,
+                acct_type,
+                info.sender.to_string(),
+                native_fund,
+            )
         }
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentDetails(msg) => {
@@ -105,16 +112,12 @@ pub fn execute(
             beneficiary_endow,
             assets,
         ),
-        ExecuteMsg::VaultsInvest {
-            id,
-            acct_type,
-            vaults,
-        } => executers::vaults_invest(deps, info, id, acct_type, vaults),
-        ExecuteMsg::VaultsRedeem {
-            id,
-            acct_type,
-            vaults,
-        } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
+        ExecuteMsg::StrategiesInvest { id, strategies } => {
+            executers::strategies_invest(deps, env, info, id, strategies)
+        }
+        ExecuteMsg::StrategiesRedeem { id, strategies } => {
+            executers::strategies_redeem(deps, env, info, id, strategies)
+        }
         ExecuteMsg::UpdateConfig {
             new_owner,
             new_registrar,
@@ -129,11 +132,6 @@ pub fn execute(
             max_general_category_id,
             ibc_controller,
         ),
-        ExecuteMsg::UpdateStrategies {
-            id,
-            acct_type,
-            strategies,
-        } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
@@ -179,7 +177,10 @@ pub fn receive_cw20(
             env,
             id,
             acct_type,
-            api.addr_validate(&cw20_msg.sender)?,
+            api.addr_validate(&cw20_msg.sender)
+                .unwrap()
+                .clone()
+                .to_string(),
             cw20_fund,
         ),
         Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(

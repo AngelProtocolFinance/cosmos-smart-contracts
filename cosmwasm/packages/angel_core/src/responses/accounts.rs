@@ -1,12 +1,11 @@
 use crate::structs::{
-    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee,
-    EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
+    BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee, EndowmentStatus,
+    EndowmentType, Investments, RebalanceDetails,
 };
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Addr;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct StateResponse {
     pub tokens_on_hand: BalanceInfo,
     pub donations_received: DonationsReceived,
@@ -14,7 +13,7 @@ pub struct StateResponse {
     pub closing_beneficiary: Option<Beneficiary>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
@@ -23,7 +22,7 @@ pub struct ConfigResponse {
     pub max_general_category_id: u8,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
     pub name: String,
@@ -36,8 +35,7 @@ pub struct EndowmentDetailsResponse {
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
     pub maturity_time: Option<u64>,
-    pub strategies: AccountStrategies,
-    pub oneoff_vaults: OneOffVaults,
+    pub invested_strategies: Investments,
     pub rebalance: RebalanceDetails,
     pub kyc_donors_only: bool,
     pub pending_redemptions: u8,
@@ -45,7 +43,7 @@ pub struct EndowmentDetailsResponse {
     pub referral_id: Option<u32>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentFeesResponse {
     pub earnings_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,

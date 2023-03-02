@@ -1,17 +1,19 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
-    VaultType,
+    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, StrategyApprovalState,
+    StrategyParams,
 };
-use cosmwasm_std::{Addr, Api, Decimal, StdResult};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde};
+use cosmwasm_std::Decimal;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {
     pub accounts_settings_controller: String,
+    pub axelar_gateway: String,
+    pub axelar_ibc_channel: String,
+    pub vault_router: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateEndowment {
     pub addr: String,
     pub status: u64,
@@ -23,7 +25,7 @@ pub struct MigrateEndowment {
     pub image: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub treasury: String,
     pub tax_rate: Decimal,
@@ -32,19 +34,23 @@ pub struct InstantiateMsg {
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<String>,
     pub accounts_settings_controller: String,
+    pub axelar_gateway: String,
+    pub axelar_ibc_channel: String,
+    pub vault_router: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
-    VaultAdd(VaultAddMsg),
-    VaultRemove {
-        vault_addr: String,
+    StrategyAdd {
+        strategy_key: String,
+        strategy: StrategyParams,
     },
-    VaultUpdate {
-        vault_addr: String,
-        approved: bool,
-        restricted_from: Vec<EndowmentType>,
+    StrategyRemove {
+        strategy_key: String,
+    },
+    StrategyUpdate {
+        strategy_key: String,
+        approval_state: StrategyApprovalState,
     },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
@@ -54,6 +60,7 @@ pub enum ExecuteMsg {
     },
     // Updates the NETWORK_CONNECTIONS
     UpdateNetworkConnections {
+        chain_id: String,
         network_info: NetworkInfo,
         action: String,
     },
@@ -62,12 +69,11 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateConfigMsg {
     pub accounts_contract: Option<String>,
     pub tax_rate: Option<Decimal>,
     pub rebalance: Option<RebalanceDetails>,
-    pub approved_charities: Option<Vec<String>>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
@@ -98,31 +104,10 @@ pub struct UpdateConfigMsg {
     pub accounts_settings_controller: Option<String>,
 }
 
-impl UpdateConfigMsg {
-    pub fn charities_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
-        match self.approved_charities.as_ref() {
-            Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
-            None => Ok(vec![]),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct VaultAddMsg {
-    pub network: Option<String>,
-    pub vault_addr: String,
-    pub input_denom: String,
-    pub yield_token: String,
-    pub restricted_from: Vec<EndowmentType>,
-    pub acct_type: AccountType,
-    pub vault_type: VaultType,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
-    // Get details on single vault
-    Vault { vault_addr: String },
+    // Get details on single strategy
+    Strategy { strategy_key: String },
     // Get all Config details for the contract
     Config {},
     // Get a network connection info

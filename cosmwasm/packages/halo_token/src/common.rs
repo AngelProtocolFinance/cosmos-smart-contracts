@@ -1,9 +1,7 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Order;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum OrderBy {
     Asc,
     Desc,

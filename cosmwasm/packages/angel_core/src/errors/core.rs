@@ -1,8 +1,9 @@
 use cosmwasm_std::{OverflowError, StdError, Uint128};
 use cw20_base::ContractError as Cw20ContractError;
+use cw_asset::AssetError;
 use thiserror::Error;
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
@@ -119,7 +120,7 @@ pub enum ContractError {
     AssertionMinimumReceive { receive: Uint128, amount: Uint128 },
 }
 
-#[derive(Error, Debug, PartialEq)]
+#[derive(Error, Debug)]
 pub enum PaymentError {
     #[error("Must send reserve token '{0}'")]
     MissingDenom(String),
@@ -140,5 +141,13 @@ pub enum PaymentError {
 impl From<OverflowError> for ContractError {
     fn from(o: OverflowError) -> Self {
         StdError::from(o).into()
+    }
+}
+
+impl From<AssetError> for ContractError {
+    fn from(_error: AssetError) -> Self {
+        ContractError::Std(StdError::GenericErr {
+            msg: "An asset error occured".to_string(),
+        })
     }
 }

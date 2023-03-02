@@ -1,13 +1,13 @@
 use crate::errors::core::ContractError;
 use crate::messages::subdao_bonding_token::CurveType;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cw_utils::Expiration;
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Delegate {
     address: Addr,
     expires: Option<u64>, // datetime int of delegation expiry
@@ -21,7 +21,14 @@ impl Delegate {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Default)]
+#[cw_serde]
+pub struct Allowances {
+    pub assets: Vec<Asset>,
+    pub expires: Vec<Expiration>,
+}
+
+#[cw_serde]
 pub struct SettingsPermissions {
     owner_controlled: bool,
     gov_controlled: bool,
@@ -100,8 +107,7 @@ impl SettingsPermissions {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum AccountType {
     Locked = 0,
     Liquid = 1,
@@ -120,7 +126,7 @@ impl fmt::Display for AccountType {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentSettings {
     pub dao: Option<Addr>,                     // subdao governance contract address
     pub dao_token: Option<Addr>,               // dao gov token contract address
@@ -159,7 +165,7 @@ impl EndowmentSettings {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentController {
     pub endowment_controller: SettingsPermissions,
     pub strategies: SettingsPermissions,
@@ -251,15 +257,13 @@ impl EndowmentController {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Pair {
     pub assets: [AssetInfo; 2],
     pub contract_address: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum SwapOperation {
     JunoSwap {
         offer_asset_info: AssetInfo,
@@ -310,43 +314,58 @@ impl SwapOperation {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum VaultType {
-    Native,              // Juno native Vault contract
-    Ibc { ica: String }, // the address of the Vault contract on it's Cosmos(non-Juno) chain
-    Evm,                 // the address of the Vault contract on it's EVM chain
+#[cw_serde]
+pub enum StrategyApprovalState {
+    NotApproved,
+    Approved,
+    WithdrawOnly,
+    Deprecated,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct YieldVault {
-    pub address: String, // vault's contract address on chain where the Registrar lives
-    pub network: String, // Points to key in NetworkConnections storage map
-    pub input_denom: String,
-    pub yield_token: String,
-    pub approved: bool,
-    pub restricted_from: Vec<EndowmentType>,
-    pub acct_type: AccountType,
-    pub vault_type: VaultType,
+// The "locale" of a given Strategy will drive:
+// 1. Encoding of the payload (IBC vs EVM)
+// 2. Should the Router pass the deposit msg off to a Gateway (IBC/EVM) or a Vault(s) directly (Native)
+// 3. Chain hardcoded vs Gateway driven lookup
+#[cw_serde]
+pub enum StrategyLocale {
+    Native,
+    Ibc,
+    Evm,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct OneOffVaults {
-    pub locked: Vec<Addr>,
-    pub liquid: Vec<Addr>,
+#[cw_serde]
+pub struct StrategyParams {
+    pub approval_state: StrategyApprovalState,
+    pub locale: StrategyLocale,
+    pub chain: String,             // links back to a Network Connection struct
+    pub input_denom: String, // should this be in terms of the originating chain where the Accounts need to check sufficient balance on hand or the destination chain?
+    pub locked_addr: Option<Addr>, // for EVM Registrars can just hold a 0x00000 for Non-Native?
+    pub liquid_addr: Option<Addr>, // for EVM Registrars can just hold a 0x00000 for Non-Native?
 }
 
-impl OneOffVaults {
+#[cw_serde]
+pub struct StrategyInvestment {
+    pub strategy_key: String,
+    pub locked_amount: Uint128,
+    pub liquid_amount: Uint128,
+}
+
+// string keys pointing to StrategyParams for Locked and Liquid
+#[cw_serde]
+pub struct Investments {
+    pub locked: Vec<String>,
+    pub liquid: Vec<String>,
+}
+
+impl Investments {
     pub fn default() -> Self {
-        OneOffVaults {
+        Investments {
             locked: vec![],
             liquid: vec![],
         }
     }
 
-    pub fn get(&self, acct_type: AccountType) -> Vec<Addr> {
+    pub fn get(&self, acct_type: AccountType) -> Vec<String> {
         match acct_type {
             AccountType::Locked => self.locked.clone(),
             AccountType::Liquid => self.liquid.clone(),
@@ -354,51 +373,14 @@ impl OneOffVaults {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct AccountStrategies {
-    pub locked: Vec<StrategyComponent>,
-    pub liquid: Vec<StrategyComponent>,
-}
-
-impl AccountStrategies {
-    pub fn default() -> Self {
-        AccountStrategies {
-            locked: vec![],
-            liquid: vec![],
-        }
-    }
-
-    pub fn get(&self, acct_type: AccountType) -> Vec<StrategyComponent> {
-        match acct_type {
-            AccountType::Locked => self.locked.clone(),
-            AccountType::Liquid => self.liquid.clone(),
-        }
-    }
-
-    pub fn set(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
-        match acct_type {
-            AccountType::Locked => self.locked = strategy,
-            AccountType::Liquid => self.liquid = strategy,
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct StrategyComponent {
-    pub vault: String,       // Vault SC Address
-    pub percentage: Decimal, // percentage of funds to invest
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+#[derive(Default)]
+#[cw_serde]
 pub struct RedeemResults {
     pub messages: Vec<SubMsg>,
     pub total: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct SplitDetails {
     pub max: Decimal,
     pub min: Decimal,
@@ -415,8 +397,7 @@ impl SplitDetails {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct RebalanceDetails {
     pub rebalance_liquid_invested_profits: bool, // should invested portions of the liquid account be rebalanced?
     pub locked_interests_to_liquid: bool, // should Locked acct interest earned be distributed to the Liquid Acct?
@@ -437,7 +418,7 @@ impl RebalanceDetails {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub enum EndowmentStatus {
     Inactive = 0, // Default state when new Endowment is created
     // Statuses below are set by DANO or AP Team
@@ -461,7 +442,7 @@ impl fmt::Display for EndowmentStatus {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub enum Tier {
     Level1 = 1,
     Level2 = 2,
@@ -482,15 +463,14 @@ impl fmt::Display for Tier {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum Beneficiary {
     Endowment { id: u32 },
     IndexFund { id: u64 },
     Wallet { address: String },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub enum EndowmentType {
     Charity,
     Normal,
@@ -509,8 +489,7 @@ impl fmt::Display for EndowmentType {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct IndexFund {
     pub id: u64,
     pub name: String,
@@ -537,7 +516,7 @@ impl IndexFund {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct AcceptedTokens {
     pub native: Vec<String>,
     pub cw20: Vec<String>,
@@ -560,15 +539,7 @@ impl AcceptedTokens {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
-pub struct VaultsBalanceInfo {
-    locked: Vec<(String, Uint128)>,
-    liquid: Vec<(String, Uint128)>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct BalanceInfo {
     pub locked: GenericBalance,
     pub liquid: GenericBalance,
@@ -590,7 +561,8 @@ impl BalanceInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+#[derive(Default)]
+#[cw_serde]
 pub struct GenericBalance {
     pub native: Vec<Coin>,
     pub cw20: Vec<Cw20CoinVerified>,
@@ -788,7 +760,7 @@ impl GenericBalance {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct DaoSetup {
     pub quorum: Decimal,
     pub threshold: Decimal,
@@ -800,8 +772,7 @@ pub struct DaoSetup {
     pub token: DaoToken,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum DaoToken {
     // Option1: Existing cw20 contract
     ExistingCw20(String),
@@ -823,7 +794,7 @@ pub enum DaoToken {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub enum DonationMatch {
     // Endowment uses HALO Token for their matching reserve (no inputs needed, as we store this info in Registrar)
     HaloTokenReserve {},
@@ -834,8 +805,7 @@ pub enum DonationMatch {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Categories {
     pub sdgs: Vec<u8>, // u8 maps one of the 17 UN SDG
     pub general: Vec<u8>,
@@ -850,27 +820,20 @@ impl Categories {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct EndowmentFee {
     pub payout_address: Addr,
     pub fee_percentage: Decimal,
     pub active: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct NetworkInfo {
-    pub name: String,
-    pub chain_id: String,
-    pub ibc_channel: Option<String>,
-    pub transfer_channel: Option<String>,
-    pub ibc_host_contract: Option<Addr>,
-    pub gas_limit: Option<u64>,
+    pub router_contract: Option<String>, // router must exist if vaults exist on that chain
+    pub accounts_contract: Option<String>, // accounts contract may exist if endowments are on that chain
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct DonationsReceived {
     pub locked: Uint128,
     pub liquid: Uint128,

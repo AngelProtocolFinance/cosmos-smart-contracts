@@ -17,7 +17,6 @@ use astroport::{
 };
 
 use angel_core::errors::vault::ContractError;
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 
 use crate::msg::{
     AstroportGeneratorExecuteMsg, ExecuteMsg, QueryMsg as VaultQueryMsg, ReceiveMsg,

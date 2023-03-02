@@ -1,12 +1,11 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{CosmosMsg, Empty};
 use cw3::{Status, Vote};
 use cw4::{Member, MemberChangedHookMsg};
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use std::fmt;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+
+#[cw_serde]
 pub struct InstantiateMsg {
     pub group_addr: String,
     pub id: u32,
@@ -16,7 +15,7 @@ pub struct InstantiateMsg {
     pub max_voting_period: Duration,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentInstantiateMsg {
     pub id: u32,
     pub cw4_members: Vec<Member>,
@@ -27,12 +26,11 @@ pub struct EndowmentInstantiateMsg {
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
 // TODO: add some T variants? Maybe good enough as fixed Empty for now
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Propose {
         title: String,
@@ -60,9 +58,7 @@ pub enum ExecuteMsg {
     MemberChangedHook(MemberChangedHookMsg),
 }
 
-// We can also add this as a cw3 extension
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     /// Return ConfigResponse
     /// (mostly to expose CW4 address for easier updating members polls)
@@ -98,8 +94,7 @@ pub enum QueryMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct ConfigResponse {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
@@ -107,11 +102,8 @@ pub struct ConfigResponse {
     pub require_execution: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct MetaProposalResponse<T = Empty>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+#[cw_serde]
+pub struct MetaProposalResponse<T = Empty> {
     pub id: u64,
     pub title: String,
     pub description: String,
@@ -126,7 +118,7 @@ where
     pub meta: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct MetaProposalListResponse {
     pub proposals: Vec<MetaProposalResponse>,
 }

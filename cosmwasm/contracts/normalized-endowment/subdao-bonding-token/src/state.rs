@@ -1,14 +1,13 @@
 use angel_core::curves::DecimalPlaces;
 use angel_core::messages::subdao_bonding_token::CurveType;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Uint128};
 use cw_controllers::Claims;
 use cw_storage_plus::{Item, Map};
 use cw_utils::Duration;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 /// Supply is dynamic and tracks the current supply of staked and ERC20 tokens.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct CurveState {
     /// reserve is how many native tokens exist bonded to the validator
     pub reserve: Uint128,
@@ -31,8 +30,7 @@ impl CurveState {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct TokenInfo {
     pub name: String,
     pub symbol: String,
@@ -41,7 +39,7 @@ pub struct TokenInfo {
     pub mint: Option<MinterData>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct MinterData {
     pub minter: Addr,
     /// cap is how many more tokens can be issued by the minter
@@ -54,7 +52,7 @@ impl TokenInfo {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     /// This is the unbonding period of CS tokens
     /// We need this to only allow claims to be redeemed after this period

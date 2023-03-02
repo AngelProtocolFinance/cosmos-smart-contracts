@@ -1,8 +1,7 @@
 use angel_core::structs::IndexFund;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
@@ -11,8 +10,7 @@ pub const FUND: Map<&[u8], IndexFund> = Map::new("fund");
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct OldConfig {
     pub owner: Addr,                   // DANO Address
     pub registrar_contract: Addr,      // Address of Registrar SC
@@ -21,8 +19,7 @@ pub struct OldConfig {
     pub funding_goal: Option<Uint128>, // donation funding limit (in UUSD) to trigger early cycle of the Active IndexFund
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,                   // DANO Address
     pub registrar_contract: Addr,      // Address of Registrar SC
@@ -32,8 +29,7 @@ pub struct Config {
     pub alliance_members: Vec<Addr>,   // angel alliance wallets
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct State {
     pub total_funds: u64,
     pub active_fund: u64,         // index ID of the Active IndexFund

@@ -11,9 +11,9 @@ use angel_core::messages::router::{
     SimulateSwapOperationsResponse,
 };
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+    ConfigResponse as RegistrarConfigResponse, StrategyDetailResponse,
 };
-use angel_core::structs::{AccountType, Pair, SwapOperation};
+use angel_core::structs::{AccountType, Pair, StrategyApprovalState, SwapOperation};
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
@@ -65,6 +65,7 @@ pub fn execute(
             acct_type,
             operations,
             minimum_receive,
+            strategy_key,
         } => execute_swap_operations(
             deps,
             env,
@@ -73,6 +74,7 @@ pub fn execute(
             acct_type,
             operations,
             minimum_receive,
+            strategy_key,
         ),
         ExecuteMsg::ExecuteSwapOperation { operation } => {
             execute_swap_operation(deps, env, info, operation)
@@ -119,6 +121,7 @@ pub fn receive_cw20(
             acct_type,
             operations,
             minimum_receive,
+            strategy_key,
         } => execute_swap_operations(
             deps,
             env,
@@ -127,6 +130,7 @@ pub fn receive_cw20(
             acct_type,
             operations,
             minimum_receive,
+            strategy_key,
         ),
     }
 }
@@ -165,23 +169,27 @@ pub fn execute_swap_operations(
     acct_type: AccountType,
     operations: Vec<SwapOperation>,
     minimum_receive: Option<Uint128>,
+    strategy_key: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    // Swaps are restricted to the Accounts contract (endowments) & approved Vault contracts
+    // Swaps are restricted to the Accounts contract (endowments) & approved Strategy's Vault contracts
     let mut vault_addr = None;
     if sender != config.accounts_contract {
-        // check that the deposit token came from an approved Vault SC
-        let vault_res: VaultDetailResponse =
+        // check that the deposit token came from an approved Strategy's Vault SC
+        let strategy_res: StrategyDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: sender.to_string(),
+                msg: to_binary(&RegistrarQuerier::Strategy {
+                    strategy_key: strategy_key.unwrap(),
                 })?,
             }))?;
-        if !vault_res.vault.approved {
+        if strategy_res.strategy.approval_state != StrategyApprovalState::Approved {
             return Err(ContractError::Unauthorized {});
         }
-        vault_addr = Some(sender.clone());
+        vault_addr = match acct_type {
+            AccountType::Locked => strategy_res.strategy.locked_addr,
+            AccountType::Liquid => strategy_res.strategy.liquid_addr,
+        };
     }
 
     let operations_len = operations.len();

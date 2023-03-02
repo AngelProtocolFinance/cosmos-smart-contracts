@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, STRATEGIES};
 use angel_core::responses::registrar::*;
 use cosmwasm_std::{Decimal, Deps, StdResult};
 use cw2::get_contract_version;
@@ -61,22 +61,30 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         applications_impact_review: config.applications_impact_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
         accounts_settings_controller: config.accounts_settings_controller.to_string(),
+        axelar_gateway: config.axelar_gateway,
+        axelar_ibc_channel: config.axelar_ibc_channel,
+        vault_router: match config.vault_router {
+            Some(router) => Some(router.to_string()),
+            None => None,
+        },
     })
 }
 
-pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
+pub fn query_strategy(deps: Deps, strategy_key: String) -> StdResult<StrategyDetailResponse> {
     // this fails if no vault is found
-    let addr = deps.api.addr_validate(&vault_addr)?;
-    let vault = VAULTS.load(deps.storage, addr.as_bytes())?;
-    Ok(VaultDetailResponse { vault })
+    Ok(StrategyDetailResponse {
+        strategy: STRATEGIES.load(deps.storage, strategy_key.as_bytes())?,
+    })
 }
 
 pub fn query_network_connection(
     deps: Deps,
     chain_id: String,
 ) -> StdResult<NetworkConnectionResponse> {
-    let network_connection = NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?;
-    Ok(NetworkConnectionResponse { network_connection })
+    Ok(NetworkConnectionResponse {
+        chain: chain_id.clone(),
+        network_connection: NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?,
+    })
 }
 
 pub fn query_fee(deps: Deps, name: String) -> StdResult<Decimal> {

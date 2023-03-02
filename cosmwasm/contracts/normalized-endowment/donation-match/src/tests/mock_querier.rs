@@ -3,25 +3,23 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::accounts_settings_controller::EndowmentSettingsResponse;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
-    SplitDetails, VaultType, YieldVault,
+    AcceptedTokens, AccountType, Categories, Investments, RebalanceDetails, SplitDetails,
+    StrategyAllocation, VaultType, YieldVault,
 };
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
     Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use terraswap::pair::SimulationResponse;
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use terraswap::asset::Asset;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Simulation { offer_asset: Asset },
     Balance { address: String },
@@ -63,7 +61,7 @@ pub struct WasmMockQuerier {
     token_querier: TokenQuerier,
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct TokenQuerier {
     // this allows to iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -119,11 +117,11 @@ impl WasmMockQuerier {
                     to_binary(&EndowmentDetailsResponse {
                         owner: Addr::unchecked("endow-cw3"),
                         name: "Test Endowment".to_string(),
-                        strategies: AccountStrategies::default(),
+                        strategies: StrategyAllocation::default(),
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,
                         maturity_time: None,
-                        oneoff_vaults: OneOffVaults::default(),
+                        oneoff_vaults: Investments::default(),
                         rebalance: RebalanceDetails::default(),
                         kyc_donors_only: false,
                         deposit_approved: true,

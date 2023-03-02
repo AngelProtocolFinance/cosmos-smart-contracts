@@ -1,9 +1,8 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde};
 
 use crate::structs::{AccountType, SwapOperation};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub acct_type: AccountType,
@@ -31,7 +30,7 @@ pub struct ConfigResponse {
     pub pending_owner_deadline: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct StateResponse {
     pub total_lp_amount: String,
     pub total_shares: String,

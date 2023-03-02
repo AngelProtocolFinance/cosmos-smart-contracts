@@ -1,19 +1,13 @@
-use crate::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, YieldVault};
+use crate::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, StrategyParams};
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Decimal;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct VaultDetailResponse {
-    pub vault: YieldVault,
+#[cw_serde]
+pub struct StrategyDetailResponse {
+    pub strategy: StrategyParams,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct VaultListResponse {
-    pub vaults: Vec<YieldVault>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
@@ -43,9 +37,12 @@ pub struct ConfigResponse {
     pub applications_impact_review: String,
     pub swaps_router: Option<String>,
     pub accounts_settings_controller: String,
+    pub axelar_gateway: String,
+    pub axelar_ibc_channel: String,
+    pub vault_router: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct FeesResponse {
     pub tax_rate: Decimal,
     pub endowtype_charity: Option<Decimal>,
@@ -56,7 +53,8 @@ pub struct AccTokensListResponse {
     pub tokens: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct NetworkConnectionResponse {
+    pub chain: String,
     pub network_connection: NetworkInfo,
 }

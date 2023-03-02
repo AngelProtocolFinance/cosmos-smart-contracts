@@ -1,19 +1,18 @@
 use crate::state::ProposalType;
 use angel_core::messages::accounts::CreateEndowmentMsg;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Coin, CosmosMsg, Decimal, Empty};
 use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
 use cw_asset::Asset;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use std::fmt;
+
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub group_addr: String,
@@ -22,8 +21,7 @@ pub struct InstantiateMsg {
 }
 
 // TODO: add some T variants? Maybe good enough as fixed Empty for now
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Propose {
         title: String,
@@ -67,8 +65,7 @@ pub enum ExecuteMsg {
     MemberChangedHook(MemberChangedHookMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct ConfigResponse {
     pub registrar_contract: String,
     pub version: String,
@@ -81,11 +78,8 @@ pub struct ConfigResponse {
     pub new_endow_gas_money: Option<Coin>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct MetaApplicationsProposalResponse<T = Empty>
-where
-    T: Clone + fmt::Debug + PartialEq + JsonSchema,
-{
+#[cw_serde]
+pub struct MetaApplicationsProposalResponse<T = Empty> {
     pub id: u64,
     pub title: String,
     pub description: String,
@@ -101,7 +95,7 @@ where
     pub meta: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct MetaApplicationsProposalListResponse {
     pub proposals: Vec<MetaApplicationsProposalResponse>,
 }

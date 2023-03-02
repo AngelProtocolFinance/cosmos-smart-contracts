@@ -1,7 +1,6 @@
 use std::marker::PhantomData;
 
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -31,7 +30,7 @@ pub struct WasmMockQuerier {
     minter_querier: MinterQuerier,
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct MinterQuerier {
     minter_addr: String,
 }
@@ -44,8 +43,7 @@ impl MinterQuerier {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Minter {},
 }

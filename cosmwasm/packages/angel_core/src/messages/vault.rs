@@ -1,12 +1,11 @@
 use crate::structs::{AccountType, SwapOperation};
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfo as CwAssetInfo;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use terraswap::asset::Asset;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub acct_type: AccountType,
     pub sibling_vault: Option<String>,
@@ -33,11 +32,10 @@ pub struct InstantiateMsg {
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
@@ -89,7 +87,7 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateConfigMsg {
     pub sibling_vault: Option<String>,
     pub keeper: Option<String>,
@@ -103,21 +101,20 @@ pub struct UpdateConfigMsg {
     pub minimum_initial_deposit: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct AccountWithdrawMsg {
     pub endowment_id: u32,
     pub beneficiary: Addr,
     pub amount: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct RoutesUpdateMsg {
     pub add: Vec<Addr>,
     pub remove: Vec<Addr>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ReceiveMsg {
     Deposit {
         endowment_id: u32,
@@ -131,8 +128,7 @@ pub enum ReceiveMsg {
     HarvestToLiquid {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     /// Returns the configuration of the contract
     /// Return type: ConfigResponse.
@@ -154,16 +150,14 @@ pub enum QueryMsg {
     ApTaxBalance {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum LoopFarmingExecuteMsg {
     Stake {},           // Farm action. Stake LP token.(param: amount in `send` msg)
     UnstakeAndClaim {}, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)
     ClaimReward {},     // Claim the reward. Enabled just after `stake`
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum LoopPairExecuteMsg {
     Swap {
         offer_asset: Asset,
@@ -176,8 +170,7 @@ pub enum LoopPairExecuteMsg {
     WithdrawLiquidity {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum LoopFarmingQueryMsg {
     QueryFlpTokenFromPoolAddress { pool_address: String },
 }

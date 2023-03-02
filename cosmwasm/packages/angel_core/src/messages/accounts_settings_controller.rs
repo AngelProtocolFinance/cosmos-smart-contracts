@@ -1,22 +1,20 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Addr;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::structs::{
     DaoSetup, DonationMatch, EndowmentController, EndowmentFee, SettingsPermissions, SplitDetails,
 };
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     CreateEndowmentSettings(CreateEndowSettingsMsg),
     // Update config(owner, ...)
@@ -44,13 +42,13 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateConfigMsg {
     pub owner: Option<String>,
     pub registrar_contract: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct CreateEndowSettingsMsg {
     pub id: u32,
     pub donation_match_active: bool,
@@ -68,7 +66,7 @@ pub struct CreateEndowSettingsMsg {
     pub aum_fee: Option<EndowmentFee>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub donation_match_active: Option<bool>,
@@ -79,7 +77,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub ignore_user_splits: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateEndowmentControllerMsg {
     pub id: u32,
     pub endowment_controller: Option<SettingsPermissions>,
@@ -100,7 +98,7 @@ pub struct UpdateEndowmentControllerMsg {
     pub aum_fee: Option<SettingsPermissions>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateEndowmentFeesMsg {
     pub id: u32,
     pub earnings_fee: Option<EndowmentFee>,
@@ -109,14 +107,13 @@ pub struct UpdateEndowmentFeesMsg {
     pub aum_fee: Option<EndowmentFee>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateMaturityAllowlist {
     pub add: Vec<String>,
     pub remove: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     EndowmentSettings {

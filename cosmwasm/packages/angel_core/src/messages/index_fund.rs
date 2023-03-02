@@ -1,9 +1,8 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub fund_rotation: Option<Option<u64>>, // how many blocks are in a rotation cycle for the active IndexFund
@@ -11,8 +10,7 @@ pub struct InstantiateMsg {
     pub funding_goal: Option<Option<Uint128>>, // donation funding limit to trigger early cycle of the Active IndexFund
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // updates the owner of the contract
@@ -57,40 +55,38 @@ pub enum ExecuteMsg {
     // Receive(Cw20ReceiveMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct RemoveMemberMsg {
     pub member: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateMembersMsg {
     pub fund_id: u64,
     pub add: Vec<String>,
     pub remove: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateConfigMsg {
     pub fund_rotation: Option<u64>,
     pub fund_member_limit: Option<u32>,
     pub funding_goal: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ReceiveMsg {
     // Donor deposits tokens sent for an Index Fund
     Deposit(DepositMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct DepositMsg {
     pub fund_id: Option<u64>,
     pub split: Option<Decimal>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     // builds and returns a Deposit CosmosMsg based on query inputs
     // NOTE: Here, we assume that the user wants to deposit "native token"
@@ -118,7 +114,7 @@ pub enum QueryMsg {
     Config {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {
     pub alliance_members: Option<Vec<Addr>>,
 }

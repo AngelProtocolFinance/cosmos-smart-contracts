@@ -1,4 +1,5 @@
 // Contains mock functionality to test multi-contract scenarios
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
@@ -6,8 +7,6 @@ use cosmwasm_std::{
     SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -16,8 +15,7 @@ use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::responses::vault::InfoResponse;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Info {},
     Balance { address: String },
@@ -53,7 +51,7 @@ pub struct WasmMockQuerier {
     token_querier: TokenQuerier,
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct TokenQuerier {
     // this allows to iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -83,7 +81,7 @@ pub(crate) fn balances_to_map(
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct PriceStruct {
     base: String,
     quote: String,

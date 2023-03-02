@@ -62,6 +62,12 @@ pub fn instantiate(
             .map(|v| deps.api.addr_validate(&v).unwrap()),
         swaps_router: None,
         accounts_settings_controller: deps.api.addr_validate(&msg.accounts_settings_controller)?,
+        axelar_gateway: msg.axelar_gateway,
+        axelar_ibc_channel: msg.axelar_ibc_channel,
+        vault_router: match msg.vault_router {
+            Some(addr) => Some(deps.api.addr_validate(&addr)?),
+            None => None,
+        },
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -75,12 +81,14 @@ pub fn instantiate(
         deps.storage,
         &env.block.chain_id.clone(),
         &NetworkInfo {
-            name: "Juno".to_string(),
-            chain_id: env.block.chain_id,
-            ibc_channel: None,
-            transfer_channel: None,
-            ibc_host_contract: None,
-            gas_limit: None,
+            accounts_contract: match configs.accounts_contract {
+                Some(accounts) => Some(accounts.to_string()),
+                None => None,
+            },
+            router_contract: match configs.vault_router {
+                Some(router) => Some(router.to_string()),
+                None => None,
+            },
         },
     )?;
 
@@ -99,19 +107,22 @@ pub fn execute(
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
-        ExecuteMsg::VaultRemove { vault_addr } => {
-            executers::vault_remove(deps, env, info, vault_addr)
+        ExecuteMsg::StrategyAdd {
+            strategy_key,
+            strategy,
+        } => executers::strategy_add(deps, env, info, strategy_key, strategy),
+        ExecuteMsg::StrategyRemove { strategy_key } => {
+            executers::strategy_remove(deps, env, info, strategy_key)
         }
-        ExecuteMsg::VaultUpdate {
-            vault_addr,
-            approved,
-            restricted_from,
-        } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
+        ExecuteMsg::StrategyUpdate {
+            strategy_key,
+            approval_state,
+        } => executers::strategy_update(deps, env, info, strategy_key, approval_state),
         ExecuteMsg::UpdateNetworkConnections {
+            chain_id,
             network_info,
             action,
-        } => executers::update_network_connections(deps, env, info, network_info, action),
+        } => executers::update_network_connections(deps, env, info, chain_id, network_info, action),
         ExecuteMsg::UpdateFees { fees } => executers::update_fees(deps, info, fees),
     }
 }
@@ -120,8 +131,8 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Vault { vault_addr } => {
-            to_binary(&queriers::query_vault_details(deps, vault_addr)?)
+        QueryMsg::Strategy { strategy_key } => {
+            to_binary(&queriers::query_strategy(deps, strategy_key)?)
         }
         QueryMsg::NetworkConnection { chain_id } => {
             to_binary(&queriers::query_network_connection(deps, chain_id)?)
@@ -149,8 +160,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // Get the collector addr from msg input
+    // Get the new addr configs from migrate msg input
     let accounts_settings_controller = deps.api.addr_validate(&msg.accounts_settings_controller)?;
+    let vault_router = match msg.vault_router {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => None,
+    };
 
     // setup the new config struct and save to storage
     let data = deps
@@ -188,7 +203,10 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             collector_share: Decimal::zero(),
             swap_factory: None,
             fundraising_contract: None,
+            axelar_gateway: msg.axelar_gateway,
+            axelar_ibc_channel: msg.axelar_ibc_channel,
             accounts_settings_controller,
+            vault_router,
         },
     )?;
 

@@ -1,6 +1,7 @@
 use angel_core::messages::dexs::InfoResponse;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -8,12 +9,9 @@ use cosmwasm_std::{
 };
 use cw20::{BalanceResponse, Denom};
 use cw_asset::AssetInfo;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     Vault {

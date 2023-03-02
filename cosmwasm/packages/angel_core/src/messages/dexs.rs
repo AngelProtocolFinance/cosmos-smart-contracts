@@ -1,19 +1,17 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Denom;
 use cw_asset::Asset;
 use cw_utils::Expiration;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 /// JUNOSWAP SPECIFIC MESSAGES/RESPONCES/QUERIES
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub enum TokenSelect {
     Token1,
     Token2,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum JunoSwapExecuteMsg {
     Swap {
         input_token: TokenSelect,
@@ -38,8 +36,7 @@ pub enum JunoSwapExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum JunoSwapQueryMsg {
     Info {},
     Balance { address: String },
@@ -47,7 +44,7 @@ pub enum JunoSwapQueryMsg {
     Token2ForToken1Price { token2_amount: Uint128 },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InfoResponse {
     pub token1_reserve: Uint128,
     pub token1_denom: Denom,
@@ -57,19 +54,18 @@ pub struct InfoResponse {
     pub lp_token_address: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Token1ForToken2PriceResponse {
     pub token2_amount: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Token2ForToken1PriceResponse {
     pub token1_amount: Uint128,
 }
 
 /// LOOP FINANCE SPECIFIC MESSAGES/RESPONCES/QUERIES
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum LoopExecuteMsg {
     Swap {
         offer_asset: terraswap::asset::Asset,
@@ -83,8 +79,7 @@ pub enum LoopExecuteMsg {
     ProvideLiquidity {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum LoopQueryMsg {
     // Get pool info for a pair
     Pool {},
@@ -94,7 +89,7 @@ pub enum LoopQueryMsg {
     Simulation { offer_asset: Asset },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct SimulationResponse {
     pub return_amount: Uint128,
     pub spread_amount: Uint128,

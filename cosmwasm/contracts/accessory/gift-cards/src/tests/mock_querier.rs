@@ -6,12 +6,10 @@ use cosmwasm_std::{
     Querier, QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use std::marker::PhantomData;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     // Mock the `registrar::QueryMsg::Config {}` query
     Config {},

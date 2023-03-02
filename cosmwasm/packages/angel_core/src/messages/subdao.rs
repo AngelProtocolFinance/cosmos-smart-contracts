@@ -1,12 +1,11 @@
 use crate::common::OrderBy;
 use crate::structs::{DaoToken, EndowmentType};
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub id: u32,
     pub quorum: Decimal,
@@ -22,8 +21,7 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     RegisterContracts {
@@ -60,8 +58,7 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum Cw20HookMsg {
     /// CreatePoll need to receive deposit from a proposer
     CreatePoll {
@@ -72,8 +69,7 @@ pub enum Cw20HookMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct PollExecuteMsg {
     pub order: u64,
     pub contract: String,
@@ -81,13 +77,12 @@ pub struct PollExecuteMsg {
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {
     pub ve_token: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     State {},
@@ -108,7 +103,7 @@ pub enum QueryMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub dao_token: String,
@@ -122,14 +117,14 @@ pub struct ConfigResponse {
     pub snapshot_period: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct StateResponse {
     pub poll_count: u64,
     pub total_share: Uint128,
     pub total_deposit: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct PollResponse {
     pub id: u64,
     pub creator: String,
@@ -147,36 +142,35 @@ pub struct PollResponse {
     pub total_balance_at_end_poll: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct PollsResponse {
     pub polls: Vec<PollResponse>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct PollCountResponse {
     pub poll_count: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct VotersResponseItem {
     pub voter: String,
     pub vote: VoteOption,
     pub balance: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct VotersResponse {
     pub voters: Vec<VotersResponseItem>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct VoterInfo {
     pub vote: VoteOption,
     pub balance: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum PollStatus {
     InProgress,
     Passed,
@@ -191,8 +185,7 @@ impl fmt::Display for PollStatus {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum VoteOption {
     Yes,
     No,

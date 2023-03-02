@@ -1,13 +1,11 @@
 use angel_core::structs::{
-    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, YieldVault,
+    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, StrategyParams,
 };
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Decimal};
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct OldConfig {
     pub owner: Addr,                      // AP TEAM MULTISIG
     pub applications_review: Addr, // Charity Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
@@ -26,8 +24,7 @@ pub struct OldConfig {
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,                      // AP TEAM MULTISIG
     pub applications_review: Addr, // Charity Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
@@ -57,9 +54,12 @@ pub struct Config {
     pub rebalance: RebalanceDetails,
     pub swaps_router: Option<Addr>,
     pub accounts_settings_controller: Addr, // contract address used for storing extra Endowment settings
+    pub axelar_gateway: String,
+    pub axelar_ibc_channel: String,
+    pub vault_router: Option<Addr>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
+pub const STRATEGIES: Map<&[u8], StrategyParams> = Map::new("strategies");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
 pub const FEES: Map<&str, Decimal> = Map::new("fee");

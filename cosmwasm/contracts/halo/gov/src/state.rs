@@ -1,17 +1,16 @@
 use angel_core::utils::{calc_range_end, calc_range_start};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
 use cw_controllers::Claims;
 use cw_storage_plus::{Bound, Item, Map};
 use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 pub const CLAIMS: Claims = Claims::new("claims");
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,
     pub halo_token: Addr,
@@ -29,7 +28,7 @@ pub struct Config {
     pub gov_hodler: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct State {
     pub poll_count: u64,
     pub total_share: Uint128,
@@ -42,7 +41,7 @@ pub struct TokenManager {
     pub locked_balance: Vec<(u64, VoterInfo)>, // maps poll_id to weight voted
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Poll {
     pub id: u64,
     pub creator: Addr,

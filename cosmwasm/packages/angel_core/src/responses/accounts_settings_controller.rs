@@ -1,16 +1,15 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Addr;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use crate::structs::{EndowmentFee, SplitDetails};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentSettingsResponse {
     pub dao: Option<Addr>,
     pub dao_token: Option<Addr>,
@@ -28,7 +27,7 @@ pub struct EndowmentSettingsResponse {
     pub ignore_user_splits: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct EndowmentPermissionsResponse {
     pub endowment_controller: bool,
     pub strategies: bool,

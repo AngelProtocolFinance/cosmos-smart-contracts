@@ -1,3 +1,4 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{
     Addr, BlockInfo, Coin, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
@@ -6,8 +7,6 @@ use cw4::Cw4Contract;
 use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
 use cw_utils::{Duration, Expiration, Threshold};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 
@@ -15,7 +14,7 @@ use std::fmt;
 // Note: `10u128.pow(9)` fails as "u128::pow` is not yet stable as a const fn"
 const PRECISION_FACTOR: u128 = 1_000_000_000;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Config {
     pub registrar_contract: Addr,
     pub threshold: Threshold,
@@ -27,7 +26,7 @@ pub struct Config {
     pub new_endow_gas_money: Option<Coin>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Proposal {
     pub proposal_type: ProposalType,
     pub title: String,
@@ -46,8 +45,7 @@ pub struct Proposal {
     pub meta: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ProposalType {
     Normal = 0,
     Application = 1,
@@ -67,7 +65,7 @@ impl fmt::Display for ProposalType {
 }
 
 // weight of votes for each option
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Votes {
     pub yes: u64,
     pub no: u64,
@@ -167,7 +165,8 @@ fn votes_needed(weight: u64, percentage: Decimal) -> u64 {
 
 // we cast a ballot with our chosen vote and a given weight
 // stored under the key that voted
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+
+#[cw_serde]
 pub struct Ballot {
     pub weight: u64,
     pub vote: Vote,

@@ -1,8 +1,9 @@
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, BalanceInfo, Categories, DonationsReceived, EndowmentType,
-    OneOffVaults, RebalanceDetails, SplitDetails,
+    AcceptedTokens, BalanceInfo, Categories, DonationsReceived, EndowmentType, Investments,
+    RebalanceDetails, SplitDetails, StrategyAllocation,
 };
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
@@ -10,13 +11,10 @@ use cosmwasm_std::{
     WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     Endowment { id: u32 },
@@ -54,7 +52,7 @@ pub struct WasmMockQuerier {
     oracle_prices_querier: OraclePricesQuerier,
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct TokenQuerier {
     // this allows to iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -83,7 +81,7 @@ pub(crate) fn balances_to_map(
     balances_map
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct OraclePriceQuerier {
     #[allow(dead_code)]
     // this lets us iterate over all pairs that match the first string
@@ -111,7 +109,7 @@ pub(crate) fn oracle_price_to_map(
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct PriceStruct {
     base: String,
     quote: String,
@@ -120,7 +118,7 @@ pub struct PriceStruct {
     last_updated_quote: u64,
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct OraclePricesQuerier {
     #[allow(dead_code)]
     // this lets us iterate over all pairs
@@ -230,8 +228,8 @@ impl WasmMockQuerier {
                             deposit_approved: true,
                             withdraw_approved: true,
                             maturity_time: None,
-                            strategies: AccountStrategies::default(),
-                            oneoff_vaults: OneOffVaults::default(),
+                            strategies: StrategyAllocation::default(),
+                            oneoff_vaults: Investments::default(),
                             rebalance: RebalanceDetails::default(),
                             kyc_donors_only: false,
                             pending_redemptions: 0,
@@ -253,8 +251,8 @@ impl WasmMockQuerier {
                             deposit_approved: true,
                             withdraw_approved: true,
                             maturity_time: Some(10000000),
-                            strategies: AccountStrategies::default(),
-                            oneoff_vaults: OneOffVaults::default(),
+                            strategies: StrategyAllocation::default(),
+                            oneoff_vaults: Investments::default(),
                             rebalance: RebalanceDetails::default(),
                             kyc_donors_only: false,
                             pending_redemptions: 0,

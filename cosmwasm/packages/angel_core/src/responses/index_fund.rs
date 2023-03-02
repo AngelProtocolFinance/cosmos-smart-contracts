@@ -1,19 +1,18 @@
 use crate::structs::IndexFund;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Uint128};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct FundDetailsResponse {
     pub fund: Option<IndexFund>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct FundListResponse {
     pub funds: Vec<IndexFund>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct StateResponse {
     pub total_funds: u64,
     pub active_fund: u64,
@@ -21,7 +20,7 @@ pub struct StateResponse {
     pub next_rotation_block: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,

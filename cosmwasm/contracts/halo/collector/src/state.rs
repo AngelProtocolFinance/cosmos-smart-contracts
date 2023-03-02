@@ -1,10 +1,9 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cw_storage_plus::Item;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,
     pub gov_contract: Addr,         // collected rewards receiver

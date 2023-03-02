@@ -1,11 +1,10 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::{cw_serde, QueryResponses};
 
 use astroport::router::SwapOperation;
 
 use angel_core::structs::AccountType;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub ibc_host: String,
     pub ibc_controller: String,
@@ -36,7 +35,7 @@ pub struct ConfigResponse {
     pub pending_owner_deadline: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct StateResponse {
     pub total_lp_amount: String,
     pub total_shares: String,

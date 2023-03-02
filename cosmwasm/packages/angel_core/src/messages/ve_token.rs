@@ -1,13 +1,11 @@
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Uint128;
 use cw20::Cw20ReceiveMsg;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     Withdraw {},
@@ -22,8 +20,7 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum Cw20HookMsg {
     /// StakeVotingTokens a user can stake their mirror token to receive rewards
     /// or do vote on polls
@@ -36,11 +33,10 @@ pub enum Cw20HookMsg {
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     State {
@@ -52,20 +48,22 @@ pub enum QueryMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub cw20_address: String,
 }
 
-#[derive(Default, Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+#[derive(Default)]
+#[cw_serde]
 pub struct StateResponse {
     pub total_deposited_amount: Uint128,
     pub total_locked_amount: Uint128,
     pub total_balance: Uint128,
 }
 
-#[derive(Default, Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+#[derive(Default)]
+#[cw_serde]
 pub struct StakerResponse {
     pub deposited_amount: Uint128,
     pub locked_amount: Uint128,

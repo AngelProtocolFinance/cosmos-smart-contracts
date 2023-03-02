@@ -1,13 +1,12 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use angel_core::structs::AccountType;
 
 use astroport::{asset::AssetInfo, router::SwapOperation};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,
     pub acct_type: AccountType,
@@ -44,14 +43,13 @@ pub struct Config {
     pub pending_owner_deadline: Option<u64>, // Block height until which the `pending_owner` is valid in `update_owner` process
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct State {
     pub total_lp_amount: Uint128, // total amount of LP tokens in this `vault`
     pub total_shares: Uint128,    // total amount of minted vault tokens
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct TokenInfo {
     pub name: String,
     pub symbol: String,
@@ -60,7 +58,7 @@ pub struct TokenInfo {
     pub mint: Option<MinterData>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct MinterData {
     pub minter: Addr,
     /// cap is how many more tokens can be issued by the minter

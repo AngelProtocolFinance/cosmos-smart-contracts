@@ -1,5 +1,6 @@
-use crate::state::{Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
+use crate::state::{Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
+use angel_core::structs::Allowances;
 use cosmwasm_std::{Deps, Order, StdResult};
 use cw2::get_contract_version;
 
@@ -56,8 +57,7 @@ pub fn query_endowment_by_proposal_link(
         deposit_approved,
         withdraw_approved,
         maturity_time,
-        strategies,
-        oneoff_vaults,
+        invested_strategies,
         rebalance,
         kyc_donors_only,
         pending_redemptions,
@@ -77,8 +77,7 @@ pub fn query_endowment_by_proposal_link(
         deposit_approved,
         withdraw_approved,
         maturity_time,
-        strategies,
-        oneoff_vaults,
+        invested_strategies,
         rebalance,
         kyc_donors_only,
         pending_redemptions,
@@ -100,8 +99,7 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         status: endowment.status,
         endow_type: endowment.endow_type,
         maturity_time: endowment.maturity_time,
-        strategies: endowment.strategies,
-        oneoff_vaults: endowment.oneoff_vaults,
+        invested_strategies: endowment.invested_strategies,
         rebalance: endowment.rebalance,
         kyc_donors_only: endowment.kyc_donors_only,
         deposit_approved: endowment.deposit_approved,

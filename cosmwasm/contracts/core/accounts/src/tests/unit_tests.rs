@@ -8,7 +8,7 @@ use angel_core::messages::accounts::{
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyComponent,
+    AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyInvestment,
     SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
@@ -413,7 +413,7 @@ fn test_update_strategy() {
     assert_eq!(endowment.strategies.liquid.len(), 1);
     assert_eq!(
         endowment.strategies.liquid,
-        vec![StrategyComponent {
+        vec![StrategyInvestment {
             vault: "liquid-vault".to_string(),
             percentage: Decimal::percent(100),
         }]

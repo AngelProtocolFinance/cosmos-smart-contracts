@@ -1,8 +1,7 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Decimal;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub gov_contract: String, // collected rewards receiver
     pub swap_factory: String,
@@ -11,8 +10,7 @@ pub struct InstantiateMsg {
     pub reward_factor: Decimal,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     /// Update config interface
     /// to enable reward_factor / gov_contract update
@@ -27,15 +25,14 @@ pub enum ExecuteMsg {
     Sweep { denom: String },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     Pair { denom: String },
 }
 
 // We define a custom struct for each query response
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub owner: String,
     pub gov_contract: String, // collected rewards receiver
@@ -46,5 +43,5 @@ pub struct ConfigResponse {
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}

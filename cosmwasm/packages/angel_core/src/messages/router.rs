@@ -1,19 +1,17 @@
 use crate::structs::{AccountType, Pair, SwapOperation};
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfo;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub registrar_contract: Addr,
     pub accounts_contract: Addr,
     pub pairs: Vec<Pair>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     /// Add/Remove Pairs
@@ -31,6 +29,7 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
+        strategy_key: Option<String>,
     },
     /// Internal use
     /// Swap all offer tokens to ask token
@@ -56,19 +55,18 @@ pub enum ExecuteMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum Cw20HookMsg {
     ExecuteSwapOperations {
         endowment_id: u32,
         acct_type: AccountType,
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
+        strategy_key: Option<String>,
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     SimulateSwapOperations {
@@ -78,18 +76,18 @@ pub enum QueryMsg {
 }
 
 // We define a custom struct for each query response
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct ConfigResponse {
     pub registrar_contract: Addr,
     pub accounts_contract: Addr,
 }
 
 // We define a custom struct for each query response
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct SimulateSwapOperationsResponse {
     pub amount: Uint128,
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
