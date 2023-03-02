@@ -3,7 +3,7 @@ use cw20_base::ContractError as Cw20ContractError;
 use cw_asset::AssetError;
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
@@ -120,7 +120,7 @@ pub enum ContractError {
     AssertionMinimumReceive { receive: Uint128, amount: Uint128 },
 }
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq)]
 pub enum PaymentError {
     #[error("Must send reserve token '{0}'")]
     MissingDenom(String),

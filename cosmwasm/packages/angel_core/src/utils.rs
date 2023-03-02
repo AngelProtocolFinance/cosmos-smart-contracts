@@ -98,7 +98,7 @@ pub fn check_splits(
     user_override: bool,
 ) -> (Decimal, Decimal) {
     // check that the split provided by a user if within the max/min bounds
-    if user_liquid > splits.max || user_liquid < splits.min || user_override == true {
+    if user_liquid > splits.max || user_liquid < splits.min || user_override {
         (Decimal::one() - splits.default, splits.default)
     } else {
         (user_locked, user_liquid)

@@ -221,7 +221,7 @@ pub fn execute_swap_operations(
             msg: to_binary(&ExecuteMsg::AssertMinimumReceive {
                 asset_info: target_asset_info.clone(),
                 prev_balance: target_asset_info
-                    .query_balance(&deps.querier, &env.contract.address.clone())?,
+                    .query_balance(&deps.querier, env.contract.address.clone())?,
                 minimum_receive,
             })?,
         }));

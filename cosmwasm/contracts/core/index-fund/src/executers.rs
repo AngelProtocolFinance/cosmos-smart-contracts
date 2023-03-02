@@ -73,7 +73,7 @@ pub fn update_alliance_member_list(
         .position(|m| m == &member_addr);
 
     if action == *"add" {
-        if !pos.is_some() {
+        if pos.is_none() {
             config.alliance_members.push(member_addr);
         }
     } else if action == *"remove" {

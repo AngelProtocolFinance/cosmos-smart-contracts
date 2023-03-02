@@ -2,7 +2,7 @@ use cosmwasm_std::StdError;
 use cw_controllers::{AdminError, HookError};
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Error, Debug, PartialEq)]
 pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),

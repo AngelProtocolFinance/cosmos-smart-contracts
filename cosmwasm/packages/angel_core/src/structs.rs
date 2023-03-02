@@ -237,21 +237,66 @@ impl EndowmentController {
         permissions: SettingsPermissions,
     ) -> Result<(), ContractError> {
         match name.as_str() {
-            "strategies" => Ok(self.strategies = permissions),
-            "beneficiaries_allowlist" => Ok(self.beneficiaries_allowlist = permissions),
-            "contributors_allowlist" => Ok(self.contributors_allowlist = permissions),
-            "maturity_allowlist" => Ok(self.maturity_allowlist = permissions),
-            "split_to_liquid" => Ok(self.split_to_liquid = permissions),
-            "ignore_user_splits" => Ok(self.ignore_user_splits = permissions),
-            "earnings_fee" => Ok(self.earnings_fee = permissions),
-            "withdraw_fee" => Ok(self.withdraw_fee = permissions),
-            "deposit_fee" => Ok(self.deposit_fee = permissions),
-            "aum_fee" => Ok(self.aum_fee = permissions),
-            "kyc_donors_only" => Ok(self.kyc_donors_only = permissions),
-            "name" => Ok(self.name = permissions),
-            "image" => Ok(self.image = permissions),
-            "logo" => Ok(self.logo = permissions),
-            "categories" => Ok(self.categories = permissions),
+            "strategies" => {
+                self.strategies = permissions;
+                Ok(())
+            },
+            "beneficiaries_allowlist" => {
+                self.beneficiaries_allowlist = permissions;
+                Ok(())
+            },
+            "contributors_allowlist" => {
+                self.contributors_allowlist = permissions;
+                Ok(())
+            },
+            "maturity_allowlist" => {
+                self.maturity_allowlist = permissions;
+                Ok(())
+            },
+            "split_to_liquid" => {
+                self.split_to_liquid = permissions;
+                Ok(())
+            },
+            "ignore_user_splits" => {
+                self.ignore_user_splits = permissions;
+                Ok(())
+            },
+            "earnings_fee" => {
+                self.earnings_fee = permissions;
+                Ok(())
+            },
+            "withdraw_fee" => {
+                self.withdraw_fee = permissions;
+                Ok(())
+            },
+            "deposit_fee" => {
+                self.deposit_fee = permissions;
+                Ok(())
+            },
+            "aum_fee" => {
+                self.aum_fee = permissions;
+                Ok(())
+            },
+            "kyc_donors_only" => {
+                self.kyc_donors_only = permissions;
+                Ok(())
+            },
+            "name" => {
+                self.name = permissions;
+                Ok(())
+            },
+            "image" => {
+                self.image = permissions;
+                Ok(())
+            },
+            "logo" => {
+                self.logo = permissions;
+                Ok(())
+            },
+            "categories" => {
+                self.categories = permissions;
+                Ok(())
+            },
             _ => Err(ContractError::InvalidInputs {}),
         }
     }
