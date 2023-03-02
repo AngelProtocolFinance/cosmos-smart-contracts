@@ -3,7 +3,6 @@ name = "ve-token"
 version = "1.0.0"
 authors.workspace = true
 edition.workspace = true
-licence.workspace = true
 description = "A curve style ve token for Angel Protocol Endowments"
 
 exclude = [

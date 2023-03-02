@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::structs::{
     AccountType, Allowances, BalanceInfo, Beneficiary, Categories, DaoSetup, DonationsReceived,
     EndowmentController, EndowmentFee, EndowmentStatus, EndowmentType, Investments,

@@ -3,7 +3,6 @@ name = "halo-gov-hodler"
 version = "2.0.0"
 authors.workspace = true
 edition.workspace = true
-licence.workspace = true
 description = "A Claims Hodler for the Angel Protocol Gov contract- holds on to all claimed HALO from Gov until it is ready to be released to their owners"
 
 exclude = [

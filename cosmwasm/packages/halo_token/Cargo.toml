@@ -3,7 +3,6 @@ name = "halo-token"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
-licence.workspace = true
 description = "Common helpers for other angel-token specs"
 metadata = {}
 

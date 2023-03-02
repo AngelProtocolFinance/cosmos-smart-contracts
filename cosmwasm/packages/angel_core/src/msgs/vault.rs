@@ -1,6 +1,7 @@
 use crate::structs::{AccountType, SwapOperation};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Uint128};
+#[allow(unused_imports)]
 use cw20::{BalanceResponse, Cw20ReceiveMsg, TokenInfoResponse};
 use cw_asset::AssetInfo as CwAssetInfo;
 use terraswap::asset::Asset;

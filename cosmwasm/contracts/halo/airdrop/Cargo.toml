@@ -3,7 +3,6 @@ name = "halo-airdrop"
 version = "2.0.0"
 authors.workspace = true
 edition.workspace = true
-licence.workspace = true
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.

@@ -2,6 +2,7 @@ use crate::curves::{decimal, Constant, Curve, DecimalPlaces, Linear, SquareRoot}
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
+#[allow(unused_imports)]
 use cw_controllers::ClaimsResponse;
 use cw_utils::Expiration;
 
