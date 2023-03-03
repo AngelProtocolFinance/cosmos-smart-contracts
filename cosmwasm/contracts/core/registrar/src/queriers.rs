@@ -58,7 +58,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
         applications_review: config.applications_review.to_string(),
-        applications_impact_review: config.applications_impact_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
         accounts_settings_controller: config.accounts_settings_controller.to_string(),
         axelar_gateway: config.axelar_gateway,

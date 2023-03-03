@@ -149,7 +149,6 @@ pub struct ConfigResponse {
     pub accepted_tokens: AcceptedTokens,
     pub swap_factory: Option<String>,
     pub applications_review: String,
-    pub applications_impact_review: String,
     pub swaps_router: Option<String>,
     pub accounts_settings_controller: String,
     pub axelar_gateway: String,

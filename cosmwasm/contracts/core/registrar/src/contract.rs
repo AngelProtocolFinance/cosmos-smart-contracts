@@ -34,7 +34,6 @@ pub fn instantiate(
     let configs = Config {
         owner: info.sender.clone(),
         applications_review: info.sender.clone(),
-        applications_impact_review: info.sender,
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
@@ -167,7 +166,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         &Config {
             owner: old_config.owner,
             applications_review: old_config.applications_review,
-            applications_impact_review: old_config.applications_impact_review,
             index_fund_contract: old_config.index_fund_contract,
             accounts_contract: old_config.accounts_contract,
             treasury: old_config.treasury,

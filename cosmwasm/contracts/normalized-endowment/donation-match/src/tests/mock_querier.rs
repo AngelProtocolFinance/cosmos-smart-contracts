@@ -163,7 +163,6 @@ impl WasmMockQuerier {
                                 accounts_contract: Some("accounts-contract".to_string()),
                                 rebalance: RebalanceDetails::default(),
                                 applications_review: "applications-review".to_string(),
-                                applications_impact_review: "applications-impact-review".to_string(),
                                 swaps_router: Some("swaps-router".to_string()),
                                 cw3_code: Some(124),
                                 cw4_code: Some(125),

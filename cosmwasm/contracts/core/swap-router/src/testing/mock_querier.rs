@@ -128,7 +128,6 @@ impl WasmMockQuerier {
                         cw4_code: None,
                         accepted_tokens: AcceptedTokens::default(),
                         applications_review: "applications-review".to_string(),
-                        applications_impact_review: "applications-impact-review".to_string(),
                         swaps_router: None,
                         donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
                         collector_addr: "collector-addr".to_string(),

@@ -128,7 +128,6 @@ impl WasmMockQuerier {
                         },
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
-                        applications_impact_review: "applications-impact-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: "accounts-settings-controller".to_string(),
                         axelar_gateway: "axelar-gateway".to_string(),
