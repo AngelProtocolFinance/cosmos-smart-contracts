@@ -174,7 +174,7 @@ pub fn execute_swap_operations(
     let config = CONFIG.load(deps.storage)?;
     // Swaps are restricted to the Accounts contract (endowments) & approved Strategy's Vault contracts
     let mut vault_addr = None;
-    if sender != config.accounts_contract {
+    if sender != config.accounts_contract && strategy_key != None {
         // check that the deposit token came from an approved Strategy's Vault SC
         let strategy_res: StrategyDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -190,6 +190,10 @@ pub fn execute_swap_operations(
             AccountType::Locked => strategy_res.strategy.locked_addr,
             AccountType::Liquid => strategy_res.strategy.liquid_addr,
         };
+    } else {
+        // this is NOT the accounts contract, nor is there a strategy key provided to
+        // attempt to validate the sender is a valid vault contract
+        return Err(ContractError::Unauthorized {});
     }
 
     let operations_len = operations.len();

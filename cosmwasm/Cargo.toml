@@ -4,7 +4,6 @@ members = [
     "contracts/core/registrar",
     "contracts/core/accounts",
     "contracts/core/accounts-settings-controller",
-    "contracts/core/swap-router",
     "contracts/core/index-fund",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-apteam",
@@ -18,6 +17,7 @@ members = [
 ]
 
 exclude = [
+    "contracts/core/swap-router",
     "packages/halo_token",
     "contracts/halo/airdrop",
     "contracts/halo/collector",

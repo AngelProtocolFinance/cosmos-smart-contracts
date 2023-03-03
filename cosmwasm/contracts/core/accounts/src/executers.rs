@@ -1248,7 +1248,7 @@ pub fn strategies_invest(
                     })
                     .unwrap(),
                     funds: vec![Coin {
-                        denom: registrar_config.accepted_tokens.native[0].clone(),
+                        denom: strategy_params.input_denom.clone(),
                         amount: investment.locked_amount + investment.liquid_amount,
                     }],
                 }));
@@ -1273,7 +1273,7 @@ pub fn strategies_invest(
                     source_channel: registrar_config.axelar_ibc_channel.to_string(),
                     token: Some(
                         Coin {
-                            denom: registrar_config.accepted_tokens.native[0].clone(),
+                            denom: strategy_params.input_denom.clone(),
                             amount: investment.locked_amount + investment.liquid_amount,
                         }
                         .into(),

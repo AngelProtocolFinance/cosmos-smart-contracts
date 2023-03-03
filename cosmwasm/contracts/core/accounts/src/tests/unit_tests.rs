@@ -1098,7 +1098,7 @@ fn test_strategies_invest() {
             id: CHARITY_ID,
             strategies: vec![StrategyInvestment {
                 strategy_key: "strategy-ethereum".to_string(),
-                locked_amount: Uint128::from(1000000_u128),
+                locked_amount: Uint128::from(100000_u128),
                 liquid_amount: Uint128::from(0_u128),
             }],
         },
@@ -1106,7 +1106,6 @@ fn test_strategies_invest() {
     .unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
 
-    // Finally, succeed to do "strategies_invest"
     // first, need to make a deposit of funds
     let donation_amt = 10000_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, USDC));
@@ -1117,13 +1116,31 @@ fn test_strategies_invest() {
     });
     let _res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
+    // Fail to invest to strategies since insufficient funds in locked account
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::StrategiesInvest {
+            id: CHARITY_ID,
+            strategies: vec![StrategyInvestment {
+                strategy_key: STRATEGY_KEY.to_string(),
+                locked_amount: Uint128::from(6000_u128), // exceeds the current amount of 5000
+                liquid_amount: Uint128::from(2000_u128),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InsufficientFunds {});
+
     // Succeed to invest in a strategy
     let info = mock_info(CHARITY_ADDR, &[]);
     let _res = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::StrategiesRedeem {
+        ExecuteMsg::StrategiesInvest {
             id: CHARITY_ID,
             strategies: vec![StrategyInvestment {
                 strategy_key: STRATEGY_KEY.to_string(),
