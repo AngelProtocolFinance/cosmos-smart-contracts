@@ -1,10 +1,13 @@
 // Contains mock functionality to test multi-contract scenarios
 // use angel_core::msgs::accounts::ReceiveMsg::SwapReceipt;
-use angel_core::msgs::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
-use angel_core::structs::{
-    AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
+use angel_core::msgs::registrar::{
+    ConfigResponse as RegistrarConfigResponse, StrategyDetailResponse,
 };
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use angel_core::structs::{
+    AcceptedTokens, RebalanceDetails, SplitDetails, StrategyApprovalState, StrategyLocale,
+    StrategyParams,
+};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
@@ -15,7 +18,7 @@ use std::marker::PhantomData;
 #[cw_serde]
 pub enum QueryMsg {
     Config {},
-    Vault { vault_addr: String },
+    Strategy { strategy_key: String },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -101,20 +104,20 @@ impl WasmMockQuerier {
                         applications_impact_review: "applications-impact-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: "accounts-settings-controller".to_string(),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
+                QueryMsg::Strategy { strategy_key: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&StrategyDetailResponse {
+                        strategy: StrategyParams {
+                            approval_state: StrategyApprovalState::Approved,
+                            locale: StrategyLocale::Native,
+                            chain: "juno".to_string(),
                             input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                            vault_type: VaultType::Native,
+                            locked_addr: Some(Addr::unchecked("vault1-locked-contract")),
+                            liquid_addr: Some(Addr::unchecked("vault1-liquid-contract")),
                         },
                     })
                     .unwrap(),

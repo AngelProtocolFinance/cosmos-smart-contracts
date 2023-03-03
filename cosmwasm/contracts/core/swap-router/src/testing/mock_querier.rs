@@ -1,7 +1,10 @@
 use angel_core::msgs::dexs::InfoResponse;
-use angel_core::msgs::registrar::{ConfigResponse, VaultDetailResponse};
-use angel_core::structs::{AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType};
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use angel_core::msgs::registrar::{ConfigResponse, StrategyDetailResponse};
+use angel_core::structs::{
+    AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, StrategyApprovalState,
+    StrategyLocale, StrategyParams,
+};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -14,8 +17,8 @@ use std::marker::PhantomData;
 #[cw_serde]
 pub enum QueryMsg {
     Config {},
-    Vault {
-        vault_addr: String,
+    Strategy {
+        strategy_key: String,
     },
     Balance {
         address: String,
@@ -139,20 +142,20 @@ impl WasmMockQuerier {
                         subdao_distributor_code: None,
                         donation_match_code: None,
                         halo_token_lp_contract: None,
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: angel_core::structs::YieldVault {
-                            address: "vault-1".to_string(),
-                            network: "juno-1".to_string(),
-                            input_denom: "ujuno".to_string(),
-                            yield_token: "yield-token-contract".to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                            vault_type: VaultType::Native,
+                QueryMsg::Strategy { strategy_key: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&StrategyDetailResponse {
+                        strategy: StrategyParams {
+                            approval_state: StrategyApprovalState::Approved,
+                            locale: StrategyLocale::Native,
+                            chain: "juno".to_string(),
+                            input_denom: "input-denom".to_string(),
+                            locked_addr: Some(Addr::unchecked("vault1-locked-contract")),
+                            liquid_addr: Some(Addr::unchecked("vault1-liquid-contract")),
                         },
                     })
                     .unwrap(),

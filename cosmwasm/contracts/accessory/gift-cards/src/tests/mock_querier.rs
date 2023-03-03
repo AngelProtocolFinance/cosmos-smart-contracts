@@ -6,7 +6,7 @@ use cosmwasm_std::{
     Querier, QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_schema::cw_serde;
 use std::marker::PhantomData;
 
 #[cw_serde]
@@ -98,6 +98,8 @@ impl WasmMockQuerier {
                         swap_factory: None,
                         accounts_settings_controller: "accounts-settings-controller-addr"
                             .to_string(),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

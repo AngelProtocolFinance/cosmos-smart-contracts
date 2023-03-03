@@ -1,23 +1,21 @@
 use angel_core::msgs::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
 use angel_core::msgs::accounts_settings_controller::EndowmentSettingsResponse;
-use angel_core::msgs::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::msgs::registrar::{ConfigResponse, StrategyDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountType, Categories, Investments, RebalanceDetails, SplitDetails,
-    StrategyAllocation, VaultType, YieldVault,
+    AcceptedTokens, Categories, Investments, RebalanceDetails, SplitDetails, StrategyApprovalState,
+    StrategyLocale, StrategyParams,
 };
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
     Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
-use terraswap::pair::SimulationResponse;
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use terraswap::asset::Asset;
+use terraswap::{asset::Asset, pair::SimulationResponse};
 
 #[cw_serde]
 pub enum QueryMsg {
@@ -25,7 +23,7 @@ pub enum QueryMsg {
     Balance { address: String },
     // Mock the `registrar` config
     Config {},
-    Vault { vault_addr: String },
+    Strategy { strategy_key: String },
     // Mock the `accounts` endowment
     Endowment { id: u32 },
     // Mock the "endowment_controller::EndowmentSettings {id: [EndowmentID]}" query
@@ -61,7 +59,7 @@ pub struct WasmMockQuerier {
     token_querier: TokenQuerier,
 }
 
-#[cw_serde]
+#[derive(Clone, Default)]
 pub struct TokenQuerier {
     // this allows to iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -117,11 +115,10 @@ impl WasmMockQuerier {
                     to_binary(&EndowmentDetailsResponse {
                         owner: Addr::unchecked("endow-cw3"),
                         name: "Test Endowment".to_string(),
-                        strategies: StrategyAllocation::default(),
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,
                         maturity_time: None,
-                        oneoff_vaults: Investments::default(),
+                        invested_strategies: Investments::default(),
                         rebalance: RebalanceDetails::default(),
                         kyc_donors_only: false,
                         deposit_approved: true,
@@ -195,23 +192,23 @@ impl WasmMockQuerier {
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
                                 accounts_settings_controller: "accounts-settings-controller".to_string(),
+                                axelar_gateway: "axelar-gateway".to_string(),
+                                axelar_ibc_channel: "channel-1".to_string(),
                             })
                             .unwrap()
                         )),
                         _ => unreachable!(),
                     }
                 }
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
+                QueryMsg::Strategy { strategy_key: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&StrategyDetailResponse {
+                        strategy: StrategyParams {
+                            approval_state: StrategyApprovalState::Approved,
+                            locale: StrategyLocale::Native,
+                            chain: "juno".to_string(),
                             input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                            vault_type: VaultType::Native,
+                            locked_addr: Some(Addr::unchecked("vault1-locked-contract")),
+                            liquid_addr: Some(Addr::unchecked("vault1-liquid-contract")),
                         },
                     })
                     .unwrap(),

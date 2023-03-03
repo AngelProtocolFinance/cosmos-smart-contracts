@@ -9,7 +9,7 @@ use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::msgs::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::msgs::router::ExecuteMsg as SwapRouterExecuteMsg;
+use angel_core::msgs::swap_router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::msgs::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
     UpdateConfigMsg,

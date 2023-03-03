@@ -28,7 +28,7 @@ pub struct WasmMockQuerier {
     token_querier: TokenQuerier,
 }
 
-#[cw_serde]
+#[derive(Clone, Default)]
 pub struct TokenQuerier {
     // this lets us iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,

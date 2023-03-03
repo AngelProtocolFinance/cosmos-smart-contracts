@@ -51,7 +51,7 @@ pub struct WasmMockQuerier {
     token_querier: TokenQuerier,
 }
 
-#[cw_serde]
+#[derive(Clone, Default)]
 pub struct TokenQuerier {
     // this allows to iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -170,6 +170,8 @@ impl WasmMockQuerier {
                         applications_review: "applications-review".to_string(),
                         applications_impact_review: "applications_impact_review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

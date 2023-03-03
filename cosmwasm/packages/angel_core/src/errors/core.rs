@@ -80,9 +80,6 @@ pub enum ContractError {
     #[error("Invalid strategy allocation")]
     InvalidStrategyAllocation {},
 
-    #[error("Strategy components should be unique")]
-    StrategyComponentsNotUnique {},
-
     #[error("Invalid deposit split provided")]
     InvalidSplit {},
 
@@ -95,14 +92,14 @@ pub enum ContractError {
     #[error("Cannot withdraw from Locked balances")]
     InaccessableLockedBalance {},
 
-    #[error("Vault redemptions already in progress.")]
+    #[error("Strategy redemptions already in progress.")]
     RedemptionInProgress {},
 
     #[error("Index Fund has expired")]
     IndexFundExpired {},
 
-    #[error("Vault already exists at given address")]
-    VaultAlreadyExists {},
+    #[error("Strategy already exists at given key")]
+    StrategyAlreadyExists {},
 
     #[error("Index Fund has no members in it")]
     IndexFundEmpty {},

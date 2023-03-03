@@ -63,10 +63,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accounts_settings_controller: config.accounts_settings_controller.to_string(),
         axelar_gateway: config.axelar_gateway,
         axelar_ibc_channel: config.axelar_ibc_channel,
-        vault_router: match config.vault_router {
-            Some(router) => Some(router.to_string()),
-            None => None,
-        },
     })
 }
 

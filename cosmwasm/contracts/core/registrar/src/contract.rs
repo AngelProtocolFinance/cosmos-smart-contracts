@@ -64,10 +64,6 @@ pub fn instantiate(
         accounts_settings_controller: deps.api.addr_validate(&msg.accounts_settings_controller)?,
         axelar_gateway: msg.axelar_gateway,
         axelar_ibc_channel: msg.axelar_ibc_channel,
-        vault_router: match msg.vault_router {
-            Some(addr) => Some(deps.api.addr_validate(&addr)?),
-            None => None,
-        },
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -76,7 +72,7 @@ pub fn instantiate(
     FEES.save(deps.storage, &"vaults_harvest", &tax_rate)?;
     FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
 
-    // setup basic JUNO network info for native Vaults
+    // setup basic JUNO network info for native Strategies
     NETWORK_CONNECTIONS.save(
         deps.storage,
         &env.block.chain_id.clone(),
@@ -85,10 +81,7 @@ pub fn instantiate(
                 Some(accounts) => Some(accounts.to_string()),
                 None => None,
             },
-            router_contract: match configs.vault_router {
-                Some(router) => Some(router.to_string()),
-                None => None,
-            },
+            router_contract: None,
         },
     )?;
 
@@ -162,10 +155,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 
     // Get the new addr configs from migrate msg input
     let accounts_settings_controller = deps.api.addr_validate(&msg.accounts_settings_controller)?;
-    let vault_router = match msg.vault_router {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
-        None => None,
-    };
 
     // setup the new config struct and save to storage
     let data = deps
@@ -206,7 +195,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             axelar_gateway: msg.axelar_gateway,
             axelar_ibc_channel: msg.axelar_ibc_channel,
             accounts_settings_controller,
-            vault_router,
         },
     )?;
 

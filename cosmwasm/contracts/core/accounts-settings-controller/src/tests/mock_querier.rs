@@ -1,9 +1,9 @@
 use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, Categories, DonationsReceived, EndowmentType, Investments,
-    RebalanceDetails, SplitDetails, StrategyAllocation,
+    RebalanceDetails, SplitDetails,
 };
-use cosmwasm_schema::{cw_serde, QueryResponses};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
@@ -52,7 +52,7 @@ pub struct WasmMockQuerier {
     oracle_prices_querier: OraclePricesQuerier,
 }
 
-#[cw_serde]
+#[derive(Clone, Default)]
 pub struct TokenQuerier {
     // this allows to iterate over all pairs that match the first string
     balances: HashMap<String, HashMap<String, Uint128>>,
@@ -81,7 +81,7 @@ pub(crate) fn balances_to_map(
     balances_map
 }
 
-#[cw_serde]
+#[derive(Clone, Default)]
 pub struct OraclePriceQuerier {
     #[allow(dead_code)]
     // this lets us iterate over all pairs that match the first string
@@ -118,7 +118,7 @@ pub struct PriceStruct {
     last_updated_quote: u64,
 }
 
-#[cw_serde]
+#[derive(Clone, Default)]
 pub struct OraclePricesQuerier {
     #[allow(dead_code)]
     // this lets us iterate over all pairs
@@ -211,6 +211,8 @@ impl WasmMockQuerier {
                         applications_impact_review: "applications_impact_review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: "accounts-settings-controller".to_string(),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),
@@ -228,8 +230,7 @@ impl WasmMockQuerier {
                             deposit_approved: true,
                             withdraw_approved: true,
                             maturity_time: None,
-                            strategies: StrategyAllocation::default(),
-                            oneoff_vaults: Investments::default(),
+                            invested_strategies: Investments::default(),
                             rebalance: RebalanceDetails::default(),
                             kyc_donors_only: false,
                             pending_redemptions: 0,
@@ -251,8 +252,7 @@ impl WasmMockQuerier {
                             deposit_approved: true,
                             withdraw_approved: true,
                             maturity_time: Some(10000000),
-                            strategies: StrategyAllocation::default(),
-                            oneoff_vaults: Investments::default(),
+                            invested_strategies: Investments::default(),
                             rebalance: RebalanceDetails::default(),
                             kyc_donors_only: false,
                             pending_redemptions: 0,

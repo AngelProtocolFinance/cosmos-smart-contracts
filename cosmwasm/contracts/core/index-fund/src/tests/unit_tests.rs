@@ -1,6 +1,5 @@
 use angel_core::errors::core::*;
 use angel_core::msgs::index_fund::*;
-use angel_core::msgs::index_fund::*;
 use angel_core::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{

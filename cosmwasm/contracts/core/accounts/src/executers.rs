@@ -1058,19 +1058,40 @@ pub fn deposit(
         liquid_split = new_splits.1;
     }
 
-    let locked_amount = Asset {
-        info: deposit_token.info.clone(),
-        amount: deposit_amount * locked_split,
-    };
-    let liquid_amount = Asset {
-        info: deposit_token.info,
-        amount: deposit_amount * liquid_split,
-    };
-
-    // update total donations received for a charity
     let mut state: State = STATES.load(deps.storage, msg.id)?;
-    state.donations_received.locked += locked_amount.amount;
-    state.donations_received.liquid += liquid_amount.amount;
+    // update total donations received for a charity
+    state.donations_received.locked += deposit_amount * locked_split;
+    state.donations_received.liquid += deposit_amount * liquid_split;
+    // update their state balances for tokens on hand
+    match deposit_token.info.clone() {
+        AssetInfo::Native(denom) => {
+            state.balances.locked.add_tokens(Balance::from(vec![Coin {
+                amount: deposit_amount * locked_split,
+                denom: denom.clone(),
+            }]));
+            state.balances.liquid.add_tokens(Balance::from(vec![Coin {
+                amount: deposit_amount * liquid_split,
+                denom,
+            }]));
+        }
+        AssetInfo::Cw20(addr) => {
+            state
+                .balances
+                .liquid
+                .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                    address: addr.clone(),
+                    amount: deposit_amount * locked_split,
+                }));
+            state
+                .balances
+                .locked
+                .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                    address: addr,
+                    amount: deposit_amount * liquid_split,
+                }));
+        }
+        _ => unreachable!(),
+    }
 
     STATES.save(deps.storage, msg.id, &state)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
@@ -1090,8 +1111,8 @@ pub fn strategies_invest(
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
     let mut state = STATES.load(deps.storage, id)?;
-    let mut current_bal_locked: GenericBalance = state.balances.get(&AccountType::Locked);
-    let mut current_bal_liquid: GenericBalance = state.balances.get(&AccountType::Liquid);
+    let mut state_bal_locked: GenericBalance = state.balances.get(&AccountType::Locked);
+    let mut state_bal_liquid: GenericBalance = state.balances.get(&AccountType::Liquid);
 
     if endowment.owner != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -1125,38 +1146,100 @@ pub fn strategies_invest(
                 msg: "Strategy is not approved to accept deposits".to_string(),
             }));
         }
-        // check that the token balance on hand is enough to cover the deposit amount
+
+        // check that the input tokens is in accepted tokens list
+        if !registrar_config
+            .accepted_tokens
+            .native_valid(strategy_params.input_denom.clone())
+        {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Input token not in accepted tokens list".to_string(),
+            }));
+        }
+
+        // get strategy's chain information from Registrar's Network Connections
+        let chain_info: NetworkConnectionResponse = deps.querier.query_wasm_smart(
+            config.registrar_contract.to_string(),
+            &RegistrarQuerier::NetworkConnection {
+                chain_id: strategy_params.chain.clone(),
+            },
+        )?;
+        if chain_info.network_connection.router_contract == None {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Vault Router not set for chain in the Registrar Network Connection."
+                    .to_string(),
+            }));
+        }
+
         // fetch the amount of an asset held in the state balance
-        let token_balance_locked: Uint128 = current_bal_locked
+        let token_balance_locked: Uint128 = state_bal_locked
             .get_denom_amount(strategy_params.input_denom.clone())
             .amount;
-        let token_balance_liquid: Uint128 = current_bal_liquid
+        let token_balance_liquid: Uint128 = state_bal_liquid
             .get_denom_amount(strategy_params.input_denom.clone())
             .amount;
 
-        // check that the amount in state balance is sufficient to cover withdraw request
+        // ensure investment has some positive value for either locked or liquid
+        if investment.locked_amount.is_zero() && investment.liquid_amount.is_zero() {
+            return Err(ContractError::InvalidInputs {});
+        }
+
+        // check that the amount in state balance is sufficient to cover investment request
         if investment.locked_amount > token_balance_locked
             || investment.liquid_amount > token_balance_liquid
         {
             return Err(ContractError::InsufficientFunds {});
         }
 
-        // deduct the tokens from the state's current balance
-        current_bal_locked.deduct_tokens(Balance::from(vec![Coin {
-            denom: strategy_params.input_denom.clone(),
-            amount: investment.locked_amount,
-        }]));
-        current_bal_liquid.deduct_tokens(Balance::from(vec![Coin {
-            denom: strategy_params.input_denom.clone(),
-            amount: investment.liquid_amount,
-        }]));
+        if !investment.locked_amount.is_zero() {
+            // update the state balances less invested amounts
+            state_bal_locked.deduct_tokens(Balance::from(vec![Coin {
+                amount: investment.locked_amount,
+                denom: strategy_params.input_denom.clone(),
+            }]));
+            // add Strategy to the invested-strategies list if a new strategy
+            let pos = endowment
+                .invested_strategies
+                .locked
+                .iter()
+                .position(|s| s == &investment.strategy_key);
+            if pos.is_some() {
+                endowment
+                    .invested_strategies
+                    .locked
+                    .push(investment.strategy_key.clone());
+            }
+        }
+
+        if !investment.liquid_amount.is_zero() {
+            state_bal_liquid.deduct_tokens(Balance::from(vec![Coin {
+                amount: investment.liquid_amount,
+                denom: strategy_params.input_denom.clone(),
+            }]));
+            let pos = endowment
+                .invested_strategies
+                .liquid
+                .iter()
+                .position(|s| s == &investment.strategy_key);
+            if pos.is_some() {
+                endowment
+                    .invested_strategies
+                    .liquid
+                    .push(investment.strategy_key.clone());
+            }
+        }
 
         // create a deposit message for the strategy to Router or Gateway contract depending on locale
         // funds payload can contain CW20 | Native token amounts
         match strategy_params.locale {
             StrategyLocale::Native => {
                 res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: registrar_config.vault_router.clone().unwrap().to_string(),
+                    contract_addr: chain_info
+                        .network_connection
+                        .router_contract
+                        .clone()
+                        .unwrap()
+                        .to_string(),
                     msg: to_binary(&angel_core::msgs::vault::ExecuteMsg::Deposit {
                         endowment_id: id,
                         // TO DO: Add Vault Router to handle passing the message to the Vaults
@@ -1172,13 +1255,6 @@ pub fn strategies_invest(
             }
             // Messages bound for IBC chain or EVM chain Strategies both need to utilize the Axelar Gateway Contract (via an IBC msg)
             StrategyLocale::Ibc | StrategyLocale::Evm => {
-                // get strategy's chain information from Registrar's Network Connections
-                let chain_info: NetworkConnectionResponse = deps.querier.query_wasm_smart(
-                    config.registrar_contract.to_string(),
-                    &RegistrarQuerier::NetworkConnection {
-                        chain_id: strategy_params.chain.clone(),
-                    },
-                )?;
                 // destination chain execute msg goes in the IBC msg memo field
                 let msg = &AxelarGeneralMessage {
                     destination_chain: strategy_params.chain,
@@ -1211,41 +1287,13 @@ pub fn strategies_invest(
                 res = res.add_attribute("ibc_message", format!("{:?}", ibc_transfer));
             }
         }
-
-        // add Strategy to the invested-strategies list if a new strategy
-        if investment.locked_amount > Uint128::zero() {
-            let pos = endowment
-                .invested_strategies
-                .locked
-                .iter()
-                .position(|s| s == &investment.strategy_key);
-            if pos.is_some() {
-                endowment
-                    .invested_strategies
-                    .locked
-                    .push(investment.strategy_key.clone());
-            }
-        }
-        if investment.liquid_amount > Uint128::zero() {
-            let pos = endowment
-                .invested_strategies
-                .liquid
-                .iter()
-                .position(|s| s == &investment.strategy_key);
-            if pos.is_some() {
-                endowment
-                    .invested_strategies
-                    .liquid
-                    .push(investment.strategy_key.clone());
-            }
-        }
     }
     // save any changes to the endowment's invested vaults
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     // set the final state balance after all assets have been deducted and save
-    state.balances.locked = current_bal_locked.clone();
-    state.balances.liquid = current_bal_liquid.clone();
+    state.balances.locked = state_bal_locked;
+    state.balances.liquid = state_bal_liquid;
     STATES.save(deps.storage, id, &state)?;
 
     Ok(res)
@@ -1303,6 +1351,20 @@ pub fn strategies_redeem(
             }));
         }
 
+        // get strategy's chain information from Registrar's Network Connections
+        let chain_info: NetworkConnectionResponse = deps.querier.query_wasm_smart(
+            config.registrar_contract.to_string(),
+            &RegistrarQuerier::NetworkConnection {
+                chain_id: strategy_params.chain.clone(),
+            },
+        )?;
+        if chain_info.network_connection.router_contract == None {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Vault Router not set for chain in the Registrar Network Connection."
+                    .to_string(),
+            }));
+        }
+
         // // check if the strategy tokens have been depleted and remove one-off(invested) strategy from list if so
         // let strategy_balance = strategy_endowment_balance(deps.as_ref(), investment.strategy_key.to_string(), id);
         // if strategy_balance == *amount || strategy_balance == Uint128::zero() {
@@ -1352,8 +1414,14 @@ pub fn strategies_redeem(
                 {
                     return Err(ContractError::BalanceTooSmall {});
                 }
+
                 res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: registrar_config.vault_router.clone().unwrap().to_string(),
+                    contract_addr: chain_info
+                        .network_connection
+                        .router_contract
+                        .clone()
+                        .unwrap()
+                        .to_string(),
                     msg: to_binary(&angel_core::msgs::vault::ExecuteMsg::Redeem {
                         endowment_id: id,
                         amount: investment.locked_amount + investment.liquid_amount,
@@ -1367,13 +1435,6 @@ pub fn strategies_redeem(
             }
             // Messages bound for IBC chain or EVM chain Strategies both need to utilize the Axelar Gateway Contract (via an IBC msg)
             StrategyLocale::Ibc | StrategyLocale::Evm => {
-                // get strategy's chain information from Registrar's Network Connections
-                let chain_info: NetworkConnectionResponse = deps.querier.query_wasm_smart(
-                    config.registrar_contract.to_string(),
-                    &RegistrarQuerier::NetworkConnection {
-                        chain_id: strategy_params.chain.clone(),
-                    },
-                )?;
                 // destination chain execute msg goes in the IBC msg memo field
                 let msg = AxelarGeneralMessage {
                     destination_chain: strategy_params.chain,

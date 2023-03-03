@@ -184,19 +184,19 @@ pub fn strategy_add(
         return Err(ContractError::Unauthorized {});
     }
 
-    // check that the vault does not already exist for a given address in storage
-    if STRATEGIES
-        .load(deps.storage, &strategy_key.as_bytes())
-        .is_ok()
-    {
-        return Err(ContractError::VaultAlreadyExists {});
-    }
-
     // check that an approved network connection was set for the StrategyParams
     let _network = NETWORK_CONNECTIONS.load(deps.storage, &strategy.chain)?;
 
-    // save the new strategy to storage
-    STRATEGIES.save(deps.storage, &strategy_key.as_bytes(), &strategy)?;
+    // check that the vault does not already exist for a given address in storage
+    // add new strategy if all looks good
+    STRATEGIES.update(
+        deps.storage,
+        &strategy_key.as_bytes(),
+        |existing| match existing {
+            Some(_) => Err(ContractError::StrategyAlreadyExists {}),
+            None => Ok(strategy),
+        },
+    )?;
     Ok(Response::default())
 }
 

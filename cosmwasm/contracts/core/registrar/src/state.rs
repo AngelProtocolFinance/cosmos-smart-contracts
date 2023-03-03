@@ -1,7 +1,7 @@
 use angel_core::structs::{
     AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, StrategyParams,
 };
-use cosmwasm_schema::{cw_serde};
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Decimal};
 use cw_storage_plus::{Item, Map};
 
@@ -56,7 +56,6 @@ pub struct Config {
     pub accounts_settings_controller: Addr, // contract address used for storing extra Endowment settings
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
-    pub vault_router: Option<Addr>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

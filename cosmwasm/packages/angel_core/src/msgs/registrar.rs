@@ -10,7 +10,6 @@ pub struct MigrateMsg {
     pub accounts_settings_controller: String,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
-    pub vault_router: Option<String>,
 }
 
 #[cw_serde]
@@ -36,7 +35,6 @@ pub struct InstantiateMsg {
     pub accounts_settings_controller: String,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
-    pub vault_router: Option<String>,
 }
 
 #[cw_serde]
@@ -72,7 +70,6 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub accounts_contract: Option<String>,
-    pub tax_rate: Option<Decimal>,
     pub rebalance: Option<RebalanceDetails>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
@@ -157,7 +154,6 @@ pub struct ConfigResponse {
     pub accounts_settings_controller: String,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
-    pub vault_router: Option<String>,
 }
 
 #[cw_serde]

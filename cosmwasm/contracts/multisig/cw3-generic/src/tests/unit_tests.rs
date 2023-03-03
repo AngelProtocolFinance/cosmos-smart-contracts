@@ -243,7 +243,7 @@ fn test_instantiate_works() {
         .unwrap();
 
     // Verify contract version set properly
-    let version = query_contract_info(&app, flex_addr.clone()).unwrap();
+    let version = query_contract_info(&app.wrap(), flex_addr.clone()).unwrap();
     assert_eq!(
         ContractVersion {
             contract: CONTRACT_NAME.to_string(),
@@ -438,6 +438,8 @@ fn test_proposal_queries() {
         title,
         description,
         msgs,
+        deposit: None,
+        proposer: Addr::unchecked(APTEAM1),
         expires: voting_period.after(&proposed_at),
         status: Status::Open,
         threshold: ThresholdResponse::AbsoluteCount {

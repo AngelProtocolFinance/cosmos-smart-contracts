@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, migrate, query};
 use crate::testing::mock_querier::mock_dependencies;
 use angel_core::errors::core::ContractError;
-use angel_core::msgs::router::{
+use angel_core::msgs::swap_router::{
     ConfigResponse,
     Cw20HookMsg,
     ExecuteMsg,
@@ -76,6 +76,7 @@ fn execute_swap_operations() {
     let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
+        strategy_key: None,
         operations: vec![],
         minimum_receive: None,
         endowment_id: 1,
@@ -88,6 +89,7 @@ fn execute_swap_operations() {
     assert_eq!(res, ContractError::MustProvideOperations {});
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
+        strategy_key: None,
         operations: vec![
             SwapOperation::Loop {
                 offer_asset_info: AssetInfo::Native("usdt".to_string()),
@@ -175,6 +177,7 @@ fn execute_swap_operations() {
         sender: "vault-1".into(),
         amount: Uint128::from(1000000u128),
         msg: to_binary(&Cw20HookMsg::ExecuteSwapOperations {
+            strategy_key: None,
             operations: vec![
                 SwapOperation::JunoSwap {
                     offer_asset_info: AssetInfo::Native("usdc".to_string()),
