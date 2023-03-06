@@ -1,16 +1,14 @@
-#![allow(dead_code)]
 use angel_core::msgs::ve_token::{StakerResponse, StateResponse};
 use cosmwasm_schema::{cw_serde, QueryResponses};
-
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Coin, ContractResult, Decimal, Empty, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use terraswap::mock_querier::TerraswapFactoryQuerier;
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
 /// this uses our CustomQuerier.
