@@ -1,4 +1,12 @@
 {
+  "name": "",
+  "description": "Typescript test suite for all integration (and day-to-day management support) platform for Angel Protocol's CosmWasm smart contracts.",
+  "version": "2.1.0",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngelProtocolFinance/cosmwasm-smart-contracts.git"
+  },
   "scripts": {
     "test": "ts-node ./src/index.ts",
     "test:local-setup-ibc": "npm run test --mode=local_setup_ibc",
