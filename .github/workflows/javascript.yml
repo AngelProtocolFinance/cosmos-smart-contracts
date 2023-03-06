@@ -14,10 +14,10 @@ defaults:
 jobs:
   lint-tests:
     name: "Lint and test the codebase"
+    environment: production
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
