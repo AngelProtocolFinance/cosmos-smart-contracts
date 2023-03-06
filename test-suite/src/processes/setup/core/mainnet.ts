@@ -20,13 +20,16 @@ import { wasm_path } from "../../../config/wasmPaths";
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeamAddr: string;
+
 let registrar: string;
 let accounts: string;
+let indexFund: string;
+let settingsController: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
-let indexFund: string;
+
 let donationMatchCharities: string;
 let vault1: string;
 

@@ -77,7 +77,7 @@ async function deployJunoIcaContracts(): Promise<void> {
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaHostCodeId}`);
 
     process.stdout.write("Uploading cw1_whitelist wasm on JUNO");
-    const cw1WhitelistCodeId = await storeCode(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
+    const cw1WhitelistCodeId = await storeCode(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, `${wasm_path.cwPlus}/cw1_whitelist.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw1WhitelistCodeId}`);
 
 
@@ -112,7 +112,7 @@ async function deployTerraIcaContracts(): Promise<void> {
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaHostCodeId}`);
 
     process.stdout.write("Uploading cw1_whitelist wasm on TERRA");
-    const cw1WhitelistCodeId = await tStoreCode(terra, terraIbcSetupper, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
+    const cw1WhitelistCodeId = await tStoreCode(terra, terraIbcSetupper, `${wasm_path.cwPlus}/cw1_whitelist.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw1WhitelistCodeId}`);
 
     // Step 2: TerraIbcClient set up the "ica"-related contracts

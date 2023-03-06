@@ -1,12 +1,12 @@
 export const wasm_path = {
-  core: "/home/andrey/Documents/Code/AngelProtocol/cosmos-smart-contracts/artifacts",
+  core: "/home/andrey/Documents/Code/cosmos-smart-contracts/cosmwasm/artifacts",
+  cw20: "/home/andrey/Documents/Code/cosmos-smart-contracts/test-suite/src/artifacts/subdao_cw20_token.wasm",
   junoswap:
-    "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/junoswap",
-  cw20: "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/subdao_cw20_token.wasm",
+    "/home/andrey/Documents/Code/cosmos-smart-contracts/test-suite/src/artifacts/junoswap",
   loopswap:
-    "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/loopswap",
+    "/home/andrey/Documents/Code/cosmos-smart-contracts/test-suite/src/artifacts/loopswap",
   astroport:
-    "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/astroport",
-  mock_vault: "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/mock-vault/artifacts",
-  cosmwasm: "/home/andrey/Documents/Code/AngelProtocol/cosmos-test-suite/src/artifacts/cosmwasm",
+    "/home/andrey/Documents/Code/cosmos-smart-contracts/test-suite/src/artifacts/astroport",
+  mock_vault: "/home/andrey/Documents/Code/cosmos-smart-contracts/test-suite/src/mock-vault/artifacts",
+  cwPlus: "/home/andrey/Documents/Code/cosmos-smart-contracts/test-suite/src/artifacts/cwPlus",
 };

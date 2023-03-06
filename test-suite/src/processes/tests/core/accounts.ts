@@ -502,7 +502,8 @@ export async function testCreateEndowment(
     proposerWallet,
     cw3ReviewTeam,
     accounts,
-    "unknown",
+    "unknown refId",
+    "unknown meta",
     msg,
     members,
   );
@@ -590,51 +591,8 @@ export async function testQueryAccountsState(
     state: { id: endowmentId },
   });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsTransactions(
-  juno: SigningCosmWasmClient,
-  accountsContract: string,
-  sender: string | undefined,
-  recipient: string | undefined,
-  asset_info: any,
-): Promise<void> {
-  process.stdout.write("Test - Query Accounts Transactions");
-  const result = await juno.queryContractSmart(accountsContract, {
-    get_tx_records: {
-      sender,
-      recipient,
-      asset_info,
-    },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsBalance(
-  juno: SigningCosmWasmClient,
-  accountsContract: string,
-  endowmentId: number,
-): Promise<void> {
-  process.stdout.write(`Test - Query Accounts - Endowment(#${endowmentId}) Balance\n`);
-  const result = await juno.queryContractSmart(accountsContract, {
-    balance: { id: endowmentId },
-  });
-
-  console.log(result);
-  console.log("Tokens on hand:", result.tokens_on_hand);
-  console.log("Oneoff locked:", result.oneoff_locked);
-  console.log("Oneoff liquid:", result.oneoff_liquid);
-  console.log("strategies locked:", result.strategies_locked);
-  console.log("strategies liquid:", result.strategies_liquid);
-  // console.log(result);
-  console.log("Locked invested:", result.invested_locked);
-  console.log("Liquid invested:", result.invested_liquid);
-  console.log("Locked TOH:", result.tokens_on_hand.locked);
-  console.log("Liquid TOH:", result.tokens_on_hand.liquid);
+  console.log("Endowment State:", result);
+  console.log(" > Tokens on hand:", JSON.stringify(result.tokens_on_hand));
   console.log(chalk.green(" Passed!"));
 }
 
@@ -658,7 +616,7 @@ export async function testQueryAccountsEndowmentByProposalLink(
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment By Proposal Link");
   const result: any = await juno.queryContractSmart(accounts, {
-    endowment_by_proposal_link: {
+    endowment_list: {
       proposal_link,
     },
   });
@@ -666,7 +624,6 @@ export async function testQueryAccountsEndowmentByProposalLink(
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
-
 
 export async function testQueryAccountsEndowment(
   juno: SigningCosmWasmClient,
@@ -676,20 +633,6 @@ export async function testQueryAccountsEndowment(
   process.stdout.write("Test - Query Accounts Endowment\n");
   const result = await juno.queryContractSmart(accountsContract, {
     endowment: { id: endowmentId },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsProfile(
-  juno: SigningCosmWasmClient,
-  accountsContract: string,
-  endowmentId: number,
-): Promise<void> {
-  process.stdout.write("Test - Query Accounts Profile");
-  const result = await juno.queryContractSmart(accountsContract, {
-    get_profile: { id: endowmentId },
   });
 
   console.log(result);

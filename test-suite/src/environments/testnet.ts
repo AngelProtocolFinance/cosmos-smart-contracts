@@ -561,6 +561,7 @@ export async function startMigrateCore(): Promise<void> {
     cw3ReviewTeam,
     swapRouter,
     settingsController,
+    donationMatching,
     giftcards,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );

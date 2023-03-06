@@ -21,6 +21,7 @@ export async function migrateCore(
   cw3ReviewTeam: string,
   swapRouter: string,
   settingsController: string,
+  donationMatching: string,
   giftcards: string,
   vaultContracts: string[],
 ): Promise<void> {

@@ -11,12 +11,9 @@ import {
   testRejectUnapprovedDonations,
   testApTeamChangesEndowmentSettings,
   testSendDonationToEndowment,
-  testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testQueryAccountsProfile,
   testQueryAccountsState,
-  testQueryAccountsTransactions,
   testCharityCanHarvestWithdrawFee,
   testCharityCanHarvestAUMFee,
   testApproveInactiveEndowment,
@@ -457,14 +454,6 @@ export async function testExecute(
   //   actors.apTeam.addr,
   //   vaultLocked1,
   // );
-  // await testVaultReinvestToLocked(
-  //   actors.charity1.client,
-  //   actors.charity1.addr,
-  //   accounts,
-  //   endowId1,
-  //   "1000000",
-  //   vaultLiquid1,
-  // );
   // await testEndowmentCanWithdrawLiquid(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -597,16 +586,15 @@ export async function testExecute(
 
 
   // Test query
-  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-  // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
-  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
-  // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
+  await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
+  await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
+  await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
 
   // await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
   // await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, endowId1);

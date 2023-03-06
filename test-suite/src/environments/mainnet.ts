@@ -40,7 +40,6 @@ let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
 let donationMatching: string;
-let endowmentIDs: number[];
 let swapRouter: string;  // FIXME: Add the scripts to initialize this variable.
 let settingsController: string;  // FIXME: Add the scripts to initialize this variable.
 let giftcards: string;
@@ -78,7 +77,6 @@ async function initialize() {
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
-  endowmentIDs = [...config.contracts.endowmentIDs];
   // members = [...config.members];
   // tcaMembers = [];
   giftcards = config.contracts.giftcards;
@@ -269,8 +267,9 @@ export async function startMigrateCore(): Promise<void> {
     cw3ApTeam,
     cw4GrpReviewTeam,
     cw3ReviewTeam,
-    swapRouter,<<<<<<< RC-v2
+    swapRouter,
     settingsController,
+    donationMatching,
     giftcards,
     [],
   );
@@ -322,7 +321,6 @@ export async function startTests(): Promise<void> {
     accounts,
     settingsController,
     donationMatching,
-    endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,
     cw4GrpReviewTeam,
