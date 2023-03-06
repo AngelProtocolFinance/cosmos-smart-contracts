@@ -1,10 +1,9 @@
+use cosmwasm_schema::cw_serde;
 use cw_storage_plus::Item;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub gov_contract: Addr,   // HALO gov address
     pub halo_token: Addr,     // HALO token address

@@ -14,29 +14,34 @@ let registrar: string;
 
 // setup charity endowments
 export async function setupGiftcards(
-  networkInfo: any,
-  juno: SigningCosmWasmClient,
-  apTeamWallet: DirectSecp256k1HdWallet,
-  keeper: string, 
-  registrar: string,
+    _networkInfo: any,
+    juno: SigningCosmWasmClient,
+    apTeamWallet: DirectSecp256k1HdWallet,
+    keeper: string,
+    _registrar: string
 ): Promise<void> {
-  networkInfo = networkInfo;
-  apTeam = apTeamWallet;
-  registrar = registrar;
+    apTeam = apTeamWallet;
 
-  const apTeamAddr = await getWalletAddress(apTeam);
-  
-  // store wasm 
-  process.stdout.write("Uploading Gift Cards Wasm");
-  const giftcardsCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/gift_cards.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${giftcardsCodeId}`);
-  
-  // instantiate gift card contract
-  process.stdout.write("Instantiating Gift Cards contract");
-  const giftcardsResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, giftcardsCodeId, { 
-    registrar_contract: registrar,
-    keeper,
-  }, "ap-GiftCards");
-  const giftcards = giftcardsResult.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${giftcards}`);
+    const apTeamAddr = await getWalletAddress(apTeam);
+
+    // store wasm
+    process.stdout.write("Uploading Gift Cards Wasm");
+    const giftcardsCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/gift_cards.wasm`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${giftcardsCodeId}`);
+
+    // instantiate gift card contract
+    process.stdout.write("Instantiating Gift Cards contract");
+    const giftcardsResult = await instantiateContract(
+        juno,
+        apTeamAddr,
+        apTeamAddr,
+        giftcardsCodeId,
+        {
+            registrar_contract: registrar,
+            keeper,
+        },
+        "ap-GiftCards"
+    );
+    const giftcards = giftcardsResult.contractAddress as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${giftcards}`);
 }

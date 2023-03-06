@@ -8,7 +8,7 @@ use cw_asset::AssetInfoBase as CwAssetInfoBase;
 use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
+use angel_core::msgs::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 use terraswap::querier::query_pair_info_from_pair;
 
 use crate::executers;

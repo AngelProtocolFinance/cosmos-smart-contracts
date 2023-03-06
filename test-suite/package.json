@@ -1,4 +1,26 @@
 {
+  "name": "",
+  "description": "Typescript test suite for all integration (and day-to-day management support) platform for Angel Protocol's CosmWasm smart contracts.",
+  "version": "2.1.0",
+  "license": "GPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngelProtocolFinance/cosmwasm-smart-contracts.git"
+  },
+  "eslintConfig": {
+    "extends": [
+      "prettier"
+    ],
+    "plugins": [
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": "error",
+      "no-unused-vars": 0,
+      "@typescript-eslint/no-unused-vars": 0,
+      "@typescript-eslint/no-explicit-any": 0
+    }
+  },
   "scripts": {
     "test": "ts-node ./src/index.ts",
     "test:local-setup-ibc": "npm run test --mode=local_setup_ibc",
@@ -35,8 +57,8 @@
     "test:mainnet-setup-halo": "npm run test --mode=mainnet_setup_halo",
     "test:mainnet-migrate-core": "npm run test --mode=mainnet_migrate_core",
     "test:mainnet-migrate-halo": "npm run test --mode=mainnet_migrate_halo",
-    "lint": "./node_modules/.bin/eslint .",
-    "lint:fix": "npm run lint --fix"
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "format": "yarn run prettier --write 'src/**/*.{ts,tsx}'"
   },
   "dependencies": {
     "@confio/relayer": "^0.7.0",
@@ -61,6 +83,7 @@
     "@typescript-eslint/eslint-plugin": "^4.31.0",
     "@typescript-eslint/parser": "^4.31.0",
     "eslint": "^7.32.0",
+    "prettier": "2.8.4",
     "sinon": "^14.0.1",
     "ts-node": "^10.2.1",
     "tslib": "^2.3.1",

@@ -1,7 +1,7 @@
 use crate::state::{pair_key, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::ExecuteMsg as AccountsExecuteMsg;
-use angel_core::messages::dexs::{
+use angel_core::msgs::accounts::ExecuteMsg as AccountsExecuteMsg;
+use angel_core::msgs::dexs::{
     InfoResponse, JunoSwapExecuteMsg, JunoSwapQueryMsg, LoopExecuteMsg, TokenSelect,
 };
 use angel_core::structs::{AccountType, Pair, SwapOperation};
@@ -76,7 +76,7 @@ pub fn assert_minium_receive(
     prev_balance: Uint128,
     minimum_receive: Uint128,
 ) -> Result<Response, ContractError> {
-    let receiver_balance = asset_info.query_balance(&deps.querier, &env.contract.address)?;
+    let receiver_balance = asset_info.query_balance(&deps.querier, env.contract.address)?;
     let swap_amount = receiver_balance.checked_sub(prev_balance)?;
 
     if swap_amount < minimum_receive {
@@ -136,7 +136,7 @@ pub fn execute_swap_operation(
             };
 
             let offer_addr = match offer_asset_info {
-                AssetInfoBase::Native(denom) => denom.to_string(),
+                AssetInfoBase::Native(denom) => denom,
                 AssetInfoBase::Cw20(addr) => addr.to_string(),
                 _ => return Err(ContractError::InvalidInputs {}),
             };

@@ -1,8 +1,8 @@
 [package]
 name = "gift-cards"
 version = "0.4.0"
-authors = ["Angel Ventures LLC"]
-edition = "2018"
+authors.workspace = true
+edition.workspace = true
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -21,14 +21,17 @@ library = []
 
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
-cosmwasm-std = "1.0.0"
-cosmwasm-schema = "1.0.0"
-cw-storage-plus = "0.13.4"
-cw2 = "0.13.4"
-cw20 = "0.13.4"
+
+cw2 = "1.0.1"
+cw20 = "1.0.1"
+cosmwasm-std = "1.2.1"
+cosmwasm-schema = "1.2.1"
+cw-storage-plus = "1.0.1"
+cw-asset = "3.0.0"
+
 schemars = "0.8.10"
-serde = { version = "1.0.137", default-features = false, features = ["derive"] }
-cw-asset = "2.2.0"
+serde = { version = "1.0.145", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.31" }
 
 [dev-dependencies]
-cw-multi-test = "0.13.4"
+cw-multi-test = "0.16.2"

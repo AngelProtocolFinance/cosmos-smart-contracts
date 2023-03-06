@@ -6,10 +6,10 @@ use cw2::{get_contract_version, set_contract_version};
 use cw20::{Cw20ReceiveMsg, Denom};
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{
+use angel_core::msgs::vault::InfoResponse;
+use angel_core::msgs::vault::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg, WasmSwapQueryMsg,
 };
-use angel_core::responses::vault::InfoResponse;
 
 use crate::executers;
 use crate::queriers;

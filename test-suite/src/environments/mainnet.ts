@@ -40,9 +40,8 @@ let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
 let donationMatching: string;
-let endowmentIDs: number[];
-let swapRouter: string;  // FIXME: Add the scripts to initialize this variable.
-let settingsController: string;  // FIXME: Add the scripts to initialize this variable.
+let swapRouter: string; // FIXME: Add the scripts to initialize this variable.
+let settingsController: string; // FIXME: Add the scripts to initialize this variable.
 let giftcards: string;
 let apTreasury: string;
 
@@ -60,134 +59,131 @@ let haloVesting: string;
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
-  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: config.networkInfo.walletPrefix });
-  apTeamAccount = await getWalletAddress(apTeam);
-  // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
-  apTreasuryAccount = config.mnemonicKeys.apTreasury;
-  keeperAccount = config.mnemonicKeys.keeper;
+    apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, {
+        prefix: config.networkInfo.walletPrefix,
+    });
+    apTeamAccount = await getWalletAddress(apTeam);
+    // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
+    apTreasuryAccount = config.mnemonicKeys.apTreasury;
+    keeperAccount = config.mnemonicKeys.keeper;
 
-  console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
-  console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);
-  console.log(`Using ${chalk.cyan(keeperAccount)} as AWS Keeper`);
+    console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
+    console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);
+    console.log(`Using ${chalk.cyan(keeperAccount)} as AWS Keeper`);
 
-  registrar = config.contracts.registrar;
-  accounts = config.contracts.accounts;
-  donationMatching = config.contracts.donationMatching;
-  cw4GrpApTeam = config.contracts.cw4GrpApTeam;
-  cw3ApTeam = config.contracts.cw3ApTeam;
-  cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
-  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
-  indexFund = config.contracts.indexFund;
-  endowmentIDs = [...config.contracts.endowmentIDs];
-  // members = [...config.members];
-  // tcaMembers = [];
-  giftcards = config.contracts.giftcards;
+    registrar = config.contracts.registrar;
+    accounts = config.contracts.accounts;
+    donationMatching = config.contracts.donationMatching;
+    cw4GrpApTeam = config.contracts.cw4GrpApTeam;
+    cw3ApTeam = config.contracts.cw3ApTeam;
+    cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
+    cw3ReviewTeam = config.contracts.cw3ReviewTeam;
+    indexFund = config.contracts.indexFund;
+    // members = [...config.members];
+    // tcaMembers = [];
+    giftcards = config.contracts.giftcards;
 
-  console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
-  console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
-  console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
-  console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
-  console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
-  console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
-  console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
+    console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
+    console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
+    console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
+    console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+    console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
+    console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
+    console.log(`Using ${chalk.cyan(giftcards)} as Gift Cards`);
 
-  haloAirdrop = config.halo.airdrop_contract;
-  haloCollector = config.halo.collector_contract;
-  haloCommunity = config.halo.community_contract;
-  haloDistributor = config.halo.distributor_contract;
-  haloGov = config.halo.gov_contract;
-  haloGovHodler = config.halo.gov_hodler_contract;
-  haloStaking = config.halo.staking_contract;
-  haloVesting = config.halo.vesting_contract;
+    haloAirdrop = config.halo.airdrop_contract;
+    haloCollector = config.halo.collector_contract;
+    haloCommunity = config.halo.community_contract;
+    haloDistributor = config.halo.distributor_contract;
+    haloGov = config.halo.gov_contract;
+    haloGovHodler = config.halo.gov_hodler_contract;
+    haloStaking = config.halo.staking_contract;
+    haloVesting = config.halo.vesting_contract;
 
-  console.log(`Using ${chalk.cyan(haloAirdrop)} as HALO airdrop`);
-  console.log(`Using ${chalk.cyan(haloCollector)} as HALO collector`);
-  console.log(`Using ${chalk.cyan(haloCommunity)} as HALO community`);
-  console.log(`Using ${chalk.cyan(haloDistributor)} as HALO distributor`);
-  console.log(`Using ${chalk.cyan(haloGov)} as HALO gov`);
-  console.log(`Using ${chalk.cyan(haloGovHodler)} as HALO gov hodler`);
-  console.log(`Using ${chalk.cyan(haloStaking)} as HALO staking`);
-  console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
+    console.log(`Using ${chalk.cyan(haloAirdrop)} as HALO airdrop`);
+    console.log(`Using ${chalk.cyan(haloCollector)} as HALO collector`);
+    console.log(`Using ${chalk.cyan(haloCommunity)} as HALO community`);
+    console.log(`Using ${chalk.cyan(haloDistributor)} as HALO distributor`);
+    console.log(`Using ${chalk.cyan(haloGov)} as HALO gov`);
+    console.log(`Using ${chalk.cyan(haloGovHodler)} as HALO gov hodler`);
+    console.log(`Using ${chalk.cyan(haloStaking)} as HALO staking`);
+    console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
-  // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString(config.networkInfo.gasPrice) });
+    // setup client connection to the JUNO network
+    juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, {
+        gasPrice: GasPrice.fromString(config.networkInfo.gasPrice),
+    });
 }
 
 // -------------------------------------------------------------------------------------
 // setup contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupCore(): Promise<void> {
-  console.log(chalk.blue("\nMainNet juno-1"));
+    console.log(chalk.blue("\nMainNet juno-1"));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  await initialize();
+    // Initialize environment information
+    console.log(chalk.yellow("\nStep 1. Environment Info"));
+    await initialize();
 
-  // Setup contracts
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupCore(juno, apTeam, apTreasuryAccount, {
-    tax_rate: "0.2", // tax rate
-    threshold_absolute_percentage: "0.50", // threshold absolute percentage for "ap-cw3"
-    max_voting_period_height: 100000, // max voting period height for "ap-cw3"
-    fund_rotation: 10, // index fund rotation
-    fund_member_limit: 10, // fund member limit
-    funding_goal: "50000000", // funding goal
-    accepted_tokens: {
-      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
-      cw20: [],
-    }
-  });
+    // Setup contracts
+    console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+    await setupCore(juno, apTeam, apTreasuryAccount, {
+        tax_rate: "0.2", // tax rate
+        threshold_absolute_percentage: "0.50", // threshold absolute percentage for "ap-cw3"
+        max_voting_period_height: 100000, // max voting period height for "ap-cw3"
+        fund_rotation: 10, // index fund rotation
+        fund_member_limit: 10, // fund member limit
+        funding_goal: "50000000", // funding goal
+        accepted_tokens: {
+            native: ["ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034", "ujuno"],
+            cw20: [],
+        },
+    });
 }
 
 // -------------------------------------------------------------------------------------
 // setup new charity endowments in the Accounts contract
 // -------------------------------------------------------------------------------------
 export async function startSetupEndowments(): Promise<void> {
-  console.log(chalk.blue(`\nMainNet ${config.networkInfo.chainId}`));
+    console.log(chalk.blue(`\nMainNet ${config.networkInfo.chainId}`));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  await initialize();
+    // Initialize environment information
+    console.log(chalk.yellow("\nStep 1. Environment Info"));
+    await initialize();
 
-  // parse endowment JSON data
-  const endowmentData: Endowment[] = [];
-  jsonData.data.forEach((el) => {
-    const item: Endowment = el;
-    endowmentData.push(item);
-  });
+    // parse endowment JSON data
+    const endowmentData: Endowment[] = [];
+    jsonData.data.forEach((el) => {
+        const item: Endowment = el;
+        endowmentData.push(item);
+    });
 
-  // Setup endowments
-  console.log(chalk.yellow("\nStep 2. Endowments Setup"));
-  await setupEndowments(
-    config.networkInfo,
-    endowmentData,
-    apTeam,
-    cw3ReviewTeam,
-    accounts,
-    "0.5", // threshold absolute percentage for "charity-cw3"
-    604800, // 1 week max voting period time(unit: seconds) for "charity-cw3"
-  );
+    // Setup endowments
+    console.log(chalk.yellow("\nStep 2. Endowments Setup"));
+    await setupEndowments(
+        config.networkInfo,
+        endowmentData,
+        apTeam,
+        cw3ReviewTeam,
+        accounts,
+        "0.5", // threshold absolute percentage for "charity-cw3"
+        604800 // 1 week max voting period time(unit: seconds) for "charity-cw3"
+    );
 }
 
 // -------------------------------------------------------------------------------------
 // setup accessories contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupGiftcards(): Promise<void> {
-  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+    console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  await initialize();
+    // Initialize environment information
+    console.log(chalk.yellow("\nStep 1. Environment Info"));
+    await initialize();
 
-  // Setup contracts
-  console.log(chalk.yellow("\nStep 2. Gift Cards Contract Setup"));
-  await setupGiftcards(
-    config.networkInfo.chainId,
-    juno,
-    apTeam,
-    keeperAccount,
-    registrar    
-  );
+    // Setup contracts
+    console.log(chalk.yellow("\nStep 2. Gift Cards Contract Setup"));
+    await setupGiftcards(config.networkInfo.chainId, juno, apTeam, keeperAccount, registrar);
 }
 
 // -------------------------------------------------------------------------------------
@@ -251,29 +247,30 @@ export async function startSetupGiftcards(): Promise<void> {
 // migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateCore(): Promise<void> {
-  console.log(chalk.blue("\nMainNet Columbus-5"));
+    console.log(chalk.blue("\nMainNet Columbus-5"));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  await initialize();
+    // Initialize environment information
+    console.log(chalk.yellow("\nStep 1. Environment Info"));
+    await initialize();
 
-  // Migrate contracts
-  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-  await migrateCore(
-    juno,
-    apTeamAccount,
-    registrar,
-    indexFund,
-    accounts,
-    cw4GrpApTeam,
-    cw3ApTeam,
-    cw4GrpReviewTeam,
-    cw3ReviewTeam,
-    swapRouter,<<<<<<< RC-v2
-    settingsController,
-    giftcards,
-    [],
-  );
+    // Migrate contracts
+    console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+    await migrateCore(
+        juno,
+        apTeamAccount,
+        registrar,
+        indexFund,
+        accounts,
+        cw4GrpApTeam,
+        cw3ApTeam,
+        cw4GrpReviewTeam,
+        cw3ReviewTeam,
+        swapRouter,
+        settingsController,
+        donationMatching,
+        giftcards,
+        []
+    );
 }
 
 // -------------------------------------------------------------------------------------
@@ -306,34 +303,33 @@ export async function startMigrateCore(): Promise<void> {
 // start test
 // -------------------------------------------------------------------------------------
 export async function startTests(): Promise<void> {
-  console.log(chalk.blue(`\nMainNet ${config.networkInfo.chainId}`));
+    console.log(chalk.blue(`\nMainNet ${config.networkInfo.chainId}`));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  await initialize();
+    // Initialize environment information
+    console.log(chalk.yellow("\nStep 1. Environment Info"));
+    await initialize();
 
-  // Test query
-  await testExecute(
-    juno,
-    apTeam,
-    apTeamAccount,
-    registrar,
-    indexFund,
-    accounts,
-    settingsController,
-    donationMatching,
-    endowmentIDs[0],
-    cw4GrpApTeam,
-    cw3ApTeam,
-    cw4GrpReviewTeam,
-    cw3ReviewTeam,
-    haloAirdrop,
-    haloCollector,
-    haloCommunity,
-    haloDistributor,
-    haloGov,
-    haloStaking,
-    haloVesting,
-    giftcards,
-  );
+    // Test query
+    await testExecute(
+        juno,
+        apTeam,
+        apTeamAccount,
+        registrar,
+        indexFund,
+        accounts,
+        settingsController,
+        donationMatching,
+        cw4GrpApTeam,
+        cw3ApTeam,
+        cw4GrpReviewTeam,
+        cw3ReviewTeam,
+        haloAirdrop,
+        haloCollector,
+        haloCommunity,
+        haloDistributor,
+        haloGov,
+        haloStaking,
+        haloVesting,
+        giftcards
+    );
 }

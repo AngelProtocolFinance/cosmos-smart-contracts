@@ -1,4 +1,5 @@
 // Contains mock functionality to test multi-contract scenarios
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
@@ -6,18 +7,15 @@ use cosmwasm_std::{
     SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::responses::vault::InfoResponse;
+use angel_core::msgs::registrar::{ConfigResponse, EndowmentListResponse};
+use angel_core::msgs::vault::InfoResponse;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Info {},
     Balance { address: String },
@@ -83,7 +81,7 @@ pub(crate) fn balances_to_map(
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct PriceStruct {
     base: String,
     quote: String,
@@ -170,8 +168,9 @@ impl WasmMockQuerier {
                             cw20: vec![],
                         },
                         applications_review: "applications-review".to_string(),
-                        applications_impact_review: "applications_impact_review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

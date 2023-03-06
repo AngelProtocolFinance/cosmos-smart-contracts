@@ -1,6 +1,6 @@
 use crate::state::{read_funds, CONFIG, FUND, STATE};
-use angel_core::messages::index_fund::{DepositMsg, ExecuteMsg::Deposit};
-use angel_core::responses::index_fund::*;
+use angel_core::msgs::index_fund::*;
+use angel_core::msgs::index_fund::{DepositMsg, ExecuteMsg::Deposit};
 use cosmwasm_std::{to_binary, Coin, CosmosMsg, Decimal, Deps, Env, StdResult, Uint128, WasmMsg};
 use cw2::get_contract_version;
 

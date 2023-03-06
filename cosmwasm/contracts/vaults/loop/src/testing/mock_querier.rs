@@ -1,4 +1,5 @@
 // Contains mock functionality to test multi-contract scenarios
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
@@ -6,21 +7,18 @@ use cosmwasm_std::{
     SystemResult, Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use terraswap::asset::{AssetInfo, PairInfo};
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
+use angel_core::msgs::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
 };
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Endowment { id: u32 },
     Balance { address: String },
@@ -89,7 +87,7 @@ pub(crate) fn balances_to_map(
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct PriceStruct {
     base: String,
     quote: String,
@@ -163,7 +161,7 @@ impl WasmMockQuerier {
                     // Simulating the `registrar::QueryMsg::Config {}`
                     QueryMsg::Config {} => match contract_addr.as_str() {
                         "locked_sibling_vault" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&angel_core::responses::vault::ConfigResponse {
+                            to_binary(&angel_core::msgs::vault::ConfigResponse {
                                 owner: "owner".to_string(),
                                 acct_type: angel_core::structs::AccountType::Locked,
                                 sibling_vault: MOCK_CONTRACT_ADDR.to_string(),
@@ -188,7 +186,7 @@ impl WasmMockQuerier {
                             .unwrap(),
                         )),
                         "liquid_sibling_vault" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&angel_core::responses::vault::ConfigResponse {
+                            to_binary(&angel_core::msgs::vault::ConfigResponse {
                                 owner: "owner".to_string(),
                                 acct_type: angel_core::structs::AccountType::Liquid,
                                 sibling_vault: MOCK_CONTRACT_ADDR.to_string(),
@@ -236,6 +234,8 @@ impl WasmMockQuerier {
                                 },
                                 applications_review: "applications-review".to_string(),
                                 swaps_router: None,
+                                axelar_gateway: "axelar-gateway".to_string(),
+                                axelar_ibc_channel: "channel-1".to_string(),
                             })
                             .unwrap(),
                         )),

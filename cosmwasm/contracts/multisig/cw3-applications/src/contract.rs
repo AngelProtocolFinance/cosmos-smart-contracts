@@ -6,14 +6,14 @@ use crate::state::{
     next_id, Ballot, Config, Proposal, ProposalType, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
 use angel_core::errors::multisig::ContractError;
-use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
-use angel_core::messages::accounts::{
+use angel_core::msgs::accounts::EndowmentDetailsResponse;
+use angel_core::msgs::accounts::QueryMsg::Endowment as EndowmentDetails;
+use angel_core::msgs::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg as AccountsExecuteMsg,
 };
-use angel_core::messages::cw3_multisig::QueryMsg;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::responses::accounts::EndowmentDetailsResponse;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::cw3_multisig::QueryMsg;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::structs::EndowmentType;
 use angel_core::utils::validate_deposit_fund;
 use cosmwasm_std::{
@@ -425,8 +425,10 @@ pub fn execute_propose_application(
         expires,
         msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: accounts_contract,
-            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::CreateEndowment(msg))
-                .unwrap(),
+            msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::CreateEndowment(
+                msg,
+            ))
+            .unwrap(),
             funds: vec![],
         })],
         status: Status::Open,

@@ -7,7 +7,7 @@ use crate::state::{
     Config, State, CONFIG, STATE, USER_LAST_CLAIMED_FEE_TIMESTAMP, WEEKLY_TOKEN_DISTRIBUTION,
 };
 use angel_core::cw900_querier::query_token_balance;
-use angel_core::messages::fee_distributor::{
+use angel_core::msgs::fee_distributor::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse, StateResponse,
 };
 use cosmwasm_std::entry_point;

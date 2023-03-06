@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, migrate, query};
 use crate::testing::mock_querier::mock_dependencies;
 use angel_core::errors::core::ContractError;
-use angel_core::messages::router::{
+use angel_core::msgs::swap_router::{
     ConfigResponse,
     Cw20HookMsg,
     ExecuteMsg,
@@ -16,18 +16,23 @@ use cosmwasm_std::{from_binary, to_binary, Addr, CosmosMsg, StdError, SubMsg, Ui
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfo;
 
+const ACCOUNTS_CONTRACT: &str = "accounts_contract_addr";
+const REGISTRAR_CONTRACT: &str = "registrar_contract_addr";
+const USDC: &str = "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4";
+const USDT: &str = "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF";
+
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![],
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
 
     // we can just call .unwrap() to assert this was a success
     let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -35,19 +40,19 @@ fn proper_initialization() {
     // it worked, let's query the state
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), env, QueryMsg::Config {}).unwrap()).unwrap();
-    assert_eq!("apaccountscontract", config.accounts_contract.as_str());
+    assert_eq!(ACCOUNTS_CONTRACT, config.accounts_contract.as_str());
 }
 
 #[test]
 fn execute_swap_operations() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![
             Pair {
                 assets: [
-                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Native(USDC.to_string()),
                     AssetInfo::Cw20(Addr::unchecked("asset0001")),
                 ],
                 contract_address: Addr::unchecked("loopswap-contract"),
@@ -70,12 +75,13 @@ fn execute_swap_operations() {
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
 
     // we can just call .unwrap() to assert this was a success
     let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
+        strategy_key: None,
         operations: vec![],
         minimum_receive: None,
         endowment_id: 1,
@@ -83,18 +89,19 @@ fn execute_swap_operations() {
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     let res = execute(deps.as_mut(), env, info, msg).unwrap_err();
     assert_eq!(res, ContractError::MustProvideOperations {});
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
+        strategy_key: None,
         operations: vec![
             SwapOperation::Loop {
-                offer_asset_info: AssetInfo::Native("usdt".to_string()),
-                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
+                offer_asset_info: AssetInfo::Native(USDT.to_string()),
+                ask_asset_info: AssetInfo::Cw20(Addr::unchecked(USDC)),
             },
             SwapOperation::JunoSwap {
-                offer_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
+                offer_asset_info: AssetInfo::Cw20(Addr::unchecked(USDC)),
                 ask_asset_info: AssetInfo::Native("ujuno".to_string()),
             },
             SwapOperation::JunoSwap {
@@ -108,7 +115,7 @@ fn execute_swap_operations() {
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
     assert_eq!(
         res.messages,
@@ -118,8 +125,8 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: SwapOperation::Loop {
-                        offer_asset_info: AssetInfo::Native("usdt".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
+                        offer_asset_info: AssetInfo::Native(USDT.to_string()),
+                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked(USDC)),
                     },
                 })
                 .unwrap(),
@@ -129,7 +136,7 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
+                        offer_asset_info: AssetInfo::Cw20(Addr::unchecked(USDC)),
                         ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                     },
                 })
@@ -175,9 +182,10 @@ fn execute_swap_operations() {
         sender: "vault-1".into(),
         amount: Uint128::from(1000000u128),
         msg: to_binary(&Cw20HookMsg::ExecuteSwapOperations {
+            strategy_key: None,
             operations: vec![
                 SwapOperation::JunoSwap {
-                    offer_asset_info: AssetInfo::Native("usdc".to_string()),
+                    offer_asset_info: AssetInfo::Native(USDC.to_string()),
                     ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                 },
                 SwapOperation::JunoSwap {
@@ -207,7 +215,7 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Native("usdc".to_string()),
+                        offer_asset_info: AssetInfo::Native(USDC.to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                     },
                 })
@@ -257,12 +265,12 @@ fn test_execute_swap_operation() {
 
     // Instantiate the contract
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![
             Pair {
                 assets: [
-                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Native(USDC.to_string()),
                     AssetInfo::Cw20(Addr::unchecked("asset0001")),
                 ],
                 contract_address: Addr::unchecked("loopswap-contract"),
@@ -283,7 +291,7 @@ fn test_execute_swap_operation() {
             },
             Pair {
                 assets: [
-                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Native(USDC.to_string()),
                     AssetInfo::Cw20(Addr::unchecked("asset0000")),
                 ],
                 contract_address: Addr::unchecked("junoswap-contract"),
@@ -292,7 +300,7 @@ fn test_execute_swap_operation() {
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
 
     // This operation should be called by contract itself
@@ -303,7 +311,7 @@ fn test_execute_swap_operation() {
         info,
         ExecuteMsg::ExecuteSwapOperation {
             operation: SwapOperation::Loop {
-                offer_asset_info: cw_asset::AssetInfoBase::Native("usdc".to_string()),
+                offer_asset_info: cw_asset::AssetInfoBase::Native(USDC.to_string()),
                 ask_asset_info: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("asset0001")),
             },
         },
@@ -319,7 +327,7 @@ fn test_execute_swap_operation() {
         info,
         ExecuteMsg::ExecuteSwapOperation {
             operation: SwapOperation::Loop {
-                offer_asset_info: cw_asset::AssetInfoBase::Native("usdc".to_string()),
+                offer_asset_info: cw_asset::AssetInfoBase::Native(USDC.to_string()),
                 ask_asset_info: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("asset0001")),
             },
         },
@@ -334,7 +342,7 @@ fn test_execute_swap_operation() {
         info,
         ExecuteMsg::ExecuteSwapOperation {
             operation: SwapOperation::JunoSwap {
-                offer_asset_info: cw_asset::AssetInfoBase::Native("usdc".to_string()),
+                offer_asset_info: cw_asset::AssetInfoBase::Native(USDC.to_string()),
                 ask_asset_info: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("asset0000")),
             },
         },
@@ -348,8 +356,8 @@ fn query_buy_with_routes() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![
             Pair {
                 assets: [
@@ -360,7 +368,7 @@ fn query_buy_with_routes() {
             },
             Pair {
                 assets: [
-                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Native(USDC.to_string()),
                     AssetInfo::Cw20(Addr::unchecked("asset0000")),
                 ],
                 contract_address: Addr::unchecked("contract-2"),
@@ -369,7 +377,7 @@ fn query_buy_with_routes() {
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
 
     // we can just call .unwrap() to assert this was a success
     let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -395,7 +403,7 @@ fn query_buy_with_routes() {
             },
             SwapOperation::JunoSwap {
                 offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0000")),
-                ask_asset_info: AssetInfo::Native("usdc".to_string()),
+                ask_asset_info: AssetInfo::Native(USDC.to_string()),
             },
         ],
     };
@@ -415,7 +423,7 @@ fn assert_minimum_receive_native_token() {
     let mut deps = mock_dependencies(&[]);
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     // success
     let msg = ExecuteMsg::AssertMinimumReceive {
         asset_info: AssetInfo::Native("ujuno".to_string()),
@@ -444,7 +452,7 @@ fn assert_minimum_receive_token() {
     let mut deps = mock_dependencies(&[]);
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     // success
     let msg = ExecuteMsg::AssertMinimumReceive {
         asset_info: AssetInfo::Cw20(Addr::unchecked("token0000")),
@@ -474,12 +482,12 @@ fn test_update_pairs() {
 
     // Instantiate the contract
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![],
     };
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
     // Only registrar_config.owner can update the pairs
@@ -503,12 +511,12 @@ fn test_migrate() {
 
     // Instantiate the contract
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![],
     };
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
     // Try to migrate
@@ -522,12 +530,12 @@ fn test_send_swap_receipt() {
 
     // Instantiate the contract
     let msg = InstantiateMsg {
-        accounts_contract: Addr::unchecked("apaccountscontract"),
-        registrar_contract: Addr::unchecked("apregistrarcontract"),
+        accounts_contract: Addr::unchecked(ACCOUNTS_CONTRACT),
+        registrar_contract: Addr::unchecked(REGISTRAR_CONTRACT),
         pairs: vec![
             Pair {
                 assets: [
-                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Native(USDC.to_string()),
                     AssetInfo::Cw20(Addr::unchecked("asset0001")),
                 ],
                 contract_address: Addr::unchecked("loopswap-contract"),
@@ -548,7 +556,7 @@ fn test_send_swap_receipt() {
             },
             Pair {
                 assets: [
-                    AssetInfo::Native("usdc".to_string()),
+                    AssetInfo::Native(USDC.to_string()),
                     AssetInfo::Cw20(Addr::unchecked("asset0000")),
                 ],
                 contract_address: Addr::unchecked("junoswap-contract"),
@@ -557,7 +565,7 @@ fn test_send_swap_receipt() {
     };
 
     let env = mock_env();
-    let info = mock_info("apaccountscontract", &[]);
+    let info = mock_info(ACCOUNTS_CONTRACT, &[]);
     let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
 
     // This operation should be called by contract itself

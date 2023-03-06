@@ -4,8 +4,8 @@ use cosmwasm_std::{
 };
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
-use angel_core::responses::vault::{ConfigResponse, StateResponse};
+use angel_core::msgs::vault::{ConfigResponse, StateResponse};
+use angel_core::msgs::vault::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
 use angel_core::structs::{AccountType, SwapOperation};
 use cw20::{BalanceResponse, TokenInfoResponse};
 use cw_asset::AssetInfoBase;
@@ -376,8 +376,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "endowment-100".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 10 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 10 }).unwrap(),
     };
     let info = mock_info("halo-token", &[]);
     let err = execute(
@@ -393,8 +392,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "accounts-contract".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 1 }).unwrap(),
     };
     let info = mock_info("cw20-token-contract", &[]);
     let err = execute(
@@ -410,8 +408,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "accounts-contract".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 1 }).unwrap(),
     };
     let info = mock_info("halo-token", &[]);
     let res = execute(
@@ -506,7 +503,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "liquid_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("loop-lp-token", &[]);
@@ -529,7 +526,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "locked_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("non-lp-token", &[]);
@@ -546,7 +543,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "non_liquid_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("loop-lp-token", &[]);
@@ -563,7 +560,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "locked_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("loop-lp-token", &[]);
@@ -1103,7 +1100,7 @@ fn test_reinvest_to_locked_receive() {
     let reinvest_to_locked_msg = cw20::Cw20ReceiveMsg {
         sender: "sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::ReinvestToLocked {
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::ReinvestToLocked {
             endowment_id: 1_u32,
             amount: Uint128::from(100_u128),
         })
@@ -1130,7 +1127,7 @@ fn test_reinvest_to_locked_receive() {
     let reinvest_to_locked_msg = cw20::Cw20ReceiveMsg {
         sender: "liquid_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::ReinvestToLocked {
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::ReinvestToLocked {
             endowment_id: 1_u32,
             amount: Uint128::from(100_u128),
         })
@@ -1151,7 +1148,7 @@ fn test_reinvest_to_locked_receive() {
     let reinvest_to_locked_msg = cw20::Cw20ReceiveMsg {
         sender: "sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::ReinvestToLocked {
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::ReinvestToLocked {
             endowment_id: 1_u32,
             amount: Uint128::from(100_u128),
         })
@@ -1172,7 +1169,7 @@ fn test_reinvest_to_locked_receive() {
     let reinvest_to_locked_msg = cw20::Cw20ReceiveMsg {
         sender: "liquid_sibling_vault".to_string(),
         amount: Uint128::from(50_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::ReinvestToLocked {
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::ReinvestToLocked {
             endowment_id: 1_u32,
             amount: Uint128::from(100_u128),
         })
@@ -1201,7 +1198,7 @@ fn test_reinvest_to_locked_receive() {
     let reinvest_to_locked_msg = cw20::Cw20ReceiveMsg {
         sender: "liquid_sibling_vault".to_string(),
         amount: Uint128::from(50_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::ReinvestToLocked {
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::ReinvestToLocked {
             endowment_id: 1_u32,
             amount: Uint128::from(50_u128),
         })
@@ -1227,7 +1224,7 @@ fn test_reinvest_to_locked_receive() {
     let reinvest_to_locked_msg = cw20::Cw20ReceiveMsg {
         sender: "liquid_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::ReinvestToLocked {
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::ReinvestToLocked {
             endowment_id: 1_u32,
             amount: Uint128::from(100_u128),
         })
@@ -1498,7 +1495,7 @@ fn test_migrate() {
     let err = migrate(
         deps.as_mut(),
         mock_env(),
-        angel_core::messages::vault::MigrateMsg {},
+        angel_core::msgs::vault::MigrateMsg {},
     )
     .unwrap_err();
     assert_eq!(

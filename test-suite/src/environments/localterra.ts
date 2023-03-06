@@ -81,7 +81,6 @@ async function initialize() {
     console.log(`Using ${chalk.cyan(vaultLocked2)} as vault Locked #2`);
     console.log(`Using ${chalk.cyan(vaultLiquid2)} as vault Liquid #2`);
 
-
     astroportTokenCode = localterra.astroport.astroport_token_code;
     astroportPairCode = localterra.astroport.astroport_pair_code;
     astroportFactory = localterra.astroport.astroport_factory;
@@ -110,41 +109,19 @@ async function initialize() {
     console.log(`Using ${chalk.cyan(astroportGenerator)} as Astroport Generator contract`);
     console.log(`Using ${chalk.cyan(astroportRouter)} as Astroport Router contract`);
     console.log(`Using ${chalk.cyan(astroTokenContract)} as Astroport ASTRO Token`);
-    console.log(
-        `Using ${chalk.cyan(usdcUsdtPair)} as Astroport USDC/USDT Swap Pair`
-    );
-    console.log(
-        `Using ${chalk.cyan(usdcUsdtPairLpToken)} as Astroport USDC/USDT Swap Pair LP Token`
-    );
+    console.log(`Using ${chalk.cyan(usdcUsdtPair)} as Astroport USDC/USDT Swap Pair`);
+    console.log(`Using ${chalk.cyan(usdcUsdtPairLpToken)} as Astroport USDC/USDT Swap Pair LP Token`);
     console.log(`Using ${chalk.cyan(usdcUsdtPairUsdcLiquidity)} as Astroport USDC/USDT Pair USDC liquidity`);
-    console.log(
-        `Using ${chalk.cyan(usdcUsdtPairUsdtLiquidity)} as Astroport USDC/USDT Pair USDT liquidity`
-    );
+    console.log(`Using ${chalk.cyan(usdcUsdtPairUsdtLiquidity)} as Astroport USDC/USDT Pair USDT liquidity`);
 
-    console.log(
-        `Using ${chalk.cyan(lunaAstroPair)} as Astroport Luna/ASTRO Swap Pair`
-    );
-    console.log(
-        `Using ${chalk.cyan(lunaAstroPairLpToken)} as Astroport Luna/ASTRO Swap Pair LP Token`
-    );
-    console.log(
-        `Using ${chalk.cyan(lunaUsdcPair)} as Astroport Luna/USDC Swap Pair`
-    );
-    console.log(
-        `Using ${chalk.cyan(lunaUsdcPairLpToken)} as Astroport Luna/USDC Swap Pair LP Token`
-    );
-    console.log(
-        `Using ${chalk.cyan(lunaUsdtPair)} as Astroport Luna/USDT Swap Pair`
-    );
-    console.log(
-        `Using ${chalk.cyan(lunaUsdtPairLpToken)} as Astroport Luna/USDT Swap Pair LP Token`
-    );
-    console.log(
-        `Using ${chalk.cyan(astroUsdcPair)} as Astroport ASTRO/USDC Swap Pair`
-    );
-    console.log(
-        `Using ${chalk.cyan(astroUsdcPairLpToken)} as Astroport ASTRO/USDC Swap Pair LP Token`
-    );
+    console.log(`Using ${chalk.cyan(lunaAstroPair)} as Astroport Luna/ASTRO Swap Pair`);
+    console.log(`Using ${chalk.cyan(lunaAstroPairLpToken)} as Astroport Luna/ASTRO Swap Pair LP Token`);
+    console.log(`Using ${chalk.cyan(lunaUsdcPair)} as Astroport Luna/USDC Swap Pair`);
+    console.log(`Using ${chalk.cyan(lunaUsdcPairLpToken)} as Astroport Luna/USDC Swap Pair LP Token`);
+    console.log(`Using ${chalk.cyan(lunaUsdtPair)} as Astroport Luna/USDT Swap Pair`);
+    console.log(`Using ${chalk.cyan(lunaUsdtPairLpToken)} as Astroport Luna/USDT Swap Pair LP Token`);
+    console.log(`Using ${chalk.cyan(astroUsdcPair)} as Astroport ASTRO/USDC Swap Pair`);
+    console.log(`Using ${chalk.cyan(astroUsdcPairLpToken)} as Astroport ASTRO/USDC Swap Pair LP Token`);
 }
 
 // -------------------------------------------------------------------------------------
@@ -198,7 +175,6 @@ export async function startSetupAstroportVaults(): Promise<void> {
     );
 }
 
-
 // -------------------------------------------------------------------------------------
 // Test Astroport-vault contract
 // -------------------------------------------------------------------------------------
@@ -230,6 +206,6 @@ export async function startTestsAstroportVault(): Promise<void> {
         usdcUsdtPair,
         usdcUsdtPairLpToken,
         usdcUsdtPairUsdcLiquidity,
-        usdcUsdtPairUsdtLiquidity,
+        usdcUsdtPairUsdtLiquidity
     );
 }

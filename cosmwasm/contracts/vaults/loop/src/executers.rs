@@ -8,13 +8,13 @@ use cw_asset::AssetInfoBase as CwAssetInfoBase;
 use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
-use angel_core::messages::vault::{
+use angel_core::msgs::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::msgs::swap_router::ExecuteMsg as SwapRouterExecuteMsg;
+use angel_core::msgs::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
     UpdateConfigMsg,
 };
-use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
+use angel_core::msgs::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{AccountType, SwapOperation};
 use terraswap::querier::query_pair_info_from_pair;
 
@@ -684,10 +684,10 @@ pub fn reinvest_to_locked_receive(
 
     // ensure `msg_sender` is sibling_vault(liquid)
     let msg_sender = cw20_msg.sender;
-    let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
+    let sibling_config_resp: angel_core::msgs::vault::ConfigResponse =
         deps.querier.query_wasm_smart(
             config.sibling_vault.to_string(),
-            &angel_core::messages::vault::QueryMsg::Config {},
+            &angel_core::msgs::vault::QueryMsg::Config {},
         )?;
     if msg_sender != config.sibling_vault || sibling_config_resp.acct_type != AccountType::Liquid {
         return Err(ContractError::Unauthorized {});
@@ -1131,10 +1131,10 @@ pub fn harvest_to_liquid(
 
     // ensure `msg_sender` is sibling_vault(locked)
     let msg_sender = cw20_msg.sender;
-    let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
+    let sibling_config_resp: angel_core::msgs::vault::ConfigResponse =
         deps.querier.query_wasm_smart(
             config.sibling_vault.to_string(),
-            &angel_core::messages::vault::QueryMsg::Config {},
+            &angel_core::msgs::vault::QueryMsg::Config {},
         )?;
     if msg_sender != config.sibling_vault || sibling_config_resp.acct_type != AccountType::Locked {
         return Err(ContractError::Unauthorized {});
@@ -1281,7 +1281,7 @@ pub fn send_asset(
         AssetInfo::NativeToken { denom } => match id {
             Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: beneficiary.to_string(),
-                msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
+                msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::VaultReceipt {
                     id,
                     acct_type: config.acct_type,
                 })
@@ -1300,7 +1300,7 @@ pub fn send_asset(
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                         contract: beneficiary.to_string(),
                         amount: send_amount,
-                        msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
+                        msg: to_binary(&angel_core::msgs::accounts::ReceiveMsg::VaultReceipt {
                             id,
                             acct_type: config.acct_type,
                         })
@@ -1571,10 +1571,8 @@ fn validate_action_caller_n_endow_id(
     let _endowments_rsp: EndowmentDetailsResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: registar_config.accounts_contract.unwrap(),
-            msg: to_binary(&angel_core::messages::accounts::QueryMsg::Endowment {
-                id: endowment_id,
-            })
-            .unwrap(),
+            msg: to_binary(&angel_core::msgs::accounts::QueryMsg::Endowment { id: endowment_id })
+                .unwrap(),
         }))?;
 
     Ok(())

@@ -1,12 +1,12 @@
+use cosmwasm_schema::{cw_serde};
 use cw_utils::{Duration, Threshold};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub group_addr: String,

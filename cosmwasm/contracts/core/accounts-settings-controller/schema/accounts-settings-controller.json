@@ -1,0 +1,1605 @@
+{
+  "contract_name": "accounts-settings-controller",
+  "contract_version": "2.0.0",
+  "idl_version": "1.0.0",
+  "instantiate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "InstantiateMsg",
+    "type": "object",
+    "required": [
+      "owner_sc",
+      "registrar_contract"
+    ],
+    "properties": {
+      "owner_sc": {
+        "type": "string"
+      },
+      "registrar_contract": {
+        "type": "string"
+      }
+    },
+    "additionalProperties": false
+  },
+  "execute": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ExecuteMsg",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "create_endowment_settings"
+        ],
+        "properties": {
+          "create_endowment_settings": {
+            "$ref": "#/definitions/CreateEndowSettingsMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_config"
+        ],
+        "properties": {
+          "update_config": {
+            "$ref": "#/definitions/UpdateConfigMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_endowment_settings"
+        ],
+        "properties": {
+          "update_endowment_settings": {
+            "$ref": "#/definitions/UpdateEndowmentSettingsMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_endowment_controller"
+        ],
+        "properties": {
+          "update_endowment_controller": {
+            "$ref": "#/definitions/UpdateEndowmentControllerMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_endowment_fees"
+        ],
+        "properties": {
+          "update_endowment_fees": {
+            "$ref": "#/definitions/UpdateEndowmentFeesMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "setup_dao"
+        ],
+        "properties": {
+          "setup_dao": {
+            "type": "object",
+            "required": [
+              "endowment_id",
+              "setup"
+            ],
+            "properties": {
+              "endowment_id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "setup": {
+                "$ref": "#/definitions/DaoSetup"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "setup_donation_match"
+        ],
+        "properties": {
+          "setup_donation_match": {
+            "type": "object",
+            "required": [
+              "endowment_id",
+              "setup"
+            ],
+            "properties": {
+              "endowment_id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "setup": {
+                "$ref": "#/definitions/DonationMatch"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_delegate"
+        ],
+        "properties": {
+          "update_delegate": {
+            "type": "object",
+            "required": [
+              "action",
+              "delegate_address",
+              "endowment_id",
+              "setting"
+            ],
+            "properties": {
+              "action": {
+                "type": "string"
+              },
+              "delegate_address": {
+                "type": "string"
+              },
+              "delegate_expiry": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "format": "uint64",
+                "minimum": 0.0
+              },
+              "endowment_id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "setting": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ],
+    "definitions": {
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "CreateEndowSettingsMsg": {
+        "type": "object",
+        "required": [
+          "beneficiaries_allowlist",
+          "contributors_allowlist",
+          "donation_match_active",
+          "endowment_controller",
+          "id",
+          "ignore_user_splits",
+          "maturity_allowlist"
+        ],
+        "properties": {
+          "aum_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "beneficiaries_allowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contributors_allowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "deposit_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "donation_match_active": {
+            "type": "boolean"
+          },
+          "donation_match_contract": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Addr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "earnings_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "endowment_controller": {
+            "$ref": "#/definitions/EndowmentController"
+          },
+          "id": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "ignore_user_splits": {
+            "type": "boolean"
+          },
+          "maturity_allowlist": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "parent": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "split_to_liquid": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SplitDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "withdraw_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "CurveType": {
+        "oneOf": [
+          {
+            "description": "Constant always returns `value * 10^-scale` as spot price",
+            "type": "object",
+            "required": [
+              "constant"
+            ],
+            "properties": {
+              "constant": {
+                "type": "object",
+                "required": [
+                  "scale",
+                  "value"
+                ],
+                "properties": {
+                  "scale": {
+                    "type": "integer",
+                    "format": "uint32",
+                    "minimum": 0.0
+                  },
+                  "value": {
+                    "$ref": "#/definitions/Uint128"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "Linear returns `slope * 10^-scale * supply` as spot price",
+            "type": "object",
+            "required": [
+              "linear"
+            ],
+            "properties": {
+              "linear": {
+                "type": "object",
+                "required": [
+                  "scale",
+                  "slope"
+                ],
+                "properties": {
+                  "scale": {
+                    "type": "integer",
+                    "format": "uint32",
+                    "minimum": 0.0
+                  },
+                  "slope": {
+                    "$ref": "#/definitions/Uint128"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "description": "SquareRoot returns `slope * 10^-scale * supply^(power)` as spot price",
+            "type": "object",
+            "required": [
+              "square_root"
+            ],
+            "properties": {
+              "square_root": {
+                "type": "object",
+                "required": [
+                  "power",
+                  "scale",
+                  "slope"
+                ],
+                "properties": {
+                  "power": {
+                    "$ref": "#/definitions/Uint128"
+                  },
+                  "scale": {
+                    "type": "integer",
+                    "format": "uint32",
+                    "minimum": 0.0
+                  },
+                  "slope": {
+                    "$ref": "#/definitions/Uint128"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "DaoSetup": {
+        "type": "object",
+        "required": [
+          "expiration_period",
+          "proposal_deposit",
+          "quorum",
+          "snapshot_period",
+          "threshold",
+          "timelock_period",
+          "token",
+          "voting_period"
+        ],
+        "properties": {
+          "expiration_period": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "proposal_deposit": {
+            "$ref": "#/definitions/Uint128"
+          },
+          "quorum": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "snapshot_period": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "threshold": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "timelock_period": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "token": {
+            "$ref": "#/definitions/DaoToken"
+          },
+          "voting_period": {
+            "type": "integer",
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
+      "DaoToken": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "existing_cw20"
+            ],
+            "properties": {
+              "existing_cw20": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "new_cw20"
+            ],
+            "properties": {
+              "new_cw20": {
+                "type": "object",
+                "required": [
+                  "initial_supply",
+                  "name",
+                  "symbol"
+                ],
+                "properties": {
+                  "initial_supply": {
+                    "$ref": "#/definitions/Uint128"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "symbol": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "bonding_curve"
+            ],
+            "properties": {
+              "bonding_curve": {
+                "type": "object",
+                "required": [
+                  "curve_type",
+                  "decimals",
+                  "name",
+                  "reserve_decimals",
+                  "reserve_denom",
+                  "symbol",
+                  "unbonding_period"
+                ],
+                "properties": {
+                  "curve_type": {
+                    "$ref": "#/definitions/CurveType"
+                  },
+                  "decimals": {
+                    "type": "integer",
+                    "format": "uint8",
+                    "minimum": 0.0
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "reserve_decimals": {
+                    "type": "integer",
+                    "format": "uint8",
+                    "minimum": 0.0
+                  },
+                  "reserve_denom": {
+                    "type": "string"
+                  },
+                  "symbol": {
+                    "type": "string"
+                  },
+                  "unbonding_period": {
+                    "type": "integer",
+                    "format": "uint64",
+                    "minimum": 0.0
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Decimal": {
+        "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+        "type": "string"
+      },
+      "Delegate": {
+        "type": "object",
+        "required": [
+          "address"
+        ],
+        "properties": {
+          "address": {
+            "$ref": "#/definitions/Addr"
+          },
+          "expires": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          }
+        },
+        "additionalProperties": false
+      },
+      "DonationMatch": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "halo_token_reserve"
+            ],
+            "properties": {
+              "halo_token_reserve": {
+                "type": "object",
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "cw20_token_reserve"
+            ],
+            "properties": {
+              "cw20_token_reserve": {
+                "type": "object",
+                "required": [
+                  "lp_addr",
+                  "reserve_addr"
+                ],
+                "properties": {
+                  "lp_addr": {
+                    "type": "string"
+                  },
+                  "reserve_addr": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "EndowmentController": {
+        "type": "object",
+        "required": [
+          "aum_fee",
+          "beneficiaries_allowlist",
+          "categories",
+          "contributors_allowlist",
+          "deposit_fee",
+          "earnings_fee",
+          "endowment_controller",
+          "ignore_user_splits",
+          "image",
+          "kyc_donors_only",
+          "logo",
+          "maturity_allowlist",
+          "name",
+          "profile",
+          "split_to_liquid",
+          "strategies",
+          "withdraw_fee"
+        ],
+        "properties": {
+          "aum_fee": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "beneficiaries_allowlist": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "categories": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "contributors_allowlist": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "deposit_fee": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "earnings_fee": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "endowment_controller": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "ignore_user_splits": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "image": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "kyc_donors_only": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "logo": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "maturity_allowlist": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "name": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "profile": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "split_to_liquid": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "strategies": {
+            "$ref": "#/definitions/SettingsPermissions"
+          },
+          "withdraw_fee": {
+            "$ref": "#/definitions/SettingsPermissions"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EndowmentFee": {
+        "type": "object",
+        "required": [
+          "active",
+          "fee_percentage",
+          "payout_address"
+        ],
+        "properties": {
+          "active": {
+            "type": "boolean"
+          },
+          "fee_percentage": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "payout_address": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SettingsPermissions": {
+        "type": "object",
+        "required": [
+          "gov_controlled",
+          "modifiable",
+          "owner_controlled"
+        ],
+        "properties": {
+          "delegate": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Delegate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "gov_controlled": {
+            "type": "boolean"
+          },
+          "modifiable": {
+            "type": "boolean"
+          },
+          "owner_controlled": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SplitDetails": {
+        "type": "object",
+        "required": [
+          "default",
+          "max",
+          "min"
+        ],
+        "properties": {
+          "default": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "max": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "min": {
+            "$ref": "#/definitions/Decimal"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Uint128": {
+        "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+        "type": "string"
+      },
+      "UpdateConfigMsg": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registrar_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateEndowmentControllerMsg": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "aum_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "beneficiaries_allowlist": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "contributors_allowlist": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deposit_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "donation_match_active": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "earnings_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "endowment_controller": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "ignore_user_splits": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kyc_donors_only": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "logo": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "maturity_allowlist": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "split_to_liquid": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "withdraw_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SettingsPermissions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateEndowmentFeesMsg": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "aum_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deposit_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "earnings_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "withdraw_fee": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/EndowmentFee"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateEndowmentSettingsMsg": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "beneficiaries_allowlist": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "contributors_allowlist": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            }
+          },
+          "donation_match_active": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "id": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          },
+          "ignore_user_splits": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "maturity_allowlist": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/UpdateMaturityAllowlist"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "split_to_liquid": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/SplitDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateMaturityAllowlist": {
+        "type": "object",
+        "required": [
+          "add",
+          "remove"
+        ],
+        "properties": {
+          "add": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "remove": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "query": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "QueryMsg",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "config"
+        ],
+        "properties": {
+          "config": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "endowment_settings"
+        ],
+        "properties": {
+          "endowment_settings": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "endowment_controller"
+        ],
+        "properties": {
+          "endowment_controller": {
+            "type": "object",
+            "required": [
+              "id"
+            ],
+            "properties": {
+              "id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "endowment_permissions"
+        ],
+        "properties": {
+          "endowment_permissions": {
+            "type": "object",
+            "required": [
+              "endowment_owner",
+              "id",
+              "setting_updater"
+            ],
+            "properties": {
+              "endowment_owner": {
+                "$ref": "#/definitions/Addr"
+              },
+              "id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "setting_updater": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ],
+    "definitions": {
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      }
+    }
+  },
+  "migrate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MigrateMsg",
+    "type": "object",
+    "additionalProperties": false
+  },
+  "sudo": null,
+  "responses": {
+    "config": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ConfigResponse",
+      "type": "object",
+      "required": [
+        "owner",
+        "registrar_contract"
+      ],
+      "properties": {
+        "owner": {
+          "type": "string"
+        },
+        "registrar_contract": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "endowment_controller": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EndowmentController",
+      "type": "object",
+      "required": [
+        "aum_fee",
+        "beneficiaries_allowlist",
+        "categories",
+        "contributors_allowlist",
+        "deposit_fee",
+        "earnings_fee",
+        "endowment_controller",
+        "ignore_user_splits",
+        "image",
+        "kyc_donors_only",
+        "logo",
+        "maturity_allowlist",
+        "name",
+        "profile",
+        "split_to_liquid",
+        "strategies",
+        "withdraw_fee"
+      ],
+      "properties": {
+        "aum_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "beneficiaries_allowlist": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "categories": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "contributors_allowlist": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "deposit_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "earnings_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "endowment_controller": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "ignore_user_splits": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "image": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "kyc_donors_only": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "logo": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "maturity_allowlist": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "name": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "profile": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "split_to_liquid": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "strategies": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "withdraw_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        },
+        "Delegate": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "$ref": "#/definitions/Addr"
+            },
+            "expires": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          },
+          "additionalProperties": false
+        },
+        "SettingsPermissions": {
+          "type": "object",
+          "required": [
+            "gov_controlled",
+            "modifiable",
+            "owner_controlled"
+          ],
+          "properties": {
+            "delegate": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Delegate"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "gov_controlled": {
+              "type": "boolean"
+            },
+            "modifiable": {
+              "type": "boolean"
+            },
+            "owner_controlled": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "endowment_permissions": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EndowmentPermissionsResponse",
+      "type": "object",
+      "required": [
+        "aum_fee",
+        "beneficiaries_allowlist",
+        "categories",
+        "contributors_allowlist",
+        "deposit_fee",
+        "earnings_fee",
+        "endowment_controller",
+        "ignore_user_splits",
+        "image",
+        "kyc_donors_only",
+        "logo",
+        "maturity_allowlist",
+        "name",
+        "split_to_liquid",
+        "strategies",
+        "withdraw_fee"
+      ],
+      "properties": {
+        "aum_fee": {
+          "type": "boolean"
+        },
+        "beneficiaries_allowlist": {
+          "type": "boolean"
+        },
+        "categories": {
+          "type": "boolean"
+        },
+        "contributors_allowlist": {
+          "type": "boolean"
+        },
+        "deposit_fee": {
+          "type": "boolean"
+        },
+        "earnings_fee": {
+          "type": "boolean"
+        },
+        "endowment_controller": {
+          "type": "boolean"
+        },
+        "ignore_user_splits": {
+          "type": "boolean"
+        },
+        "image": {
+          "type": "boolean"
+        },
+        "kyc_donors_only": {
+          "type": "boolean"
+        },
+        "logo": {
+          "type": "boolean"
+        },
+        "maturity_allowlist": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "boolean"
+        },
+        "split_to_liquid": {
+          "type": "boolean"
+        },
+        "strategies": {
+          "type": "boolean"
+        },
+        "withdraw_fee": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "endowment_settings": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "EndowmentSettingsResponse",
+      "type": "object",
+      "required": [
+        "beneficiaries_allowlist",
+        "contributors_allowlist",
+        "donation_match_active",
+        "ignore_user_splits",
+        "maturity_allowlist"
+      ],
+      "properties": {
+        "aum_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "beneficiaries_allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "contributors_allowlist": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dao": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Addr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dao_token": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Addr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deposit_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "donation_match_active": {
+          "type": "boolean"
+        },
+        "donation_match_contract": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Addr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "earnings_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ignore_user_splits": {
+          "type": "boolean"
+        },
+        "maturity_allowlist": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "parent": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "split_to_liquid": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SplitDetails"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "withdraw_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        },
+        "Decimal": {
+          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+          "type": "string"
+        },
+        "EndowmentFee": {
+          "type": "object",
+          "required": [
+            "active",
+            "fee_percentage",
+            "payout_address"
+          ],
+          "properties": {
+            "active": {
+              "type": "boolean"
+            },
+            "fee_percentage": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "payout_address": {
+              "$ref": "#/definitions/Addr"
+            }
+          },
+          "additionalProperties": false
+        },
+        "SplitDetails": {
+          "type": "object",
+          "required": [
+            "default",
+            "max",
+            "min"
+          ],
+          "properties": {
+            "default": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "max": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "min": {
+              "$ref": "#/definitions/Decimal"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

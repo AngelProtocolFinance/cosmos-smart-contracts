@@ -1,8 +1,8 @@
 use crate::state::{read_funds, CONFIG, FUND, STATE};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::index_fund::*;
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::index_fund::*;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::structs::{IndexFund, SplitDetails};
 use angel_core::utils::{percentage_checks, validate_deposit_fund};
 use cosmwasm_std::{
@@ -73,7 +73,7 @@ pub fn update_alliance_member_list(
         .position(|m| m == &member_addr);
 
     if action == *"add" {
-        if !pos.is_some() {
+        if pos.is_none() {
             config.alliance_members.push(member_addr);
         }
     } else if action == *"remove" {
@@ -254,10 +254,10 @@ pub fn remove_member(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    let registrar_config: angel_core::responses::registrar::ConfigResponse =
+    let registrar_config: angel_core::msgs::registrar::ConfigResponse =
         deps.querier.query_wasm_smart(
             config.registrar_contract,
-            &angel_core::messages::registrar::QueryMsg::Config {},
+            &angel_core::msgs::registrar::QueryMsg::Config {},
         )?;
 
     if let Some(accounts_contract) = registrar_config.accounts_contract {
@@ -491,8 +491,8 @@ pub fn build_donation_messages(
             AssetInfoBase::Native(ref denom) => {
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: accounts_contract.clone(),
-                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-                        angel_core::messages::accounts::DepositMsg {
+                    msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
+                        angel_core::msgs::accounts::DepositMsg {
                             id: member.0,
                             locked_percentage: member.1 .1,
                             liquid_percentage: member.2 .1,
@@ -511,7 +511,7 @@ pub fn build_donation_messages(
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                         contract: accounts_contract.clone(),
                         amount: member.1 .0 + member.2 .0,
-                        msg: to_binary(&angel_core::messages::accounts::DepositMsg {
+                        msg: to_binary(&angel_core::msgs::accounts::DepositMsg {
                             id: member.0,
                             locked_percentage: member.1 .1,
                             liquid_percentage: member.2 .1,

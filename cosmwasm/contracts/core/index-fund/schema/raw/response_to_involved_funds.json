@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "FundListResponse",
+  "type": "object",
+  "required": [
+    "funds"
+  ],
+  "properties": {
+    "funds": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/IndexFund"
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
+    "IndexFund": {
+      "type": "object",
+      "required": [
+        "description",
+        "id",
+        "members",
+        "name"
+      ],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "expiry_height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "expiry_time": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "id": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "members": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint32",
+            "minimum": 0.0
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "rotating_fund": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "split_to_liquid": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

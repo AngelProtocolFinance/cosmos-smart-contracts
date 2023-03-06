@@ -2,9 +2,8 @@ name: Rust
 
 on:
   push:
-    branches: [ main, RC-v2 ]
+    branches: [ main ]
   pull_request:
-    branches: [ main, RC-v2 ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,8 +13,10 @@ defaults:
     working-directory: ./cosmwasm
 
 jobs:
-  build:
+  build-n-test:
+    name: "Build wasms & run unit-tests"
     runs-on: ubuntu-latest
+    environment: production
     strategy:
       matrix:
         toolchain:

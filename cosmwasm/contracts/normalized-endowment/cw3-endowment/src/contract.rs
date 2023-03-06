@@ -5,9 +5,9 @@ use crate::state::{
     next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
-use angel_core::messages::cw3_multisig::{EndowmentInstantiateMsg as InstantiateMsg, QueryMsg};
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::cw3_multisig::{EndowmentInstantiateMsg as InstantiateMsg, QueryMsg};
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
@@ -61,7 +61,7 @@ pub fn instantiate(
                 code_id: msg.cw4_code,
                 admin: None,
                 label: format!("v2 endowment cw4 group - {}", msg.id),
-                msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
+                msg: to_binary(&angel_core::msgs::cw4_group::InstantiateMsg {
                     admin: Some(env.contract.address.to_string()),
                     members: msg.cw4_members,
                 })?,
@@ -386,7 +386,7 @@ pub fn execute_propose_locked_withdraw(
         msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: registrar_config.owner,
             msg: to_binary(
-                &angel_core::messages::cw3_apteam::ExecuteMsg::ProposeLockedWithdraw {
+                &angel_core::msgs::cw3_apteam::ExecuteMsg::ProposeLockedWithdraw {
                     orig_proposal: id,
                     endowment_id,
                     description,

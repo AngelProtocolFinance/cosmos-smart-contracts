@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use cw2::{get_contract_version, set_contract_version};
 
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts_settings_controller::*;
+use angel_core::msgs::accounts_settings_controller::*;
 
 use crate::state::{Config, CONFIG};
 use crate::{executers, queriers};

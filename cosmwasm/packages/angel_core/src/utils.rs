@@ -1,12 +1,13 @@
 use crate::errors::core::{ContractError, PaymentError};
-use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::QueryMsg as VaultQuerier;
-use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
-use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
+use crate::msgs::registrar::{
+    ConfigResponse as RegistrarConfigResponse, QueryMsg as RegistrarQuerier,
+};
+use crate::msgs::vault::QueryMsg as VaultQuerier;
+use crate::structs::{GenericBalance, SplitDetails};
 use cosmwasm_std::{
-    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Deps, DepsMut,
-    Empty, Event, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError,
-    SystemResult, Uint128, WasmMsg, WasmQuery,
+    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, Decimal, Deps, DepsMut, Empty, Event,
+    MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError, SystemResult, Uint128,
+    WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
@@ -98,7 +99,7 @@ pub fn check_splits(
     user_override: bool,
 ) -> (Decimal, Decimal) {
     // check that the split provided by a user if within the max/min bounds
-    if user_liquid > splits.max || user_liquid < splits.min || user_override == true {
+    if user_liquid > splits.max || user_liquid < splits.min || user_override {
         (Decimal::one() - splits.default, splits.default)
     } else {
         (user_locked, user_liquid)
@@ -144,74 +145,6 @@ pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: 
             msg: to_binary(&VaultQuerier::Balance { endowment_id }).unwrap(),
         }))
         .unwrap()
-}
-
-pub fn deposit_to_vaults(
-    deps: Deps,
-    registrar_contract: String,
-    endowment_id: u32,
-    fund: Asset,
-    strategies: &[StrategyComponent],
-) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
-    // deduct all deposited amounts from the orig amount
-    // tracks how much of the locked funds are leftover
-    let mut leftovers_amt = fund.amount;
-
-    // deposit to the strategies set
-    let mut deposit_messages = vec![];
-    for strategy in strategies.iter() {
-        if (fund.amount * strategy.percentage).is_zero() {
-            continue;
-        }
-        leftovers_amt -= fund.amount * strategy.percentage;
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.clone(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: strategy.vault.to_string(),
-                })?,
-            }))?;
-        let yield_vault: YieldVault = vault_config.vault;
-        if !yield_vault.approved {
-            return Err(ContractError::Std(StdError::GenericErr {
-                msg: "Vault is not approved to accept deposits".to_string(),
-            }));
-        }
-
-        // create a deposit message for X Vault
-        // funds payload can contain CW20 | Native token amounts
-        // total to send: payload_amount * strategy.percentage
-        match fund.info {
-            AssetInfoBase::Native(ref denom) => {
-                deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: yield_vault.address.to_string(),
-                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit { endowment_id })
-                        .unwrap(),
-                    funds: vec![Coin {
-                        denom: denom.clone(),
-                        amount: fund.amount * strategy.percentage,
-                    }],
-                })));
-            }
-            AssetInfoBase::Cw20(ref contract_addr) => {
-                deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: contract_addr.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                        contract: yield_vault.address.to_string(),
-                        amount: fund.amount * strategy.percentage,
-                        msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
-                            endowment_id,
-                        })
-                        .unwrap(),
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                })));
-            }
-            _ => unreachable!(),
-        }
-    }
-    Ok((deposit_messages, leftovers_amt))
 }
 
 /// returns an error if any coins were sent

@@ -1,0 +1,630 @@
+{
+  "contract_name": "registrar",
+  "contract_version": "1.9.1",
+  "idl_version": "1.0.0",
+  "instantiate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "InstantiateMsg",
+    "type": "object",
+    "required": [
+      "accounts_contract",
+      "pairs",
+      "registrar_contract"
+    ],
+    "properties": {
+      "accounts_contract": {
+        "$ref": "#/definitions/Addr"
+      },
+      "pairs": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/Pair"
+        }
+      },
+      "registrar_contract": {
+        "$ref": "#/definitions/Addr"
+      }
+    },
+    "additionalProperties": false,
+    "definitions": {
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "AssetInfoBase_for_Addr": {
+        "description": "Represents the type of an fungible asset.\n\nEach **asset info** instance can be one of three variants:\n\n- Native SDK coins. To create an **asset info** instance of this type, provide the denomination. - CW20 tokens. To create an **asset info** instance of this type, provide the contract address.",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "native"
+            ],
+            "properties": {
+              "native": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "cw20"
+            ],
+            "properties": {
+              "cw20": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Pair": {
+        "type": "object",
+        "required": [
+          "assets",
+          "contract_address"
+        ],
+        "properties": {
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AssetInfoBase_for_Addr"
+            },
+            "maxItems": 2,
+            "minItems": 2
+          },
+          "contract_address": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "execute": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ExecuteMsg",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "receive"
+        ],
+        "properties": {
+          "receive": {
+            "$ref": "#/definitions/Cw20ReceiveMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Add/Remove Pairs",
+        "type": "object",
+        "required": [
+          "update_pairs"
+        ],
+        "properties": {
+          "update_pairs": {
+            "type": "object",
+            "required": [
+              "add",
+              "remove"
+            ],
+            "properties": {
+              "add": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Pair"
+                }
+              },
+              "remove": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  },
+                  "maxItems": 2,
+                  "minItems": 2
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Execute multiple BuyOperation NOTE: There are 2 contracts which are able to call this entry: `accounts` and `vault`. `endowmnent_id` & `acct_type` fields are only used when `accounts` contract call. When calling from `vault` contract, `endowment_id` & `acct_type` are meaningless and filled with random value(Mostly, `endowment_id`: 1, `acct_type`: AccountType::Locked).",
+        "type": "object",
+        "required": [
+          "execute_swap_operations"
+        ],
+        "properties": {
+          "execute_swap_operations": {
+            "type": "object",
+            "required": [
+              "acct_type",
+              "endowment_id",
+              "operations"
+            ],
+            "properties": {
+              "acct_type": {
+                "$ref": "#/definitions/AccountType"
+              },
+              "endowment_id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "minimum_receive": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Uint128"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "operations": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/SwapOperation"
+                }
+              },
+              "strategy_key": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Internal use Swap all offer tokens to ask token",
+        "type": "object",
+        "required": [
+          "execute_swap_operation"
+        ],
+        "properties": {
+          "execute_swap_operation": {
+            "type": "object",
+            "required": [
+              "operation"
+            ],
+            "properties": {
+              "operation": {
+                "$ref": "#/definitions/SwapOperation"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Internal use Check the swap amount is exceed minimum_receive",
+        "type": "object",
+        "required": [
+          "assert_minimum_receive"
+        ],
+        "properties": {
+          "assert_minimum_receive": {
+            "type": "object",
+            "required": [
+              "asset_info",
+              "minimum_receive",
+              "prev_balance"
+            ],
+            "properties": {
+              "asset_info": {
+                "$ref": "#/definitions/AssetInfoBase_for_Addr"
+              },
+              "minimum_receive": {
+                "$ref": "#/definitions/Uint128"
+              },
+              "prev_balance": {
+                "$ref": "#/definitions/Uint128"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "description": "Send a Swap Receipt message back to the original contract Used by Accounts to properly credit the Endowment with newly swapped asset in either involved Balance",
+        "type": "object",
+        "required": [
+          "send_swap_receipt"
+        ],
+        "properties": {
+          "send_swap_receipt": {
+            "type": "object",
+            "required": [
+              "acct_type",
+              "asset_info",
+              "endowment_id",
+              "prev_balance"
+            ],
+            "properties": {
+              "acct_type": {
+                "$ref": "#/definitions/AccountType"
+              },
+              "asset_info": {
+                "$ref": "#/definitions/AssetInfoBase_for_Addr"
+              },
+              "endowment_id": {
+                "type": "integer",
+                "format": "uint32",
+                "minimum": 0.0
+              },
+              "prev_balance": {
+                "$ref": "#/definitions/Uint128"
+              },
+              "vault_addr": {
+                "anyOf": [
+                  {
+                    "$ref": "#/definitions/Addr"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ],
+    "definitions": {
+      "AccountType": {
+        "type": "string",
+        "enum": [
+          "locked",
+          "liquid"
+        ]
+      },
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "AssetInfoBase_for_Addr": {
+        "description": "Represents the type of an fungible asset.\n\nEach **asset info** instance can be one of three variants:\n\n- Native SDK coins. To create an **asset info** instance of this type, provide the denomination. - CW20 tokens. To create an **asset info** instance of this type, provide the contract address.",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "native"
+            ],
+            "properties": {
+              "native": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "cw20"
+            ],
+            "properties": {
+              "cw20": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Binary": {
+        "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.",
+        "type": "string"
+      },
+      "Cw20ReceiveMsg": {
+        "description": "Cw20ReceiveMsg should be de/serialized under `Receive()` variant in a ExecuteMsg",
+        "type": "object",
+        "required": [
+          "amount",
+          "msg",
+          "sender"
+        ],
+        "properties": {
+          "amount": {
+            "$ref": "#/definitions/Uint128"
+          },
+          "msg": {
+            "$ref": "#/definitions/Binary"
+          },
+          "sender": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "Pair": {
+        "type": "object",
+        "required": [
+          "assets",
+          "contract_address"
+        ],
+        "properties": {
+          "assets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/AssetInfoBase_for_Addr"
+            },
+            "maxItems": 2,
+            "minItems": 2
+          },
+          "contract_address": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SwapOperation": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "juno_swap"
+            ],
+            "properties": {
+              "juno_swap": {
+                "type": "object",
+                "required": [
+                  "ask_asset_info",
+                  "offer_asset_info"
+                ],
+                "properties": {
+                  "ask_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  },
+                  "offer_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "loop"
+            ],
+            "properties": {
+              "loop": {
+                "type": "object",
+                "required": [
+                  "ask_asset_info",
+                  "offer_asset_info"
+                ],
+                "properties": {
+                  "ask_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  },
+                  "offer_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Uint128": {
+        "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+        "type": "string"
+      }
+    }
+  },
+  "query": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "QueryMsg",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "config"
+        ],
+        "properties": {
+          "config": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "simulate_swap_operations"
+        ],
+        "properties": {
+          "simulate_swap_operations": {
+            "type": "object",
+            "required": [
+              "offer_amount",
+              "operations"
+            ],
+            "properties": {
+              "offer_amount": {
+                "$ref": "#/definitions/Uint128"
+              },
+              "operations": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/SwapOperation"
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ],
+    "definitions": {
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "AssetInfoBase_for_Addr": {
+        "description": "Represents the type of an fungible asset.\n\nEach **asset info** instance can be one of three variants:\n\n- Native SDK coins. To create an **asset info** instance of this type, provide the denomination. - CW20 tokens. To create an **asset info** instance of this type, provide the contract address.",
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "native"
+            ],
+            "properties": {
+              "native": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "cw20"
+            ],
+            "properties": {
+              "cw20": {
+                "$ref": "#/definitions/Addr"
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "SwapOperation": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "juno_swap"
+            ],
+            "properties": {
+              "juno_swap": {
+                "type": "object",
+                "required": [
+                  "ask_asset_info",
+                  "offer_asset_info"
+                ],
+                "properties": {
+                  "ask_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  },
+                  "offer_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "required": [
+              "loop"
+            ],
+            "properties": {
+              "loop": {
+                "type": "object",
+                "required": [
+                  "ask_asset_info",
+                  "offer_asset_info"
+                ],
+                "properties": {
+                  "ask_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  },
+                  "offer_asset_info": {
+                    "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false
+          }
+        ]
+      },
+      "Uint128": {
+        "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+        "type": "string"
+      }
+    }
+  },
+  "migrate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MigrateMsg",
+    "description": "We currently take no arguments for migrations",
+    "type": "object",
+    "additionalProperties": false
+  },
+  "sudo": null,
+  "responses": {
+    "config": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ConfigResponse",
+      "type": "object",
+      "required": [
+        "accounts_contract",
+        "registrar_contract"
+      ],
+      "properties": {
+        "accounts_contract": {
+          "$ref": "#/definitions/Addr"
+        },
+        "registrar_contract": {
+          "$ref": "#/definitions/Addr"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        }
+      }
+    },
+    "simulate_swap_operations": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "SimulateSwapOperationsResponse",
+      "type": "object",
+      "required": [
+        "amount"
+      ],
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/Uint128"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Uint128": {
+          "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

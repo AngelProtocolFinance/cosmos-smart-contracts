@@ -1,11 +1,10 @@
 use crate::state::Campaign;
 use angel_core::structs::GenericBalance;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal};
 use cw20::Cw20ReceiveMsg;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub campaign_period_seconds: u64, // seconds
@@ -13,8 +12,7 @@ pub struct InstantiateMsg {
     pub accepted_tokens: GenericBalance,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     Create {
         endowment_id: u32,
@@ -55,8 +53,7 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ReceiveMsg {
     Create {
         endowment_id: u32,
@@ -72,7 +69,7 @@ pub enum ReceiveMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct CreateMsg {
     /// Title of the campaign
     pub title: String,
@@ -101,31 +98,31 @@ pub fn is_valid_name(name: &str) -> bool {
     true
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
     /// Show campaigns that meet optional filter criteria.
-    /// Return type: ListResponse.
+    #[returns(ListResponse)]
     List {
         creator: Option<Addr>,
         open: Option<bool>,
         success: Option<bool>,
     },
     /// Show campaigns that a given address has contributed to
-    /// Return type: ListResponse.
+    #[returns(ListResponse)]
     ContributorCampaigns { contributor: String },
     /// Returns the details of the named campaign, error if not created
-    /// Return type: DetailsResponse.
+    #[returns(DetailsResponse)]
     Details { id: u64 },
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct ListResponse {
     /// list all registered ids
     pub campaigns: Vec<Campaign>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct DetailsResponse {
     /// id of this campaign
     pub id: u64,
@@ -153,5 +150,5 @@ pub struct DetailsResponse {
     pub locked_balance: GenericBalance,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}

@@ -4,7 +4,6 @@ import { localibc } from "../config/localIbcConstants";
 import { setupIBC } from "../processes/setup/ibc";
 import { testExecuteIBC } from "../processes/tests/ibc";
 
-
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
@@ -19,7 +18,6 @@ let terraIcaHost: string;
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
-
     junoIcaController = localibc.config.junoIcaController;
     junoIcaHost = localibc.config.junoIcaHost;
 
@@ -56,13 +54,11 @@ export async function startTestIBC(): Promise<void> {
     await initialize();
 
     // Tests
-    await testExecuteIBC(
-        {
-            junoIcaController,
-            junoIcaHost,
-            terraIcaController1,
-            terraIcaController2,
-            terraIcaHost,
-        }
-    );
+    await testExecuteIBC({
+        junoIcaController,
+        junoIcaHost,
+        terraIcaController1,
+        terraIcaController2,
+        terraIcaHost,
+    });
 }

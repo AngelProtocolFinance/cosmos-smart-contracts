@@ -6,10 +6,10 @@ use cosmwasm_std::{
 };
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{
+use angel_core::msgs::vault::ConfigResponse;
+use angel_core::msgs::vault::{
     AccountWithdrawMsg, ExecuteMsg, InstantiateMsg, QueryMsg, RoutesUpdateMsg, UpdateConfigMsg,
 };
-use angel_core::responses::vault::ConfigResponse;
 
 use crate::contract::{execute, instantiate, query};
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
@@ -95,7 +95,7 @@ fn test_update_owner() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        angel_core::messages::vault::QueryMsg::Config {},
+        angel_core::msgs::vault::QueryMsg::Config {},
     )
     .unwrap();
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
@@ -226,8 +226,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "endowment-100".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 10 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 10 }).unwrap(),
     };
     let info = mock_info("halo-token-contract", &[]);
     let err = execute(
@@ -243,8 +242,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "accounts-contract".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 1 }).unwrap(),
     };
     let info = mock_info("cw20-token-contract", &[]);
     let err = execute(
@@ -260,8 +258,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "accounts-contract".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 1 }).unwrap(),
     };
     let info = mock_info("halo-token-contract", &[]);
     let res = execute(

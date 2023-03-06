@@ -1,11 +1,9 @@
 use angel_core::structs::{EndowmentController, EndowmentSettings};
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Addr;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,              // DANO/AP Team Address
     pub registrar_contract: Addr, // Registrar contract address

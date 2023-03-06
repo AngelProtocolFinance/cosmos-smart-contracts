@@ -1,10 +1,9 @@
+use cosmwasm_schema::cw_serde;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub halo_token: Addr,
     pub staking_token: Addr,
@@ -20,7 +19,7 @@ pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
     CONFIG.load(storage)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct State {
     pub last_distributed: u64,
     pub total_bond_amount: Uint128,
@@ -36,7 +35,7 @@ pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
     STATE.load(storage)
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct StakerInfo {
     pub reward_index: Decimal,
     pub bond_amount: Uint128,

@@ -1,0 +1,1225 @@
+{
+  "contract_name": "registrar",
+  "contract_version": "2.0.0",
+  "idl_version": "1.0.0",
+  "instantiate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "InstantiateMsg",
+    "type": "object",
+    "required": [
+      "accounts_settings_controller",
+      "axelar_gateway",
+      "axelar_ibc_channel",
+      "tax_rate",
+      "treasury"
+    ],
+    "properties": {
+      "accepted_tokens": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/AcceptedTokens"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "accounts_settings_controller": {
+        "type": "string"
+      },
+      "axelar_gateway": {
+        "type": "string"
+      },
+      "axelar_ibc_channel": {
+        "type": "string"
+      },
+      "rebalance": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/RebalanceDetails"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "split_to_liquid": {
+        "anyOf": [
+          {
+            "$ref": "#/definitions/SplitDetails"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "swap_factory": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "tax_rate": {
+        "$ref": "#/definitions/Decimal"
+      },
+      "treasury": {
+        "type": "string"
+      },
+      "vault_router": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "additionalProperties": false,
+    "definitions": {
+      "AcceptedTokens": {
+        "type": "object",
+        "required": [
+          "cw20",
+          "native"
+        ],
+        "properties": {
+          "cw20": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "native": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Decimal": {
+        "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+        "type": "string"
+      },
+      "RebalanceDetails": {
+        "type": "object",
+        "required": [
+          "interest_distribution",
+          "locked_interests_to_liquid",
+          "locked_principle_to_liquid",
+          "principle_distribution",
+          "rebalance_liquid_invested_profits"
+        ],
+        "properties": {
+          "interest_distribution": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "locked_interests_to_liquid": {
+            "type": "boolean"
+          },
+          "locked_principle_to_liquid": {
+            "type": "boolean"
+          },
+          "principle_distribution": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "rebalance_liquid_invested_profits": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SplitDetails": {
+        "type": "object",
+        "required": [
+          "default",
+          "max",
+          "min"
+        ],
+        "properties": {
+          "default": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "max": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "min": {
+            "$ref": "#/definitions/Decimal"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "execute": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "ExecuteMsg",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "strategy_add"
+        ],
+        "properties": {
+          "strategy_add": {
+            "type": "object",
+            "required": [
+              "strategy",
+              "strategy_key"
+            ],
+            "properties": {
+              "strategy": {
+                "$ref": "#/definitions/StrategyParams"
+              },
+              "strategy_key": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "strategy_remove"
+        ],
+        "properties": {
+          "strategy_remove": {
+            "type": "object",
+            "required": [
+              "strategy_key"
+            ],
+            "properties": {
+              "strategy_key": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "strategy_update"
+        ],
+        "properties": {
+          "strategy_update": {
+            "type": "object",
+            "required": [
+              "approval_state",
+              "strategy_key"
+            ],
+            "properties": {
+              "approval_state": {
+                "$ref": "#/definitions/StrategyApprovalState"
+              },
+              "strategy_key": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_config"
+        ],
+        "properties": {
+          "update_config": {
+            "$ref": "#/definitions/UpdateConfigMsg"
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_owner"
+        ],
+        "properties": {
+          "update_owner": {
+            "type": "object",
+            "required": [
+              "new_owner"
+            ],
+            "properties": {
+              "new_owner": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_network_connections"
+        ],
+        "properties": {
+          "update_network_connections": {
+            "type": "object",
+            "required": [
+              "action",
+              "chain_id",
+              "network_info"
+            ],
+            "properties": {
+              "action": {
+                "type": "string"
+              },
+              "chain_id": {
+                "type": "string"
+              },
+              "network_info": {
+                "$ref": "#/definitions/NetworkInfo"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "update_fees"
+        ],
+        "properties": {
+          "update_fees": {
+            "type": "object",
+            "required": [
+              "fees"
+            ],
+            "properties": {
+              "fees": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "$ref": "#/definitions/Decimal"
+                    }
+                  ],
+                  "maxItems": 2,
+                  "minItems": 2
+                }
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ],
+    "definitions": {
+      "AcceptedTokens": {
+        "type": "object",
+        "required": [
+          "cw20",
+          "native"
+        ],
+        "properties": {
+          "cw20": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "native": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "Addr": {
+        "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+        "type": "string"
+      },
+      "Decimal": {
+        "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+        "type": "string"
+      },
+      "NetworkInfo": {
+        "type": "object",
+        "properties": {
+          "accounts_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "router_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "RebalanceDetails": {
+        "type": "object",
+        "required": [
+          "interest_distribution",
+          "locked_interests_to_liquid",
+          "locked_principle_to_liquid",
+          "principle_distribution",
+          "rebalance_liquid_invested_profits"
+        ],
+        "properties": {
+          "interest_distribution": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "locked_interests_to_liquid": {
+            "type": "boolean"
+          },
+          "locked_principle_to_liquid": {
+            "type": "boolean"
+          },
+          "principle_distribution": {
+            "$ref": "#/definitions/Decimal"
+          },
+          "rebalance_liquid_invested_profits": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "StrategyApprovalState": {
+        "type": "string",
+        "enum": [
+          "not_approved",
+          "approved",
+          "withdraw_only",
+          "deprecated"
+        ]
+      },
+      "StrategyLocale": {
+        "type": "string",
+        "enum": [
+          "native",
+          "ibc",
+          "evm"
+        ]
+      },
+      "StrategyParams": {
+        "type": "object",
+        "required": [
+          "approval_state",
+          "chain",
+          "input_denom",
+          "locale"
+        ],
+        "properties": {
+          "approval_state": {
+            "$ref": "#/definitions/StrategyApprovalState"
+          },
+          "chain": {
+            "type": "string"
+          },
+          "input_denom": {
+            "type": "string"
+          },
+          "liquid_addr": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Addr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "locale": {
+            "$ref": "#/definitions/StrategyLocale"
+          },
+          "locked_addr": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Addr"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "UpdateConfigMsg": {
+        "type": "object",
+        "properties": {
+          "accepted_tokens": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/AcceptedTokens"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "accounts_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "accounts_settings_controller": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "applications_review": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "charity_shares_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "collector_addr": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "collector_share": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cw3_code": {
+            "description": "WASM CODES",
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "cw4_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "donation_match_charites_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "donation_match_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "fundraising_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "gov_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "halo_token": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "halo_token_lp_contract": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "index_fund_contract": {
+            "description": "CONTRACT ADDRESSES",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rebalance": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/RebalanceDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "split_default": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "split_max": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "split_min": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subdao_bonding_token_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subdao_cw20_token_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subdao_cw900_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subdao_distributor_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "subdao_gov_code": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "uint64",
+            "minimum": 0.0
+          },
+          "swap_factory": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "swaps_router": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "tax_rate": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/Decimal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "treasury": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "query": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "QueryMsg",
+    "oneOf": [
+      {
+        "type": "object",
+        "required": [
+          "strategy"
+        ],
+        "properties": {
+          "strategy": {
+            "type": "object",
+            "required": [
+              "strategy_key"
+            ],
+            "properties": {
+              "strategy_key": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "config"
+        ],
+        "properties": {
+          "config": {
+            "type": "object",
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "network_connection"
+        ],
+        "properties": {
+          "network_connection": {
+            "type": "object",
+            "required": [
+              "chain_id"
+            ],
+            "properties": {
+              "chain_id": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "required": [
+          "fee"
+        ],
+        "properties": {
+          "fee": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "additionalProperties": false
+      }
+    ]
+  },
+  "migrate": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "MigrateMsg",
+    "type": "object",
+    "required": [
+      "accounts_settings_controller",
+      "axelar_gateway",
+      "axelar_ibc_channel"
+    ],
+    "properties": {
+      "accounts_settings_controller": {
+        "type": "string"
+      },
+      "axelar_gateway": {
+        "type": "string"
+      },
+      "axelar_ibc_channel": {
+        "type": "string"
+      },
+      "vault_router": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "additionalProperties": false
+  },
+  "sudo": null,
+  "responses": {
+    "config": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ConfigResponse",
+      "type": "object",
+      "required": [
+        "accepted_tokens",
+        "accounts_settings_controller",
+        "applications_impact_review",
+        "applications_review",
+        "axelar_gateway",
+        "axelar_ibc_channel",
+        "collector_addr",
+        "collector_share",
+        "owner",
+        "rebalance",
+        "split_to_liquid",
+        "treasury",
+        "version"
+      ],
+      "properties": {
+        "accepted_tokens": {
+          "$ref": "#/definitions/AcceptedTokens"
+        },
+        "accounts_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "accounts_settings_controller": {
+          "type": "string"
+        },
+        "applications_impact_review": {
+          "type": "string"
+        },
+        "applications_review": {
+          "type": "string"
+        },
+        "axelar_gateway": {
+          "type": "string"
+        },
+        "axelar_ibc_channel": {
+          "type": "string"
+        },
+        "charity_shares_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "collector_addr": {
+          "type": "string"
+        },
+        "collector_share": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "cw3_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "cw4_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "donation_match_charites_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "donation_match_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "gov_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "halo_token": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "halo_token_lp_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "index_fund": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "owner": {
+          "type": "string"
+        },
+        "rebalance": {
+          "$ref": "#/definitions/RebalanceDetails"
+        },
+        "split_to_liquid": {
+          "$ref": "#/definitions/SplitDetails"
+        },
+        "subdao_bonding_token_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_cw20_token_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_cw900_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_distributor_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_gov_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "swap_factory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "swaps_router": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "treasury": {
+          "type": "string"
+        },
+        "vault_router": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "AcceptedTokens": {
+          "type": "object",
+          "required": [
+            "cw20",
+            "native"
+          ],
+          "properties": {
+            "cw20": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "native": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "Decimal": {
+          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+          "type": "string"
+        },
+        "RebalanceDetails": {
+          "type": "object",
+          "required": [
+            "interest_distribution",
+            "locked_interests_to_liquid",
+            "locked_principle_to_liquid",
+            "principle_distribution",
+            "rebalance_liquid_invested_profits"
+          ],
+          "properties": {
+            "interest_distribution": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "locked_interests_to_liquid": {
+              "type": "boolean"
+            },
+            "locked_principle_to_liquid": {
+              "type": "boolean"
+            },
+            "principle_distribution": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "rebalance_liquid_invested_profits": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "SplitDetails": {
+          "type": "object",
+          "required": [
+            "default",
+            "max",
+            "min"
+          ],
+          "properties": {
+            "default": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "max": {
+              "$ref": "#/definitions/Decimal"
+            },
+            "min": {
+              "$ref": "#/definitions/Decimal"
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "fee": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "FeesResponse",
+      "type": "object",
+      "required": [
+        "tax_rate"
+      ],
+      "properties": {
+        "endowtype_charity": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "endowtype_normal": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "tax_rate": {
+          "$ref": "#/definitions/Decimal"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Decimal": {
+          "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+          "type": "string"
+        }
+      }
+    },
+    "network_connection": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "NetworkConnectionResponse",
+      "type": "object",
+      "required": [
+        "chain",
+        "network_connection"
+      ],
+      "properties": {
+        "chain": {
+          "type": "string"
+        },
+        "network_connection": {
+          "$ref": "#/definitions/NetworkInfo"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "NetworkInfo": {
+          "type": "object",
+          "properties": {
+            "accounts_contract": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "router_contract": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    },
+    "strategy": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StrategyDetailResponse",
+      "type": "object",
+      "required": [
+        "strategy"
+      ],
+      "properties": {
+        "strategy": {
+          "$ref": "#/definitions/StrategyParams"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "Addr": {
+          "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+          "type": "string"
+        },
+        "StrategyApprovalState": {
+          "type": "string",
+          "enum": [
+            "not_approved",
+            "approved",
+            "withdraw_only",
+            "deprecated"
+          ]
+        },
+        "StrategyLocale": {
+          "type": "string",
+          "enum": [
+            "native",
+            "ibc",
+            "evm"
+          ]
+        },
+        "StrategyParams": {
+          "type": "object",
+          "required": [
+            "approval_state",
+            "chain",
+            "input_denom",
+            "locale"
+          ],
+          "properties": {
+            "approval_state": {
+              "$ref": "#/definitions/StrategyApprovalState"
+            },
+            "chain": {
+              "type": "string"
+            },
+            "input_denom": {
+              "type": "string"
+            },
+            "liquid_addr": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Addr"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "locale": {
+              "$ref": "#/definitions/StrategyLocale"
+            },
+            "locked_addr": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/Addr"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      }
+    }
+  }
+}

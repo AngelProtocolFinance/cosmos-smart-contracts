@@ -2,12 +2,12 @@ use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 
-use angel_core::messages::accounts_settings_controller::{
+use angel_core::msgs::accounts_settings_controller::{
+    ConfigResponse, EndowmentPermissionsResponse, EndowmentSettingsResponse,
+};
+use angel_core::msgs::accounts_settings_controller::{
     CreateEndowSettingsMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
     UpdateEndowmentFeesMsg, UpdateEndowmentSettingsMsg, UpdateMaturityAllowlist,
-};
-use angel_core::responses::accounts_settings_controller::{
-    ConfigResponse, EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
 use angel_core::structs::{EndowmentController, EndowmentFee};
 use cosmwasm_std::testing::{mock_env, mock_info};

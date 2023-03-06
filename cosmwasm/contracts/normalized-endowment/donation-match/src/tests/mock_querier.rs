@@ -1,33 +1,29 @@
-use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::msgs::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
-use angel_core::responses::accounts_settings_controller::EndowmentSettingsResponse;
-use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
+use angel_core::msgs::accounts_settings_controller::EndowmentSettingsResponse;
+use angel_core::msgs::registrar::{ConfigResponse, StrategyDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
-    SplitDetails, VaultType, YieldVault,
+    AcceptedTokens, Categories, Investments, RebalanceDetails, SplitDetails, StrategyApprovalState,
+    StrategyLocale, StrategyParams,
 };
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
     Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-use terraswap::pair::SimulationResponse;
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use terraswap::asset::Asset;
+use terraswap::{asset::Asset, pair::SimulationResponse};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Simulation { offer_asset: Asset },
     Balance { address: String },
     // Mock the `registrar` config
     Config {},
-    Vault { vault_addr: String },
+    Strategy { strategy_key: String },
     // Mock the `accounts` endowment
     Endowment { id: u32 },
     // Mock the "endowment_controller::EndowmentSettings {id: [EndowmentID]}" query
@@ -119,11 +115,10 @@ impl WasmMockQuerier {
                     to_binary(&EndowmentDetailsResponse {
                         owner: Addr::unchecked("endow-cw3"),
                         name: "Test Endowment".to_string(),
-                        strategies: AccountStrategies::default(),
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,
                         maturity_time: None,
-                        oneoff_vaults: OneOffVaults::default(),
+                        invested_strategies: Investments::default(),
                         rebalance: RebalanceDetails::default(),
                         kyc_donors_only: false,
                         deposit_approved: true,
@@ -154,7 +149,7 @@ impl WasmMockQuerier {
                 QueryMsg::Config {} => {
                     match contract_addr.as_str() {
                         "accounts-contract" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&angel_core::responses::accounts::ConfigResponse {
+                            to_binary(&angel_core::msgs::accounts::ConfigResponse {
                                 owner: "owner".to_string(),
                                 version: "accounts-v2.0.0".to_string(),
                                 registrar_contract: "registrar-contract".to_string(),
@@ -168,7 +163,6 @@ impl WasmMockQuerier {
                                 accounts_contract: Some("accounts-contract".to_string()),
                                 rebalance: RebalanceDetails::default(),
                                 applications_review: "applications-review".to_string(),
-                                applications_impact_review: "applications-impact-review".to_string(),
                                 swaps_router: Some("swaps-router".to_string()),
                                 cw3_code: Some(124),
                                 cw4_code: Some(125),
@@ -197,23 +191,23 @@ impl WasmMockQuerier {
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
                                 accounts_settings_controller: "accounts-settings-controller".to_string(),
+                                axelar_gateway: "axelar-gateway".to_string(),
+                                axelar_ibc_channel: "channel-1".to_string(),
                             })
                             .unwrap()
                         )),
                         _ => unreachable!(),
                     }
                 }
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
+                QueryMsg::Strategy { strategy_key: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&StrategyDetailResponse {
+                        strategy: StrategyParams {
+                            approval_state: StrategyApprovalState::Approved,
+                            locale: StrategyLocale::Native,
+                            chain: "juno".to_string(),
                             input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                            vault_type: VaultType::Native,
+                            locked_addr: Some(Addr::unchecked("vault1-locked-contract")),
+                            liquid_addr: Some(Addr::unchecked("vault1-liquid-contract")),
                         },
                     })
                     .unwrap(),

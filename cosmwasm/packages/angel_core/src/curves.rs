@@ -1,10 +1,8 @@
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Decimal as StdDecimal, Uint128};
 use integer_cbrt::IntegerCubeRoot;
 use integer_sqrt::IntegerSquareRoot;
-use rust_decimal::prelude::ToPrimitive;
-use rust_decimal::Decimal;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use rust_decimal::{prelude::ToPrimitive, Decimal};
 use std::str::FromStr;
 
 pub trait Curve {
@@ -181,7 +179,8 @@ fn cube_root(cube: Decimal) -> Decimal {
 }
 
 /// DecimalPlaces should be passed into curve constructors
-#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema, Default)]
+#[derive(Default, Copy)]
+#[cw_serde]
 pub struct DecimalPlaces {
     /// Number of decimal places for the supply token (this is what was passed in cw20-base instantiate
     pub supply: u32,

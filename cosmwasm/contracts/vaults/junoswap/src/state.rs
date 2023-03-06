@@ -1,12 +1,11 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cw20::{Denom, Expiration};
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr,
     pub registrar_contract: Addr,
@@ -28,8 +27,8 @@ pub struct Config {
 
     pub next_pending_id: u32, // (Incrementing) ID used for indexing the PendingInfo
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+
+#[cw_serde]
 pub struct PendingInfo {
     pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
     pub endowment_id: u32, // ID of org. sending Accounts SC
@@ -38,8 +37,7 @@ pub struct PendingInfo {
     pub release_at: Expiration,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct TokenInfo {
     pub name: String,
     pub symbol: String,
@@ -48,7 +46,7 @@ pub struct TokenInfo {
     pub mint: Option<MinterData>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct MinterData {
     pub minter: Addr,
     /// cap is how many more tokens can be issued by the minter

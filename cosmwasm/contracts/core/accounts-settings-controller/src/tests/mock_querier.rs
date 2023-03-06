@@ -1,8 +1,9 @@
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, BalanceInfo, Categories, DonationsReceived, EndowmentType,
-    OneOffVaults, RebalanceDetails, SplitDetails,
+    AcceptedTokens, BalanceInfo, Categories, DonationsReceived, EndowmentType, Investments,
+    RebalanceDetails, SplitDetails,
 };
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
@@ -10,13 +11,10 @@ use cosmwasm_std::{
     WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
     Endowment { id: u32 },
@@ -111,7 +109,7 @@ pub(crate) fn oracle_price_to_map(
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct PriceStruct {
     base: String,
     quote: String,
@@ -210,15 +208,16 @@ impl WasmMockQuerier {
                         },
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
-                        applications_impact_review: "applications_impact_review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: "accounts-settings-controller".to_string(),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),
                 QueryMsg::Endowment { id } => match id {
                     1 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
+                        to_binary(&angel_core::msgs::accounts::EndowmentDetailsResponse {
                             owner: Addr::unchecked("endowment-owner"),
                             name: "Test Endowment 1".to_string(),
                             categories: Categories::default(),
@@ -230,8 +229,7 @@ impl WasmMockQuerier {
                             deposit_approved: true,
                             withdraw_approved: true,
                             maturity_time: None,
-                            strategies: AccountStrategies::default(),
-                            oneoff_vaults: OneOffVaults::default(),
+                            invested_strategies: Investments::default(),
                             rebalance: RebalanceDetails::default(),
                             kyc_donors_only: false,
                             pending_redemptions: 0,
@@ -241,7 +239,7 @@ impl WasmMockQuerier {
                         .unwrap(),
                     )),
                     2 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::EndowmentDetailsResponse {
+                        to_binary(&angel_core::msgs::accounts::EndowmentDetailsResponse {
                             owner: Addr::unchecked("endowment-owner"),
                             name: "Test Endowment 2".to_string(),
                             categories: Categories::default(),
@@ -253,8 +251,7 @@ impl WasmMockQuerier {
                             deposit_approved: true,
                             withdraw_approved: true,
                             maturity_time: Some(10000000),
-                            strategies: AccountStrategies::default(),
-                            oneoff_vaults: OneOffVaults::default(),
+                            invested_strategies: Investments::default(),
                             rebalance: RebalanceDetails::default(),
                             kyc_donors_only: false,
                             pending_redemptions: 0,
@@ -267,7 +264,7 @@ impl WasmMockQuerier {
                 },
                 QueryMsg::State { id } => match id {
                     1 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::StateResponse {
+                        to_binary(&angel_core::msgs::accounts::StateResponse {
                             donations_received: DonationsReceived {
                                 locked: Uint128::from(1000000_u128),
                                 liquid: Uint128::from(1000000_u128),
@@ -279,7 +276,7 @@ impl WasmMockQuerier {
                         .unwrap(),
                     )),
                     2 => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&angel_core::responses::accounts::StateResponse {
+                        to_binary(&angel_core::msgs::accounts::StateResponse {
                             donations_received: DonationsReceived {
                                 locked: Uint128::from(1000000_u128),
                                 liquid: Uint128::from(1000000_u128),

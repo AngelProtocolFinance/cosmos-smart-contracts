@@ -1,27 +1,26 @@
-use angel_core::responses::accounts_settings_controller::{
+use angel_core::msgs::accounts_settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+use angel_core::msgs::registrar::{
+    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, StrategyDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
+    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, StrategyApprovalState,
+    StrategyLocale, StrategyParams,
 };
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
     Querier, QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Config {},
-    Vault {
-        vault_addr: String,
+    Strategy {
+        strategy_key: String,
     },
     // Mock the "vault::balance { endowment_id: u32 }" query
     Balance {
@@ -40,6 +39,10 @@ pub enum QueryMsg {
         id: u32,
         setting_updater: Addr,
         endowment_owner: Addr,
+    },
+    // Mock Network Connection from Registrar for an EVM and Native chain
+    NetworkConnection {
+        chain_id: String,
     },
 }
 
@@ -93,7 +96,7 @@ impl WasmMockQuerier {
                 )),
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
-                        owner: "registrar_owner".to_string(),
+                        owner: "juno1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string(), // APT TEAM ADDR
                         version: "registrar-0.1.0".to_string(),
                         accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
@@ -120,52 +123,85 @@ impl WasmMockQuerier {
                         cw3_code: Some(2),
                         cw4_code: Some(3),
                         accepted_tokens: AcceptedTokens {
-                            native: vec!["ujuno".to_string()],
+                            native: vec!["ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string()],
                             cw20: vec!["test-cw20".to_string()],
                         },
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
-                        applications_impact_review: "applications-impact-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: "accounts-settings-controller".to_string(),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr } => {
-                    if let "liquid-vault" = vault_addr.as_str() {
-                        SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&VaultDetailResponse {
-                                vault: YieldVault {
-                                    network: "juno".to_string(),
-                                    address: Addr::unchecked("liquid-vault").to_string(),
-                                    input_denom: "input-denom".to_string(),
-                                    yield_token: Addr::unchecked("yield-token").to_string(),
-                                    approved: true,
-                                    restricted_from: vec![],
-                                    acct_type: AccountType::Liquid,
-                                    vault_type: VaultType::Native,
-                                },
-                            })
-                            .unwrap(),
-                        ))
-                    } else {
-                        SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&VaultDetailResponse {
-                                vault: YieldVault {
-                                    network: "juno".to_string(),
-                                    address: Addr::unchecked("vault").to_string(),
-                                    input_denom: "input-denom".to_string(),
-                                    yield_token: Addr::unchecked("yield-token").to_string(),
-                                    approved: true,
-                                    restricted_from: vec![],
-                                    acct_type: AccountType::Locked,
-                                    vault_type: VaultType::Native,
-                                },
-                            })
-                            .unwrap(),
-                        ))
-                    }
-                }
+                QueryMsg::Strategy { strategy_key } => match strategy_key.as_str() {
+                    "strategy-native" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&StrategyDetailResponse {
+                            strategy: StrategyParams {
+                                approval_state: StrategyApprovalState::Approved,
+                                locale: StrategyLocale::Native,
+                                chain: "juno".to_string(),
+                                input_denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                locked_addr: Some(Addr::unchecked("vault1-locked-contract")),
+                                liquid_addr: Some(Addr::unchecked("vault1-liquid-contract")),
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    "strategy-ethereum" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&StrategyDetailResponse {
+                            strategy: StrategyParams {
+                                approval_state: StrategyApprovalState::Approved,
+                                locale: StrategyLocale::Evm,
+                                chain: "ethereum".to_string(),
+                                input_denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                locked_addr: None,
+                                liquid_addr: None,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    "shady-strategy" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&StrategyDetailResponse {
+                            strategy: StrategyParams {
+                                approval_state: StrategyApprovalState::NotApproved,
+                                locale: StrategyLocale::Ibc,
+                                chain: "injective".to_string(),
+                                input_denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                locked_addr: None,
+                                liquid_addr: None,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    "wrong-chain-strategy" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&StrategyDetailResponse {
+                            strategy: StrategyParams {
+                                approval_state: StrategyApprovalState::Approved,
+                                locale: StrategyLocale::Ibc,
+                                chain: "injective".to_string(),
+                                input_denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                locked_addr: None,
+                                liquid_addr: None,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    _ => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&StrategyDetailResponse {
+                            strategy: StrategyParams {
+                                approval_state: StrategyApprovalState::Deprecated,
+                                locale: StrategyLocale::Ibc,
+                                chain: "injective".to_string(),
+                                input_denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                locked_addr: None,
+                                liquid_addr: None,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                },
                 QueryMsg::Fee { name: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Decimal::from_ratio(10_u128, 100_u128)).unwrap(),
                 )),
@@ -178,7 +214,7 @@ impl WasmMockQuerier {
                         beneficiaries_allowlist: vec![],
                         contributors_allowlist: vec![],
                         maturity_allowlist: vec![Addr::unchecked(
-                            "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", // CHARITY_ADDR
+                            "juno1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", // CHARITY_ADDR
                         )],
                         earnings_fee: None,
                         withdraw_fee: None,
@@ -215,6 +251,41 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
+                QueryMsg::NetworkConnection { chain_id } => match chain_id.as_str() {
+                    // EVM chain (w/o Accounts contract)
+                    "ethereum" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&NetworkConnectionResponse {
+                            chain: chain_id,
+                            network_connection: NetworkInfo {
+                                router_contract: Some("vault-router".to_string()),
+                                accounts_contract: None,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    // Native cosmos chain (w/ Vaults)
+                    "juno" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&NetworkConnectionResponse {
+                            chain: chain_id,
+                            network_connection: NetworkInfo {
+                                router_contract: Some("vault-router".to_string()),
+                                accounts_contract: Some("accounts_contract_addr".to_string()),
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    // Some chain (w/o Vaults)
+                    _ => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&NetworkConnectionResponse {
+                            chain: chain_id,
+                            network_connection: NetworkInfo {
+                                router_contract: None,
+                                accounts_contract: Some("accounts_contract_addr".to_string()),
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                },
             },
             _ => self.base.handle_query(request),
         }

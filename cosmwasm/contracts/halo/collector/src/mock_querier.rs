@@ -1,11 +1,10 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Coin, ContractResult, Empty, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use terraswap::asset::{AssetInfo, PairInfo};
@@ -69,7 +68,7 @@ pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint1
     owner_map
 }
 
-#[derive(Clone, Default)]
+#[cw_serde]
 pub struct TerraswapFactoryQuerier {
     pairs: HashMap<String, String>,
 }
@@ -106,8 +105,7 @@ impl Querier for WasmMockQuerier {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     Pair { asset_infos: [AssetInfo; 2] },
 }

@@ -1,42 +1,46 @@
 [workspace]
 members = [
-    "packages/angel_core",
-    "contracts/core/registrar",
-    "contracts/core/accounts",
-    "contracts/core/accounts-settings-controller",
-    "contracts/core/swap-router",
-    "contracts/core/index-fund",
-    "contracts/multisig/cw4-group",
-    "contracts/multisig/cw3-apteam",
-    "contracts/multisig/cw3-applications",
-    "contracts/multisig/cw3-generic",
-    "contracts/normalized-endowment/cw3-endowment",
-    "contracts/normalized-endowment/cw900-lv",
-    "contracts/normalized-endowment/subdao",
-    "contracts/normalized-endowment/subdao-bonding-token",
-    "contracts/normalized-endowment/donation-match",
-    "contracts/normalized-endowment/fee-distributor",
     "contracts/accessory/fundraising",
     "contracts/accessory/gift-cards",
+    "contracts/halo/airdrop",
+    "contracts/halo/community",
+    "contracts/halo/gov",
+    "contracts/halo/gov-hodler",
+    "contracts/halo/vesting",
+    "contracts/core/accounts",
+    "contracts/core/accounts-settings-controller",
+    "contracts/core/index-fund",
+    "contracts/core/registrar",
+    "contracts/multisig/cw3-applications",
+    "contracts/multisig/cw3-apteam",
+    "contracts/multisig/cw3-generic",
+    "contracts/multisig/cw4-group",
+    "contracts/normalized-endowment/cw3-endowment",
+    "contracts/normalized-endowment/donation-match",
+    "contracts/normalized-endowment/fee-distributor",
+    "packages/angel_core",
+    "packages/halo_token",
 ]
 
 exclude = [
-    "packages/ica_vaults",
-    "packages/halo_token",
-    "contracts/halo/airdrop",
     "contracts/halo/collector",
-    "contracts/halo/community",
     "contracts/halo/distributor",
-    "contracts/halo/gov",
-    "contracts/halo/gov-hodler",
     "contracts/halo/staking",
-    "contracts/halo/vesting",
-    "contracts/ica/ica-controller",
-    "contracts/ica/ica-host",
+    "contracts/core/swap-router",
+    "contracts/normalized-endowment/cw900-lv",
+    "contracts/normalized-endowment/subdao",
+    "contracts/normalized-endowment/subdao-bonding-token",
     "contracts/vaults/astroport",
     "contracts/vaults/junoswap",
     "contracts/vaults/loop",
 ]
+
+[workspace.package]
+version = "2.1.0"
+authors = ["Angel Ventures LLC"]
+edition = "2021"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/AngelProtocolFinance/cosmos-smart-contracts"
 
 [profile.release]
 opt-level = 'z'

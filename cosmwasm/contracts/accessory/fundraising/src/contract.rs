@@ -6,10 +6,10 @@ use crate::msg::{
 use crate::state::{
     all_campaigns, Campaign, Config, ContributorInfo, CAMPAIGNS, CONFIG, CONTRIBUTORS,
 };
-use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::responses::accounts::EndowmentDetailsResponse;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::accounts::EndowmentDetailsResponse;
+use angel_core::msgs::accounts::QueryMsg as AccountQueryMsg;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::structs::{EndowmentStatus, GenericBalance};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

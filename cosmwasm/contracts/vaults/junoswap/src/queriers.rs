@@ -1,8 +1,8 @@
 use cosmwasm_std::{Deps, Uint128};
 use cw20::{Denom, TokenInfoResponse};
 
-use angel_core::messages::vault::WasmSwapQueryMsg;
-use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse, InfoResponse};
+use angel_core::msgs::vault::WasmSwapQueryMsg;
+use angel_core::msgs::vault::{ConfigResponse, ExchangeRateResponse, InfoResponse};
 
 use crate::state::{BALANCES, CONFIG, TOKEN_INFO};
 

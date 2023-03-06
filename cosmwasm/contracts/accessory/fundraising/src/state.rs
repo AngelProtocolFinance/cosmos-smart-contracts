@@ -1,10 +1,9 @@
 use angel_core::structs::GenericBalance;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{Addr, Decimal, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Config {
     pub registrar_contract: Addr,
     /// auto-incrememnted campaign ID (default to 1 at init)
@@ -21,7 +20,7 @@ pub struct Config {
     pub accepted_tokens: GenericBalance,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct Campaign {
     pub creator: Addr,
     /// whether the campaign is open for new contributions / top-ups
@@ -70,7 +69,7 @@ impl Campaign {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[cw_serde]
 pub struct ContributorInfo {
     pub campaign: u64,
     pub balance: GenericBalance,

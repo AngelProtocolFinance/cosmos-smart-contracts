@@ -1,15 +1,14 @@
 use angel_core::common::OrderBy;
-use angel_core::messages::subdao::{PollStatus, VoterInfo};
+use angel_core::msgs::subdao::{PollStatus, VoterInfo};
 use angel_core::utils::{
     calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
 };
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Binary, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 static KEY_CONFIG: &[u8] = b"config";
@@ -19,7 +18,7 @@ static PREFIX_POLL_INDEXER: &[u8] = b"poll_indexer";
 static PREFIX_POLL_VOTER: &[u8] = b"poll_voter";
 static PREFIX_POLL: &[u8] = b"poll";
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub registrar_contract: Addr,
     pub owner: Addr,
@@ -35,20 +34,20 @@ pub struct Config {
     pub snapshot_period: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct State {
     pub poll_count: u64,
     pub total_share: Uint128,
     pub total_deposit: Uint128,
 }
 
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct TokenManager {
     pub share: Uint128,                        // total staked balance
     pub locked_balance: Vec<(u64, VoterInfo)>, // maps poll_id to weight voted
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct Poll {
     pub id: u64,
     pub creator: Addr,
@@ -67,7 +66,7 @@ pub struct Poll {
     pub staked_amount: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[cw_serde]
 pub struct ExecuteData {
     pub order: u64,
     pub contract: Addr,

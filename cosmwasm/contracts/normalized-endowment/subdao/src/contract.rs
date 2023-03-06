@@ -8,14 +8,14 @@ use crate::state::{
 };
 use angel_core::common::OrderBy;
 use angel_core::errors::dao::ContractError;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::messages::subdao::{
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::msgs::subdao::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
     PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
-use angel_core::messages::subdao_bonding_token::InstantiateMsg as DaoTokenInstantiateMsg;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::subdao_bonding_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::structs::{DaoToken, EndowmentType};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{

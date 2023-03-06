@@ -1,8 +1,8 @@
 [package]
 name = "cw3-endowment"
 version = "2.0.7"
-authors = ["Angel Ventures LLC"]
-edition = "2018"
+authors.workspace = true
+edition.workspace = true
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -22,19 +22,22 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
+
 angel-core = { path = "../../../packages/angel_core" }
-cw2 = "0.13.4"
-cw3 = "0.13.4"
-cw4 = "0.13.4"
-cw-utils = "0.13.4"
-cw-asset = "2.2.0"
-cw-storage-plus = "0.13.4"
-cosmwasm-std = { version = "1.0.0",  features = ["abort"] } 
-schemars = "0.8.1"
-serde = { version = "1.0.125", default-features = false, features = ["derive"] }
-thiserror = "1.0.24"
+
+cw2 = "1.0.1"
+cw3 = "1.0.1"
+cw4 = "1.0.1"
+cosmwasm-std = "1.2.1"
+cosmwasm-schema = "1.2.1"
+cw-storage-plus = "1.0.1"
+cw-utils = "1.0.0"
+cw-asset = "3.0.0"
+
+schemars = "0.8.10"
+serde = { version = "1.0.145", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.31" }
 
 [dev-dependencies]
-cosmwasm-schema = "1.0.0"
-cw4-group = "0.13.4"
-cw-multi-test = "0.13.4"
+cw4-group = "1.0.1"
+cw-multi-test = "0.16.2"

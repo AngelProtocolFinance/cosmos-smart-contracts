@@ -1,16 +1,12 @@
 use angel_core::structs::{
-    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentStatus,
-    EndowmentType, OneOffVaults, RebalanceDetails,
+    Allowances, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentStatus,
+    EndowmentType, Investments, RebalanceDetails,
 };
+use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Env, Timestamp};
-use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
-use cw_utils::Expiration;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
@@ -19,8 +15,7 @@ pub struct Config {
     pub max_general_category_id: u8,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Endowment {
     pub owner: Addr,            // address that originally setup the endowment account
     pub name: String,           // name of the Endowment
@@ -33,8 +28,7 @@ pub struct Endowment {
     pub deposit_approved: bool, // approved to receive donations & transact
     pub withdraw_approved: bool, // approved to withdraw funds
     pub maturity_time: Option<u64>, // datetime int of endowment maturity (unit: seconds)
-    pub strategies: AccountStrategies, // vaults and percentages for locked/liquid accounts donations where auto_invest == TRUE
-    pub oneoff_vaults: OneOffVaults, // vaults not covered in account startegies (more efficient tracking of vaults vs. looking up allll vaults)
+    pub invested_strategies: Investments, // list of strategies that an endowment has invested in
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
@@ -53,19 +47,12 @@ impl Endowment {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct State {
     pub donations_received: DonationsReceived,
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<Beneficiary>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
-pub struct Allowances {
-    pub assets: Vec<Asset>,
-    pub expires: Vec<Expiration>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

@@ -405,8 +405,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "endowment-100".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 10 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 10 }).unwrap(),
     };
     let info = mock_info("halo-token", &[]);
     let err = execute(
@@ -422,8 +421,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "ibc-relayer".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 1 }).unwrap(),
     };
     let info = mock_info("cw20-token-contract", &[]);
     let err = execute(
@@ -439,8 +437,7 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "ibc-relayer".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
-            .unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::Deposit { endowment_id: 1 }).unwrap(),
     };
     let info = mock_info("halo-token", &[]);
     let res = execute(
@@ -558,7 +555,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "locked_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("non-lp-token", &[]);
@@ -575,7 +572,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "non_liquid_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("astroport-lp-token", &[]);
@@ -592,7 +589,7 @@ fn test_harvest_to_liquid() {
     let harvest_to_liquid_msg = cw20::Cw20ReceiveMsg {
         sender: "locked_sibling_vault".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
+        msg: to_binary(&angel_core::msgs::vault::ReceiveMsg::HarvestToLiquid {}).unwrap(),
     };
 
     let info = mock_info("astroport-lp-token", &[]);

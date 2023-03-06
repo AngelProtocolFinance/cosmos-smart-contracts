@@ -12,7 +12,7 @@ import { send } from "process";
 import { localterra } from "../../config/localterraConstants";
 
 export async function testExecuteAstroport(
-    terra: LocalTerra | LCDClient, // environment config object 
+    terra: LocalTerra | LCDClient, // environment config object
     apTeam: Wallet,
     apTeam2: Wallet,
     apTeam3: Wallet,
@@ -21,7 +21,6 @@ export async function testExecuteAstroport(
     vaultLiquid1: string,
     vaultLocked2: string,
     vaultLiquid2: string,
-
     astroportFactory: string,
     astroportGenerator: string,
     astroportRouter: string,
@@ -30,7 +29,7 @@ export async function testExecuteAstroport(
     usdcUsdtPair: string,
     usdcUsdtPairLpToken: string,
     usdcUsdtPairUsdcLiquidity: string,
-    usdcUsdtPairUsdtLiquidity: string,
+    usdcUsdtPairUsdtLiquidity: string
 ): Promise<void> {
     console.log(chalk.yellow("\nStep 2. Running Tests"));
 
@@ -55,7 +54,7 @@ export async function testVaultDeposit(
     sender: Wallet,
     vault: string,
     endowment_id: number,
-    coins: any,
+    coins: any
 ): Promise<void> {
     process.stdout.write("Test - Ibc_host deposits to the vault");
     await sendTransaction(terra, sender, [
@@ -67,7 +66,7 @@ export async function testVaultDeposit(
                     endowment_id,
                 },
             },
-            coins,
+            coins
         ),
     ]);
     console.log(chalk.green(" Passed!"));
@@ -78,38 +77,26 @@ export async function testVaultRedeem(
     sender: Wallet,
     vault: string,
     endowment_id: number,
-    amount: string,
+    amount: string
 ): Promise<void> {
     process.stdout.write("Test - Ibc_host redeems from the vault");
     await sendTransaction(terra, sender, [
-        new MsgExecuteContract(
-            sender.key.accAddress,
-            vault,
-            {
-                redeem: {
-                    endowment_id,
-                    amount,
-                },
+        new MsgExecuteContract(sender.key.accAddress, vault, {
+            redeem: {
+                endowment_id,
+                amount,
             },
-        ),
+        }),
     ]);
     console.log(chalk.green(" Passed!"));
 }
 
-export async function testVaultHarvest(
-    terra: LocalTerra | LCDClient,
-    sender: Wallet,
-    vault: string,
-): Promise<void> {
+export async function testVaultHarvest(terra: LocalTerra | LCDClient, sender: Wallet, vault: string): Promise<void> {
     process.stdout.write("Test - Keeper harvests the vault");
     await sendTransaction(terra, sender, [
-        new MsgExecuteContract(
-            sender.key.accAddress,
-            vault,
-            {
-                harvest: {},
-            }
-        )
+        new MsgExecuteContract(sender.key.accAddress, vault, {
+            harvest: {},
+        }),
     ]);
     console.log(chalk.green(" Passed!"));
 }
@@ -119,21 +106,17 @@ export async function testVaultReinvestToLocked(
     sender: Wallet,
     vault: string,
     endowmentId: number,
-    amount: string,
+    amount: string
 ): Promise<void> {
     process.stdout.write("Test - Liquid vault reinvests the LP to locked vault");
 
     await sendTransaction(terra, sender, [
-        new MsgExecuteContract(
-            sender.key.accAddress,
-            vault,
-            {
-                reinvest_to_locked: {
-                    endowment_id: endowmentId,
-                    amount: amount,
-                }
-            }
-        )
+        new MsgExecuteContract(sender.key.accAddress, vault, {
+            reinvest_to_locked: {
+                endowment_id: endowmentId,
+                amount: amount,
+            },
+        }),
     ]);
     console.log(chalk.green(" Passed!"));
 }
@@ -142,17 +125,13 @@ export async function testVaultUpdateConfig(
     terra: LocalTerra | LCDClient,
     sender: Wallet,
     vault_addr: string,
-    new_config: any | undefined,
+    new_config: any | undefined
 ): Promise<void> {
-    process.stdout.write("Test - Vault owner updates the vault config")
+    process.stdout.write("Test - Vault owner updates the vault config");
     await sendTransaction(terra, sender, [
-        new MsgExecuteContract(
-            sender.key.accAddress,
-            vault_addr,
-            {
-                update_config: new_config
-            }
-        )
+        new MsgExecuteContract(sender.key.accAddress, vault_addr, {
+            update_config: new_config,
+        }),
     ]);
     console.log(chalk.green(" Passed!"));
 }
@@ -161,10 +140,7 @@ export async function testVaultUpdateConfig(
 // Querying tests
 //----------------------------------------------------------------------------------------
 
-export async function testQueryVaultConfig(
-    terra: LocalTerra | LCDClient,
-    vault: string
-): Promise<void> {
+export async function testQueryVaultConfig(terra: LocalTerra | LCDClient, vault: string): Promise<void> {
     process.stdout.write("Test - Query Vault Config\n");
     const result: any = await terra.wasm.contractQuery(vault, {
         config: {},
@@ -177,7 +153,7 @@ export async function testQueryVaultConfig(
 export async function testQueryVaultEndowmentBalance(
     terra: LocalTerra | LCDClient,
     vault: string,
-    endowmentId: number,
+    endowmentId: number
 ): Promise<void> {
     process.stdout.write("Test - Query Vault Endowment Balance\n");
     const result: any = await terra.wasm.contractQuery(vault, {
@@ -188,10 +164,7 @@ export async function testQueryVaultEndowmentBalance(
     console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryVaultTotalBalance(
-    terra: LocalTerra | LCDClient,
-    vault: string
-): Promise<void> {
+export async function testQueryVaultTotalBalance(terra: LocalTerra | LCDClient, vault: string): Promise<void> {
     process.stdout.write("Test - Query Vault Total Balance\n");
     const result: any = await terra.wasm.contractQuery(vault, {
         total_balance: {},
@@ -201,10 +174,7 @@ export async function testQueryVaultTotalBalance(
     console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryVaultTokenInfo(
-    terra: LocalTerra | LCDClient,
-    vault: string
-): Promise<void> {
+export async function testQueryVaultTokenInfo(terra: LocalTerra | LCDClient, vault: string): Promise<void> {
     process.stdout.write("Test - Query Vault Token Info\n");
     const result: any = await terra.wasm.contractQuery(vault, {
         token_info: {},

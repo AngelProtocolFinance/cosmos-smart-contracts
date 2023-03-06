@@ -1,8 +1,7 @@
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use cosmwasm_std::{Addr, Decimal, StdResult, Storage};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {

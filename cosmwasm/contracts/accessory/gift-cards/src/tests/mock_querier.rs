@@ -1,4 +1,4 @@
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AcceptedTokens, RebalanceDetails, SplitDetails};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -6,12 +6,10 @@ use cosmwasm_std::{
     Querier, QuerierResult, QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
+use cosmwasm_schema::cw_serde;
 use std::marker::PhantomData;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     // Mock the `registrar::QueryMsg::Config {}` query
     Config {},
@@ -85,7 +83,6 @@ impl WasmMockQuerier {
                             cw20: vec!["test-cw20".to_string()],
                         },
                         applications_review: "applications-review".to_string(),
-                        applications_impact_review: "applications-impact-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         subdao_gov_code: None,
                         subdao_cw20_token_code: None,
@@ -100,6 +97,8 @@ impl WasmMockQuerier {
                         swap_factory: None,
                         accounts_settings_controller: "accounts-settings-controller-addr"
                             .to_string(),
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

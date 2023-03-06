@@ -31,8 +31,8 @@ export async function customSigningClient(opts: SigningOpts, mnemonic: string, l
     if (opts.prefix == "terra") {
         signer = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
             prefix: opts.prefix,
-            hdPaths: [stringToPath("m/44'/330'/0'/0/0")]
-        })
+            hdPaths: [stringToPath("m/44'/330'/0'/0/0")],
+        });
     } else {
         signer = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
             prefix: opts.prefix,
@@ -62,8 +62,8 @@ export async function customSigningCosmWasmClient(opts: SigningOpts, mnemonic: s
     if (opts.prefix == "terra") {
         wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
             prefix: opts.prefix,
-            hdPaths: [stringToPath("m/44'/330'/0'/0/0")]
-        })
+            hdPaths: [stringToPath("m/44'/330'/0'/0/0")],
+        });
     } else {
         wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
             prefix: opts.prefix,
@@ -106,7 +106,6 @@ export async function listAccounts(cosmwasm: CosmWasmSigner, controllerAddr: str
     return res.accounts;
 }
 
-
 /**
  * Exta fields used for `chain` configuration
  * @returns 2 fields `broadcastPollIntervalMs` & `broadcastTimeoutMs`
@@ -133,8 +132,8 @@ export async function setup(srcConfig: ChainDefinition, destConfig: ChainDefinit
     const src = await customSigningClient(srcConfig, mnemonic);
     const dest = await customSigningClient(destConfig, mnemonic);
 
-    await customFundAccount(destConfig, dest.senderAddress, '4000000');
-    await customFundAccount(srcConfig, src.senderAddress, '4000000');
+    await customFundAccount(destConfig, dest.senderAddress, "4000000");
+    await customFundAccount(srcConfig, src.senderAddress, "4000000");
 
     return [src, dest];
 }

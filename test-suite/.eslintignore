@@ -1,2 +1,3 @@
-# don't ever lint node_modules
+# don't ever lint node_modules or build files
+build
 node_modules

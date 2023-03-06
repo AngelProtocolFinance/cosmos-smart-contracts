@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query, SECONDS_PER_WEEK};
 use crate::error::ContractError;
 use crate::state::{Config, State, CONFIG, STATE};
-use angel_core::messages::fee_distributor::{ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse};
+use angel_core::msgs::fee_distributor::{ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Api, CosmosMsg, DepsMut, Env, SubMsg, Timestamp, Uint128,

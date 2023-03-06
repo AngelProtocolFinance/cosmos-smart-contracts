@@ -1,15 +1,11 @@
+use angel_core::structs::AccountType;
+use astroport::router::SwapOperation;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfo as CwAssetInfo;
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-use astroport::router::SwapOperation;
-
-use angel_core::structs::AccountType;
-use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub ibc_host: String,
     pub ibc_controller: String,
@@ -41,11 +37,10 @@ pub struct InstantiateMsg {
 }
 
 /// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct MigrateMsg {}
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
@@ -96,7 +91,7 @@ pub enum ExecuteMsg {
     ReceiveIbcResponse(ReceiveIbcResponseMsg),
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[cw_serde]
 pub struct UpdateConfigMsg {
     pub ibc_host: Option<String>,
     pub ibc_controller: Option<String>,
@@ -113,8 +108,7 @@ pub struct UpdateConfigMsg {
     pub minimum_initial_deposit: Option<Uint128>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ReceiveMsg {
     Deposit {
         endowment_id: u32,
@@ -128,8 +122,7 @@ pub enum ReceiveMsg {
     HarvestToLiquid {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum QueryMsg {
     /// Returns the configuration of the contract
     /// Return type: ConfigResponse.
@@ -151,8 +144,7 @@ pub enum QueryMsg {
     ApTaxBalance {},
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum AstroportGeneratorExecuteMsg {
     Deposit {}, // Deposit(stake) LP token.(param: amount in `send` msg)
     Withdraw { lp_token: String, amount: Uint128 }, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)

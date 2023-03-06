@@ -1,12 +1,10 @@
 use angel_core::structs::GenericBalance;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::Addr;
 use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Config {
     pub owner: Addr, // AP TEAM MULTISIG
     pub keeper: Addr,
@@ -14,8 +12,7 @@ pub struct Config {
     pub next_deposit: u64,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct Deposit {
     pub sender: Addr,
     pub token: Asset,

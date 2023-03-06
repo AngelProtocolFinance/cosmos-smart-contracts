@@ -1,12 +1,11 @@
 use angel_core::errors::core::ContractError;
 use angel_core::structs::Pair;
+use cosmwasm_schema::{cw_serde};
 use cosmwasm_std::{to_binary, Addr, Deps, StdError};
 use cw_asset::AssetInfo;
 use cw_storage_plus::{Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[cw_serde]
 pub struct Config {
     pub registrar_contract: Addr,
     pub accounts_contract: Addr,

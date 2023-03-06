@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "EndowmentPermissionsResponse",
+  "type": "object",
+  "required": [
+    "aum_fee",
+    "beneficiaries_allowlist",
+    "categories",
+    "contributors_allowlist",
+    "deposit_fee",
+    "earnings_fee",
+    "endowment_controller",
+    "ignore_user_splits",
+    "image",
+    "kyc_donors_only",
+    "logo",
+    "maturity_allowlist",
+    "name",
+    "split_to_liquid",
+    "strategies",
+    "withdraw_fee"
+  ],
+  "properties": {
+    "aum_fee": {
+      "type": "boolean"
+    },
+    "beneficiaries_allowlist": {
+      "type": "boolean"
+    },
+    "categories": {
+      "type": "boolean"
+    },
+    "contributors_allowlist": {
+      "type": "boolean"
+    },
+    "deposit_fee": {
+      "type": "boolean"
+    },
+    "earnings_fee": {
+      "type": "boolean"
+    },
+    "endowment_controller": {
+      "type": "boolean"
+    },
+    "ignore_user_splits": {
+      "type": "boolean"
+    },
+    "image": {
+      "type": "boolean"
+    },
+    "kyc_donors_only": {
+      "type": "boolean"
+    },
+    "logo": {
+      "type": "boolean"
+    },
+    "maturity_allowlist": {
+      "type": "boolean"
+    },
+    "name": {
+      "type": "boolean"
+    },
+    "split_to_liquid": {
+      "type": "boolean"
+    },
+    "strategies": {
+      "type": "boolean"
+    },
+    "withdraw_fee": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

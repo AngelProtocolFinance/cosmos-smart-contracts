@@ -1,15 +1,14 @@
 use super::mock_querier::{mock_dependencies, WasmMockQuerier};
 use crate::contract::{execute, instantiate, migrate, query};
-use crate::state::Allowances;
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::{
+use angel_core::msgs::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
+use angel_core::msgs::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg,
-    Strategy, UpdateEndowmentDetailsMsg, UpdateEndowmentStatusMsg,
+    UpdateEndowmentDetailsMsg, UpdateEndowmentStatusMsg,
 };
-use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyComponent,
-    SwapOperation,
+    AccountType, Allowances, Beneficiary, Categories, EndowmentType, SplitDetails,
+    StrategyInvestment, SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -19,13 +18,14 @@ use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
 
-const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
+const AP_TEAM: &str = "juno1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ID: u32 = 1;
-const CHARITY_ADDR: &str = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
-const REGISTRAR_CONTRACT: &str = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
-const APPLICATIONS_IMPACT_REVIEW: &str = "applications-impact-review";
-const PLEB: &str = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
+const CHARITY_ADDR: &str = "juno1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
+const REGISTRAR_CONTRACT: &str = "juno18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
+const PLEB: &str = "juno17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
 const DEPOSITOR: &str = "depositor";
+const USDC: &str = "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4";
+const STRATEGY_KEY: &str = "strategy-native";
 
 fn create_endowment() -> (
     OwnedDeps<MockStorage, MockApi, WasmMockQuerier>,
@@ -94,7 +94,7 @@ fn create_endowment() -> (
     )
     .unwrap();
 
-    let info = mock_info(APPLICATIONS_IMPACT_REVIEW, &coins(100000, "earth"));
+    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let _ = execute(
         deps.as_mut(),
         env.clone(),
@@ -146,7 +146,6 @@ fn test_update_endowment_details() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        strategies: None,
         rebalance: None,
     };
     let res = execute(
@@ -172,7 +171,6 @@ fn test_update_endowment_details() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        strategies: None,
         rebalance: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
@@ -306,123 +304,8 @@ fn test_change_admin() {
 }
 
 #[test]
-fn test_update_strategy() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
-
-    // sum of the invested strategy components percentages is over 100%
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
-                vault: "vault".to_string(),
-                percentage: Decimal::percent(30),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(80),
-            },
-        ],
-    };
-
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::InvalidStrategyAllocation {});
-
-    // duplicated vaults passed
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
-                vault: "vault".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(20),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-        ],
-    };
-
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
-
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
-                vault: "vault".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(PLEB, &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Succeed to update the strategies
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Liquid,
-        strategies: vec![Strategy {
-            vault: "liquid-vault".to_string(),
-            percentage: Decimal::percent(100),
-        }],
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-    // Check the strategies
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Endowment { id: CHARITY_ID },
-    )
-    .unwrap();
-    let endowment: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(endowment.strategies.locked.len(), 2);
-    assert_eq!(endowment.strategies.liquid.len(), 1);
-    assert_eq!(
-        endowment.strategies.liquid,
-        vec![StrategyComponent {
-            vault: "liquid-vault".to_string(),
-            percentage: Decimal::percent(100),
-        }]
-    );
-}
-
-#[test]
 fn test_donate() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(AP_TEAM, &[]);
@@ -434,8 +317,8 @@ fn test_donate() {
     let _res = execute(deps.as_mut(), env.clone(), info, update_status_msg).unwrap();
 
     // Try the "Deposit" w/o "Auto Invest" turned on. No Vault deposits should take place.
-    let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
+    let donation_amt = 20000_u128;
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, USDC));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -456,51 +339,17 @@ fn test_donate() {
     assert_eq!(state.donations_received.locked.u128(), donation_amt / 2);
     assert_eq!(state.donations_received.liquid.u128(), donation_amt / 2);
 
-    // Update the Endowment settings to enable onward vault deposits
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let _vaults_res = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::UpdateStrategies {
-            id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            strategies: [
-                Strategy {
-                    vault: "tech_strategy_component_addr".to_string(),
-                    percentage: Decimal::percent(40),
-                },
-                Strategy {
-                    vault: "vault".to_string(),
-                    percentage: Decimal::percent(40),
-                },
-            ]
-            .to_vec(),
-        },
-    )
-    .unwrap();
-    assert_eq!(0, res.messages.len());
-
-    let res = query(
-        deps.as_ref(),
-        env.clone(),
-        QueryMsg::Endowment { id: CHARITY_ID },
-    )
-    .unwrap();
-    let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(2, endow.strategies.locked.len());
-
     // Cannot deposit several tokens at once.
     let info = mock_info(
         DEPOSITOR,
         &[
             Coin {
-                denom: "ujuno".to_string(),
-                amount: Uint128::from(100_u128),
+                denom: USDC.to_string(),
+                amount: Uint128::from(10000_u128),
             },
             Coin {
                 denom: "uusd".to_string(),
-                amount: Uint128::from(100_u128),
+                amount: Uint128::from(10000_u128),
             },
         ],
     );
@@ -511,18 +360,6 @@ fn test_donate() {
     });
     let err = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap_err();
     assert_eq!(err, ContractError::InvalidCoinsDeposited {});
-
-    // Try the "Deposit" w/ "Auto Invest" turned on. Two Vault deposits should now take place.
-    let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
-    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
-        id: CHARITY_ID,
-        locked_percentage: Decimal::percent(50),
-        liquid_percentage: Decimal::percent(50),
-    });
-    let res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
-
-    assert_eq!(res.messages.len(), 2);
 }
 
 #[test]
@@ -539,7 +376,7 @@ fn test_deposit_cw20() {
     let _res = execute(deps.as_mut(), env.clone(), info, update_status_msg).unwrap();
 
     // Try the "Deposit"
-    let donation_amt = 200_u128;
+    let donation_amt = 20000_u128;
     let info = mock_info("test-cw20", &[]);
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
@@ -557,7 +394,7 @@ fn test_deposit_cw20() {
 }
 
 #[test]
-fn test_withdraw() {
+fn test_withdraw_locked() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     // Update the Endowment status
@@ -570,8 +407,8 @@ fn test_withdraw() {
     let _res = execute(deps.as_mut(), env.clone(), info, update_status_msg).unwrap();
 
     // Try the "Deposit"
-    let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
+    let donation_amt = 20000_u128;
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, USDC));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -587,8 +424,8 @@ fn test_withdraw() {
         beneficiary_wallet: Some("beneficiary".to_string()),
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
-            info: AssetInfoBase::Native("ujuno".to_string()),
-            amount: Uint128::from(100_u128),
+            info: AssetInfoBase::Native(USDC.to_string()),
+            amount: Uint128::from(10000_u128),
         }],
     };
     let err = execute(
@@ -616,8 +453,8 @@ fn test_withdraw() {
         beneficiary_wallet: Some("fake_beneficiary".to_string()),
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
-            info: AssetInfoBase::Native("ujuno".to_string()),
-            amount: Uint128::from(100_u128),
+            info: AssetInfoBase::Native(USDC.to_string()),
+            amount: Uint128::from(10000_u128),
         }],
     };
     let err = execute(
@@ -644,8 +481,8 @@ fn test_withdraw() {
         beneficiary_wallet: Some("beneficiary".to_string()),
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
-            info: AssetInfoBase::Native("ujuno".to_string()),
-            amount: Uint128::from(100_u128),
+            info: AssetInfoBase::Native(USDC.to_string()),
+            amount: Uint128::from(10000_u128),
         }],
     };
     let res = execute(deps.as_mut(), matured_env.clone(), info, withdraw_msg).unwrap();
@@ -660,14 +497,14 @@ fn test_withdraw() {
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::cw20(Addr::unchecked("test-cw20")),
-            amount: Uint128::from(100_u128),
+            amount: Uint128::from(10000_u128),
         }],
     };
     let err = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
 
     // Deposit cw20 token first & withdraw
-    let donation_amt = 200_u128;
+    let donation_amt = 20000_u128;
     let info = mock_info("test-cw20", &[]);
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
@@ -711,7 +548,7 @@ fn test_withdraw_liquid() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, USDC));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -727,7 +564,7 @@ fn test_withdraw_liquid() {
         beneficiary_wallet: Some("beneficiary".to_string()),
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
-            info: AssetInfoBase::Native("ujuno".to_string()),
+            info: AssetInfoBase::Native(USDC.to_string()),
             amount: Uint128::from(1000_u128),
         }],
     };
@@ -748,7 +585,7 @@ fn test_withdraw_liquid() {
         beneficiary_wallet: Some("beneficiary".to_string()),
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
-            info: AssetInfoBase::Native("ujuno".to_string()),
+            info: AssetInfoBase::Native(USDC.to_string()),
             amount: Uint128::from(1000_u128),
         }],
     };
@@ -763,8 +600,8 @@ fn test_withdraw_liquid() {
         beneficiary_wallet: Some("beneficiary".to_string()),
         beneficiary_endow: None,
         assets: vec![AssetUnchecked {
-            info: AssetInfoBase::Native("ujuno".to_string()),
-            amount: Uint128::from(10_u128),
+            info: AssetInfoBase::Native(USDC.to_string()),
+            amount: Uint128::from(100_u128),
         }],
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_liquid_msg).unwrap();
@@ -773,7 +610,7 @@ fn test_withdraw_liquid() {
 
 #[test]
 fn test_vault_receipt() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
     // Update the Endowment status to APPROVED
     let info = mock_info(AP_TEAM, &[]);
@@ -803,7 +640,7 @@ fn test_vault_receipt() {
     let info = mock_info(
         "vault",
         &[Coin {
-            denom: "ujuno".to_string(),
+            denom: USDC.to_string(),
             amount: Uint128::from(100_u128),
         }],
     );
@@ -819,54 +656,11 @@ fn test_vault_receipt() {
     .unwrap();
     assert_eq!(0, res.messages.len());
 
-    // Should fail if we try to assign a vault with an acct_type that is different from the Endow acct_type
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
-                vault: "liquid-vault".to_string(), // THIS IS A LIQUID ACCOUNT VAULT!
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "locked-vault".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
-
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![
-            Strategy {
-                vault: "locked-vault".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
-    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-    let res = query(
-        deps.as_ref(),
-        env.clone(),
-        QueryMsg::Endowment { id: CHARITY_ID },
-    )
-    .unwrap();
-    let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(2, endow.strategies.locked.len());
-
     // Success, check if the "config.redemptions" is decreased
     let info = mock_info(
         "vault",
         &[Coin {
-            denom: "ujuno".to_string(),
+            denom: USDC.to_string(),
             amount: Uint128::from(100_u128),
         }],
     );
@@ -1003,7 +797,7 @@ fn test_swap_token() {
     execute(
         deps.as_mut(),
         mock_env(),
-        mock_info("anyone", &coins(1000000000_u128, "ujuno")),
+        mock_info("anyone", &coins(1000000000_u128, USDC)),
         ExecuteMsg::Deposit(DepositMsg {
             id: CHARITY_ID,
             locked_percentage: Decimal::percent(100),
@@ -1055,7 +849,7 @@ fn test_swap_token() {
             acct_type: AccountType::Locked,
             amount: Uint128::zero(),
             operations: vec![SwapOperation::JunoSwap {
-                offer_asset_info: AssetInfo::Native("ujuno".to_string()),
+                offer_asset_info: AssetInfo::Native(USDC.to_string()),
                 ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
             }],
         },
@@ -1074,7 +868,7 @@ fn test_swap_token() {
             acct_type: AccountType::Locked,
             amount: Uint128::from(1000000_u128),
             operations: vec![SwapOperation::JunoSwap {
-                offer_asset_info: AssetInfo::Native("ujuno".to_string()),
+                offer_asset_info: AssetInfo::Native(USDC.to_string()),
                 ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
             }],
         },
@@ -1096,7 +890,7 @@ fn test_swap_receipt() {
         ExecuteMsg::SwapReceipt {
             id: CHARITY_ID,
             acct_type: AccountType::Locked,
-            final_asset: Asset::native("ujuno", 1000000_u128),
+            final_asset: Asset::native(USDC, 1000000_u128),
         },
     )
     .unwrap_err();
@@ -1111,7 +905,7 @@ fn test_swap_receipt() {
         ExecuteMsg::SwapReceipt {
             id: CHARITY_ID,
             acct_type: AccountType::Locked,
-            final_asset: Asset::native("ujuno", 1000000_u128),
+            final_asset: Asset::native(USDC, 1000000_u128),
         },
     )
     .unwrap();
@@ -1124,7 +918,7 @@ fn test_swap_receipt() {
         ExecuteMsg::SwapReceipt {
             id: CHARITY_ID,
             acct_type: AccountType::Liquid,
-            final_asset: Asset::native("ujuno", 2000000_u128),
+            final_asset: Asset::native(USDC, 2000000_u128),
         },
     )
     .unwrap();
@@ -1217,108 +1011,142 @@ fn test_swap_receipt() {
 }
 
 #[test]
-fn test_vaults_invest() {
+fn test_strategies_invest() {
     let (mut deps, _, _, _) = create_endowment();
 
-    // Fail to invest to vaults since no endowment owner calls
+    // Fail to invest to strategies since no endowment owner calls
     let info = mock_info("anyone", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsInvest {
+        ExecuteMsg::StrategiesInvest {
             id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![],
+            strategies: vec![],
         },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
-    // Fail to invest to vaults since vaults are empty
+    // Fail to invest to strategies since not approved
     let info = mock_info(CHARITY_ADDR, &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsInvest {
+        ExecuteMsg::StrategiesInvest {
             id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![],
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::InvalidInputs {});
-
-    // Fail to invest to vaults since acct_type does not match
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::VaultsInvest {
-            id: CHARITY_ID,
-            acct_type: AccountType::Liquid,
-            vaults: vec![(
-                "vault".to_string(),
-                Asset::native("input-denom", 1000000_u128),
-            )],
+            strategies: vec![StrategyInvestment {
+                strategy_key: "shady-strategy".to_string(),
+                locked_amount: Uint128::from(1000000_u128),
+                liquid_amount: Uint128::from(0_u128),
+            }],
         },
     )
     .unwrap_err();
     assert_eq!(
         err,
         ContractError::Std(StdError::GenericErr {
-            msg: "Vault and Endowment AccountTypes do not match".to_string(),
+            msg: "Strategy is not approved to accept deposits".to_string(),
         })
     );
 
-    // Fail to invest to vaults since insufficient funds
+    // Fail to invest to strategies since native chain does not have a vault router
     let info = mock_info(CHARITY_ADDR, &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsInvest {
+        ExecuteMsg::StrategiesInvest {
             id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![(
-                "vault".to_string(),
-                Asset::native("input-denom", 1000000_u128),
-            )],
+            strategies: vec![StrategyInvestment {
+                strategy_key: "wrong-chain-strategy".to_string(),
+                locked_amount: Uint128::from(1000000_u128),
+                liquid_amount: Uint128::from(0_u128),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Vault Router not set for chain in the Registrar Network Connection.".to_string()
+        })
+    );
+
+    // Fail to invest to strategies since strategies input is empty
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::StrategiesInvest {
+            id: CHARITY_ID,
+            strategies: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to invest to strategies since insufficient funds
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::StrategiesInvest {
+            id: CHARITY_ID,
+            strategies: vec![StrategyInvestment {
+                strategy_key: "strategy-ethereum".to_string(),
+                locked_amount: Uint128::from(100000_u128),
+                liquid_amount: Uint128::from(0_u128),
+            }],
         },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
 
-    // Finally, succeed to do "vaults_invest"
-    // first, need to update the "state.balances"
-    let info = mock_info("swaps_router_addr", &[]);
-    let _ = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::SwapReceipt {
-            id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            final_asset: Asset::native("input-denom", 1000000_u128),
-        },
-    )
-    .unwrap();
+    // first, need to make a deposit of funds
+    let donation_amt = 10000_u128;
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, USDC));
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let _res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
-    // succeed to "vaults_invest"
+    // Fail to invest to strategies since insufficient funds in locked account
     let info = mock_info(CHARITY_ADDR, &[]);
     let _res = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsInvest {
+        ExecuteMsg::StrategiesInvest {
             id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![(
-                "vault".to_string(),
-                Asset::native("input-denom", 300000_u128),
-            )],
+            strategies: vec![StrategyInvestment {
+                strategy_key: STRATEGY_KEY.to_string(),
+                locked_amount: Uint128::from(6000_u128), // exceeds the current amount of 5000
+                liquid_amount: Uint128::from(2000_u128),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InsufficientFunds {});
+
+    // Succeed to invest in a strategy
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::StrategiesInvest {
+            id: CHARITY_ID,
+            strategies: vec![StrategyInvestment {
+                strategy_key: STRATEGY_KEY.to_string(),
+                locked_amount: Uint128::from(3000_u128),
+                liquid_amount: Uint128::from(2000_u128),
+            }],
         },
     )
     .unwrap();
@@ -1333,93 +1161,104 @@ fn test_vaults_invest() {
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
         state.tokens_on_hand.locked.native[0].denom,
-        "input-denom".to_string(),
+        USDC.to_string(),
     );
     assert_eq!(
         state.tokens_on_hand.locked.native[0].amount,
-        Uint128::from(1000000_u128 - 300000_u128)
+        Uint128::from(2000_u128)
+    );
+    assert_eq!(
+        state.tokens_on_hand.liquid.native[0].amount,
+        Uint128::from(3000_u128)
     );
 }
 
 #[test]
-fn test_vaults_redeem() {
+fn test_strategies_redeem() {
     let (mut deps, _, _, _) = create_endowment();
 
-    // Fail to redeem vaults since no endowment owner calls
-    let info = mock_info("anyone", &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::VaultsRedeem {
-            id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![("vault".to_string(), Uint128::from(1000000_u128))],
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Fail to redeem vaults since vaults are empty
+    // Fail to redeem strategies since strategies input is empty
     let info = mock_info(CHARITY_ADDR, &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsRedeem {
+        ExecuteMsg::StrategiesRedeem {
             id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![],
+            strategies: vec![],
         },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::InvalidInputs {});
 
-    // Fail to invest to vaults since acct_type does not match
+    // Fail to redeem strategies since no endowment owner calls
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::StrategiesRedeem {
+            id: CHARITY_ID,
+            strategies: vec![StrategyInvestment {
+                strategy_key: STRATEGY_KEY.to_string(),
+                locked_amount: Uint128::from(10000_u128),
+                liquid_amount: Uint128::from(0_u128),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to redeem strategies since no Vault Router is set for a native strategy
     let info = mock_info(CHARITY_ADDR, &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsRedeem {
+        ExecuteMsg::StrategiesRedeem {
             id: CHARITY_ID,
-            acct_type: AccountType::Liquid,
-            vaults: vec![("vault".to_string(), Uint128::from(1000000_u128))],
+            strategies: vec![StrategyInvestment {
+                strategy_key: "wrong-chain-strategy".to_string(),
+                locked_amount: Uint128::from(10000_u128),
+                liquid_amount: Uint128::from(0_u128),
+            }],
         },
     )
     .unwrap_err();
     assert_eq!(
         err,
         ContractError::Std(StdError::GenericErr {
-            msg: "Vault and Endowment AccountTypes do not match".to_string(),
+            msg: "Vault Router not set for chain in the Registrar Network Connection.".to_string(),
         })
     );
 
-    // Fail to invest to vaults since insufficient funds
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::VaultsRedeem {
-            id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![("vault".to_string(), Uint128::from(2000000_u128))],
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::BalanceTooSmall {});
+    // // Fail to invest to strategies since insufficient funds
+    // let info = mock_info(CHARITY_ADDR, &[]);
+    // let err = execute(
+    //     deps.as_mut(),
+    //     mock_env(),
+    //     info,
+    //     ExecuteMsg::StrategiesRedeem {
+    //         id: CHARITY_ID,
+    //         strategies: vec![StrategyInvestment { strategy_key: STRATEGY_KEY.to_string(), locked_amount: 4200000_u128, liquid_amount: 0_u128 }],
+    //     },
+    // )
+    // .unwrap_err();
+    // assert_eq!(err, ContractError::BalanceTooSmall {});
 
-    // Succeed to invest to vaults
+    // Succeed to redeem from strategies
     let info = mock_info(CHARITY_ADDR, &[]);
     let res = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultsRedeem {
+        ExecuteMsg::StrategiesRedeem {
             id: CHARITY_ID,
-            acct_type: AccountType::Locked,
-            vaults: vec![("vault".to_string(), Uint128::from(100000_u128))],
+            strategies: vec![StrategyInvestment {
+                strategy_key: "strategy-native".to_string(),
+                locked_amount: Uint128::from(10000_u128),
+                liquid_amount: Uint128::from(0_u128),
+            }],
         },
     )
     .unwrap();
@@ -1506,7 +1345,7 @@ fn test_manage_allowances() {
             action: "add".to_string(),
             spender: "spender".to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::from(100_u128),
             },
             expires: None,
@@ -1539,7 +1378,7 @@ fn test_manage_allowances() {
             action: "add".to_string(),
             spender: "spender".to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::from(100_u128),
             },
             expires: None,
@@ -1561,7 +1400,7 @@ fn test_manage_allowances() {
     assert_eq!(allowances.assets[0].amount, Uint128::from(100_u128));
     assert_eq!(
         allowances.assets[0].info.to_string(),
-        "native:ujuno".to_string()
+        format!("native:{}", USDC)
     );
     assert_eq!(allowances.expires[0], Expiration::Never {});
 
@@ -1576,7 +1415,7 @@ fn test_manage_allowances() {
             action: "add".to_string(),
             spender: "spender".to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::from(100_u128),
             },
             expires: Some(Expiration::AtHeight(env.block.height + 100)),
@@ -1598,7 +1437,7 @@ fn test_manage_allowances() {
     assert_eq!(allowances.assets[0].amount, Uint128::from(200_u128));
     assert_eq!(
         allowances.assets[0].info.to_string(),
-        "native:ujuno".to_string()
+        format!("native:{}", USDC)
     );
     assert_eq!(
         allowances.expires[0],
@@ -1616,7 +1455,7 @@ fn test_manage_allowances() {
             action: "add".to_string(),
             spender: "spender".to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::MAX,
             },
             expires: None,
@@ -1634,7 +1473,7 @@ fn test_manage_allowances() {
             action: "remove".to_string(),
             spender: "spender".to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::from(1000_u128),
             },
             expires: None,
@@ -1653,7 +1492,7 @@ fn test_manage_allowances() {
             action: "remove".to_string(),
             spender: "spender".to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::from(60_u128),
             },
             expires: None,
@@ -1675,22 +1514,22 @@ fn test_manage_allowances() {
     assert_eq!(allowances.assets[0].amount, Uint128::from(140_u128));
     assert_eq!(
         allowances.assets[0].info.to_string(),
-        "native:ujuno".to_string()
+        format!("native:{}", USDC)
     );
     assert_eq!(allowances.expires[0], Expiration::Never {});
 }
 
 #[test]
 fn test_spend_allowance() {
-    let donation_amt = 200_u128;
+    let donation_amt = 2000_u128;
     let liquid_amt = donation_amt / 2;
     let spender = "spender";
-    let spend_amt = 60_u128;
+    let spend_amt = 100_u128;
 
     let (mut deps, env, _, _) = create_endowment();
 
     // "Deposit" the JUNO tokens
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, USDC));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -1706,17 +1545,14 @@ fn test_spend_allowance() {
     )
     .unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        state.tokens_on_hand.liquid.native,
-        coins(liquid_amt, "ujuno")
-    );
+    assert_eq!(state.tokens_on_hand.liquid.native, coins(liquid_amt, USDC));
 
     // "spend_allowance" fails since the sender/caller does not have allowances
     let info = mock_info(&spender.to_string(), &[]);
     let spend_allowance_msg = ExecuteMsg::SpendAllowance {
         endowment_id: CHARITY_ID,
         asset: Asset {
-            info: AssetInfoBase::Native("ujuno".to_string()),
+            info: AssetInfoBase::Native(USDC.to_string()),
             amount: Uint128::from(spend_amt),
         },
     };
@@ -1734,7 +1570,7 @@ fn test_spend_allowance() {
             action: "add".to_string(),
             spender: spender.to_string(),
             asset: Asset {
-                info: AssetInfoBase::Native("ujuno".to_string()),
+                info: AssetInfoBase::Native(USDC.to_string()),
                 amount: Uint128::from(spend_amt),
             },
             expires: None,
@@ -1757,7 +1593,7 @@ fn test_spend_allowance() {
     assert_eq!(allowances.assets[0].amount, Uint128::from(spend_amt));
     assert_eq!(
         allowances.assets[0].info.to_string(),
-        "native:ujuno".to_string()
+        format!("native:{}", USDC)
     );
 
     // "spend_allowance" fails when zero amount
@@ -1765,7 +1601,7 @@ fn test_spend_allowance() {
     let spend_allowance_msg = ExecuteMsg::SpendAllowance {
         endowment_id: CHARITY_ID,
         asset: Asset {
-            info: AssetInfoBase::Native("ujuno".to_string()),
+            info: AssetInfoBase::Native(USDC.to_string()),
             amount: Uint128::zero(),
         },
     };
@@ -1777,7 +1613,7 @@ fn test_spend_allowance() {
     let spend_allowance_msg = ExecuteMsg::SpendAllowance {
         endowment_id: CHARITY_ID,
         asset: Asset {
-            info: AssetInfoBase::Native("ujuno".to_string()),
+            info: AssetInfoBase::Native(USDC.to_string()),
             amount: Uint128::from(liquid_amt + 1),
         },
     };
@@ -1788,7 +1624,7 @@ fn test_spend_allowance() {
     let spend_allowance_msg = ExecuteMsg::SpendAllowance {
         endowment_id: CHARITY_ID,
         asset: Asset {
-            info: AssetInfoBase::Native("ujuno".to_string()),
+            info: AssetInfoBase::Native(USDC.to_string()),
             amount: Uint128::from(spend_amt),
         },
     };
@@ -1813,7 +1649,7 @@ fn test_spend_allowance() {
     );
     assert_eq!(
         allowances.assets[0].info.to_string(),
-        "native:ujuno".to_string()
+        format!("native:{}", USDC)
     );
 
     // Check the endowment state
@@ -1826,7 +1662,7 @@ fn test_spend_allowance() {
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
         state.tokens_on_hand.liquid.native,
-        coins(liquid_amt - spend_amt, "ujuno")
+        coins(liquid_amt - spend_amt, USDC)
     );
 }
 

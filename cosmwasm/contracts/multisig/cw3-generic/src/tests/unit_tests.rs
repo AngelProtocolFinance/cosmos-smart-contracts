@@ -1,11 +1,11 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
-use angel_core::messages::cw3_multisig::QueryMsg;
+use angel_core::msgs::cw3_multisig::{MetaProposalListResponse, MetaProposalResponse, QueryMsg};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};
 use cw3::{
-    ProposalListResponse, ProposalResponse, Status, Vote, VoteInfo, VoteListResponse, VoteResponse,
-    VoterDetail, VoterListResponse, VoterResponse,
+    Status, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail, VoterListResponse,
+    VoterResponse,
 };
 use cw4::{Cw4ExecuteMsg, Member, MemberChangedHookMsg, MemberDiff};
 use cw4_group::helpers::Cw4GroupContract;
@@ -243,7 +243,7 @@ fn test_instantiate_works() {
         .unwrap();
 
     // Verify contract version set properly
-    let version = query_contract_info(&app, flex_addr.clone()).unwrap();
+    let version = query_contract_info(&app.wrap(), flex_addr.clone()).unwrap();
     assert_eq!(
         ContractVersion {
             contract: CONTRACT_NAME.to_string(),
@@ -399,7 +399,7 @@ fn test_proposal_queries() {
         start_after: None,
         limit: None,
     };
-    let res: ProposalListResponse = app
+    let res: MetaProposalListResponse = app
         .wrap()
         .query_wasm_smart(&flex_addr, &list_query)
         .unwrap();
@@ -426,18 +426,19 @@ fn test_proposal_queries() {
         start_before: None,
         limit: Some(1),
     };
-    let res: ProposalListResponse = app
+    let res: MetaProposalListResponse = app
         .wrap()
         .query_wasm_smart(&flex_addr, &list_query)
         .unwrap();
     assert_eq!(1, res.proposals.len());
 
     let (msgs, title, description) = proposal_info();
-    let expected = ProposalResponse {
+    let expected = MetaProposalResponse {
         id: proposal_id2,
         title,
         description,
         msgs,
+        meta: Some("".to_string()),
         expires: voting_period.after(&proposed_at),
         status: Status::Open,
         threshold: ThresholdResponse::AbsoluteCount {
@@ -727,7 +728,7 @@ fn execute_group_changes_from_external() {
     let proposal_id: u64 = res.custom_attrs(1)[2].value.parse().unwrap();
     let prop_status = |app: &App, proposal_id: u64| -> Status {
         let query_prop = QueryMsg::Proposal { proposal_id };
-        let prop: ProposalResponse = app
+        let prop: MetaProposalResponse = app
             .wrap()
             .query_wasm_smart(&flex_addr, &query_prop)
             .unwrap();
@@ -888,7 +889,7 @@ fn execute_group_changes_from_proposal() {
     // query proposal state
     let prop_status = |app: &App, proposal_id: u64| -> Status {
         let query_prop = QueryMsg::Proposal { proposal_id };
-        let prop: ProposalResponse = app
+        let prop: MetaProposalResponse = app
             .wrap()
             .query_wasm_smart(&flex_addr, &query_prop)
             .unwrap();
@@ -971,7 +972,7 @@ fn execute_group_changes_from_proposal() {
 //     let proposal_id: u64 = res.custom_attrs(1)[2].value.parse().unwrap();
 //     let prop_status = |app: &App| -> Status {
 //         let query_prop = QueryMsg::Proposal { proposal_id };
-//         let prop: ProposalResponse = app
+//         let prop: MetaProposalResponse = app
 //             .wrap()
 //             .query_wasm_smart(&flex_addr, &query_prop)
 //             .unwrap();
@@ -1018,7 +1019,7 @@ fn execute_group_changes_from_proposal() {
 //     let query_prop = QueryMsg::Proposal {
 //         proposal_id: proposal_id2,
 //     };
-//     let prop: ProposalResponse = app
+//     let prop: MetaProposalResponse = app
 //         .wrap()
 //         .query_wasm_smart(&flex_addr, &query_prop)
 //         .unwrap();
@@ -1053,7 +1054,7 @@ fn quorum_handles_group_changes() {
     let proposal_id: u64 = res.custom_attrs(1)[2].value.parse().unwrap();
     let prop_status = |app: &App| -> Status {
         let query_prop = QueryMsg::Proposal { proposal_id };
-        let prop: ProposalResponse = app
+        let prop: MetaProposalResponse = app
             .wrap()
             .query_wasm_smart(&flex_addr, &query_prop)
             .unwrap();
@@ -1122,7 +1123,7 @@ fn quorum_enforced_even_if_absolute_threshold_met() {
     let proposal_id: u64 = res.custom_attrs(1)[2].value.parse().unwrap();
     let prop_status = |app: &App| -> Status {
         let query_prop = QueryMsg::Proposal { proposal_id };
-        let prop: ProposalResponse = app
+        let prop: MetaProposalResponse = app
             .wrap()
             .query_wasm_smart(&flex_addr, &query_prop)
             .unwrap();
