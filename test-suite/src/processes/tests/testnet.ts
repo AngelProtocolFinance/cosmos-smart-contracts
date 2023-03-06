@@ -453,16 +453,16 @@ export async function testExecute(
     //   actors.charity1.addr,
     //   [{ info: { native: config.networkInfo.nativeToken }, amount: "1000" }],
     // );
-    await testCharityCanWithdrawLocked(
-      networkInfo,
-      actors.charity1.wallet,
-      accounts,
-      cw3ApTeam,
-      endowId1,
-      [{ info: { native: config.networkInfo.nativeToken }, amount: "2000" }],
-      [],
-      [actors.apTeam.wallet],
-    );
+    // await testCharityCanWithdrawLocked(
+    //   networkInfo,
+    //   actors.charity1.wallet,
+    //   accounts,
+    //   cw3ApTeam,
+    //   endowId1,
+    //   [{ info: { native: config.networkInfo.nativeToken }, amount: "2000" }],
+    //   [],
+    //   [actors.apTeam.wallet],
+    // );
     // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
     // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 3, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr } } });
     // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId2, "10000000"); // possible query registrar error
@@ -579,19 +579,19 @@ export async function testExecute(
     await testQueryRegistrarConfig(actors.apTeam.client, registrar);
     // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
     // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-    // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
+    await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-    await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
     await testQueryAccountsConfig(actors.apTeam.client, accounts);
     await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
     await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
+    // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
 
-    // await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
-    // await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, endowId1);
+    await testQuerySettingsControllerConfig(actors.apTeam.client, settingsController);
+    await testQuerySettingsControllerEndowSettings(actors.apTeam.client, settingsController, endowId1);
     // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr, actors.apTeam.addr);
 
-    // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
-    // await testQueryIndexFundState(actors.apTeam.client, indexFund);
+    await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
+    await testQueryIndexFundState(actors.apTeam.client, indexFund);
     // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
     // await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
     // await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
@@ -600,7 +600,6 @@ export async function testExecute(
     // await testQueryIndexFundAllianceMember(actors.apTeam.client, indexFund, actors.apTeam2.addr);
 
     // await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
-    // await testQueryVaultEndowmentBalance(actors.apTeam.client, vaultLiquid1, endowId1);
     // await testQueryVaultTotalBalance(actors.apTeam.client, vaultLocked1);
     // await testQueryVaultTokenInfo(actors.apTeam.client, vaultLocked1);
 

@@ -207,6 +207,36 @@ export async function storeAndMigrateContract(
     console.log(chalk.green(" Done!"));
 }
 
+// --------------------------------------------------
+// Wrapper Function:
+// Stores wasm, gets new code, and instantiates a new contract
+//---------------------------------------------------
+export async function storeAndInstantiateContract(
+    juno: SigningCosmWasmClient,
+    deployer: string,
+    admin: string, // leave this emtpy then contract is not migratable
+    wasmFilename: string,
+    instantiateMsg: Record<string, unknown>,
+    label: string | undefined = undefined
+) {
+    process.stdout.write(`Uploading ${wasmFilename} Wasm`);
+    const codeId = await storeCode(juno, deployer, `${wasm_path.core}/${wasmFilename}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+    process.stdout.write(`Migrate ${wasmFilename} contract`);
+    const result = await juno.instantiate(
+        deployer,
+        codeId,
+        instantiateMsg,
+        `instantiate-${label || codeId + new Date().getMilliseconds()}`,
+        "auto",
+        { admin: admin }
+    );
+    const resultContract = result.contractAddress as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${resultContract}`);
+    return resultContract;
+}
+
 //----------------------------------------------------------------------------------------
 // Abstract away steps to send a message to another contract via a CW3 multisig poll:
 // 1. Create a proposal on a CW3 to execute some msg on a target contract

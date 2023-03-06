@@ -269,7 +269,9 @@ export async function startMigrateCore(): Promise<void> {
         settingsController,
         donationMatching,
         giftcards,
-        []
+        [],
+        config.networkInfo.axelarGateway,
+        config.networkInfo.axelarIbcChannel
     );
 }
 

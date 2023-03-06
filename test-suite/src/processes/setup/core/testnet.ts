@@ -6,6 +6,7 @@ import {
     sendTransaction,
     storeCode,
     instantiateContract,
+    storeAndInstantiateContract,
     getWalletAddress,
     sendMessageViaCw3Proposal,
     sendApplicationViaCw3Proposal,
@@ -28,6 +29,10 @@ let apTeamAddr: string;
 let apTeam2Addr: string;
 let apTreasuryAddr: string;
 
+// wasm codes
+let cw4Group: number;
+let cw3MultiSigEndowment: number;
+
 // contract addresses
 let registrar: string;
 let accounts: string;
@@ -43,6 +48,7 @@ let settingsController: string;
 let vault1: string;
 let vault2: string;
 
+// endowment IDs
 let endow_1_id: number;
 let endow_2_id: number;
 let endow_3_id: number;
@@ -107,107 +113,28 @@ async function setup(
     funding_goal: string | undefined,
     accepted_tokens: any | undefined
 ): Promise<void> {
-    // Step 1. Upload all local wasm files and capture the codes for each....
-    process.stdout.write("Uploading Registrar Wasm");
-    const registrarCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/registrar.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
-
-    process.stdout.write("Uploading Index Fund Wasm");
-    const fundCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/index_fund.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
-
-    process.stdout.write("Uploading Accounts Wasm");
-    const accountsCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/accounts.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
-
-    process.stdout.write("Uploading Settings-Controller Wasm");
-    const settingsControllerCodId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/settings_controller.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${settingsControllerCodId}`);
-
-    process.stdout.write("Uploading CW4 Group Wasm");
-    const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
-
-    process.stdout.write("Uploading AP Team CW3 MultiSig Wasm");
-    const cw3MultiSigApTeam = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_apteam.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigApTeam}`);
-
-    process.stdout.write("Uploading Review Team CW3 MultiSig Wasm");
-    const cw3MultiSigApplications = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_applications.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigApplications}`);
-
-    process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
-    const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigEndowment}`);
-
-    process.stdout.write("Uploading Endowment SubDAO Wasm");
-    const subdao = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdao}`);
-    process.stdout.write("Uploading SwapRouter Wasm");
-    const swapRouterCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/swap_router.wasm`);
-    console.log(chalk.green(" Done!", `${chalk.blue("codeId")}=${swapRouterCodeId}`));
-
-    process.stdout.write("Uploading Endowment SubDAO Bonding Token Wasm");
-    const subdaoBondingToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao_bonding_token.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoBondingToken}`);
-
-    process.stdout.write("Uploading Endowment SubDAO CW20 Token Wasm");
-    const subdaoCw20Token = await storeCode(juno, apTeamAddr, `${wasm_path.cw20}`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoCw20Token}`);
-
-    process.stdout.write("Uploading Endowment SubDAO Donation Matching Wasm");
-    const subdaoDonationMatch = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoDonationMatch}`);
-
-    // Step 2. Instantiate the key contracts
-    // Registrar
-    process.stdout.write("Instantiating Registrar contract");
-    const registrarResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, registrarCodeId, {
+    // Step 1. Upload all local wasm files and capture the codes for each and instantiate the contracts
+    registrar = await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'registrar.wasm', {
         tax_rate,
         treasury: treasury_address,
         default_vault: apTeamAddr, // Fake vault address from apTeam
         split_to_liquid: undefined,
         accepted_tokens: accepted_tokens,
     });
-    registrar = registrarResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
-
-    // Index Fund
-    process.stdout.write("Instantiating Index Fund contract");
-    const fundResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, fundCodeId, {
-        registrar_contract: registrar,
-        fund_rotation: fund_rotation,
-        fund_member_limit: fund_member_limit,
-        funding_goal: funding_goal,
-        accepted_tokens: accepted_tokens,
-    });
-    indexFund = fundResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
-
-    // CW4 AP Team Group
-    process.stdout.write("Instantiating CW4 AP Team Group contract");
-    const cw4GrpApTeamResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, cw4Group, {
+    cw4GrpApTeam = await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'cw4_group.wasm', {
         admin: apTeamAddr,
         members: [
             { addr: apTeamAddr, weight: 1 },
             { addr: apTeam2Addr, weight: 1 },
         ],
     });
-    cw4GrpApTeam = cw4GrpApTeamResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
-
-    // CW3 AP Team MultiSig
-    process.stdout.write("Instantiating CW3 AP Team MultiSig contract");
-    const cw3ApTeamResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, cw3MultiSigApTeam, {
+    cw3ApTeam = await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'cw3_apteam.wasm', {
         registrar_contract: registrar,
         group_addr: cw4GrpApTeam,
         threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
         max_voting_period: { height: max_voting_period_height },
         // registrar_contract: registrar,
     });
-    cw3ApTeam = cw3ApTeamResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
-
     // Setup AP Team C3 to be the admin to it's C4 Group
     process.stdout.write("AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3");
     await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
@@ -217,37 +144,45 @@ async function setup(
         update_admin: { admin: cw3ApTeam },
     });
     console.log(chalk.green(" Done!"));
-
-    process.stdout.write("Instantiating Settings-Controller contract");
-    const settingsControllerResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, settingsControllerCodId, {
+    settingsController = await storeAndInstantiateContract(juno, apTeamAddr, cw3ApTeam, 'settings_controller.wasm', {
         owner_sc: cw3ApTeam,
         registrar_contract: registrar,
     });
-    settingsController = settingsControllerResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${settingsController}`);
-
-    process.stdout.write("Instantiating Accounts contract");
-    const accountsResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, accountsCodeId, {
+    accounts = await storeAndInstantiateContract(juno, apTeamAddr, cw3ApTeam, 'accounts.wasm', {
         owner_sc: cw3ApTeam,
         registrar_contract: registrar,
     });
-    accounts = accountsResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
-
-    // Charities Donation Matching
-    process.stdout.write("Instantiating Charities Donation Matching contract");
-    const charityDonationMatchResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, subdaoDonationMatch, {
-        id: 1, // FAKE! Need to fix.
+    indexFund = await storeAndInstantiateContract(juno, apTeamAddr, cw3ApTeam, 'index_fund.wasm', {
         registrar_contract: registrar,
-        reserve_token: apTeamAddr, // FAKE! Need to fix.
-        lp_pair: apTeamAddr, // FAKE! Need to fix.
+        fund_rotation: fund_rotation,
+        fund_member_limit: fund_member_limit,
+        funding_goal: funding_goal,
+        accepted_tokens: accepted_tokens,
     });
-    donationMatchCharities = charityDonationMatchResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${donationMatchCharities}`);
+    cw4Group = await storeCode(juno, apTeamAddr, 'cw3_group.wasm');
+    cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, 'cw3_endowment.wasm');
+    cw3ReviewTeam = await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'cw3_applications.wasm', {
+        registrar_contract: registrar,
+        group_addr: cw4GrpReviewTeam,
+        threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
+        max_voting_period: { height: max_voting_period_height },
+        // registrar_contract: registrar,
+    });
+    cw4GrpReviewTeam = await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, `cw4_group.wasm`, {
+        admin: apTeamAddr,
+        members: [{ addr: apTeamAddr, weight: 1 }],
+    });
+    // Setup AP Team C3 to be the admin to it's C4 Group
+    process.stdout.write("AddHook & UpdateAdmin on AP Review Team CW4 Group to point to AP Team C3");
+    await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
+        add_hook: { addr: cw3ReviewTeam },
+    });
+    await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
+        update_admin: { admin: cw3ReviewTeam },
+    });
+    console.log(chalk.green(" Done!"));
 
-    // Swap-Rotuer
-    process.stdout.write("Instantiating the Swap-router contract");
-    const swapRouterResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, swapRouterCodeId, {
+    swapRouter = await storeAndInstantiateContract(juno, apTeamAddr, cw3ApTeam, 'swap_router.wasm', {
         registrar_contract: registrar,
         accounts_contract: accounts,
         pairs: [
@@ -297,39 +232,14 @@ async function setup(
             },
         ],
     });
-    swapRouter = swapRouterResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${swapRouter}`);
-
-    // CW4 Review Team Group
-    process.stdout.write("Instantiating CW4 Review Team Group contract");
-    const cw4GrpReviewTeamResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, cw4Group, {
-        admin: apTeamAddr,
-        members: [{ addr: apTeamAddr, weight: 1 }],
-    });
-    cw4GrpReviewTeam = cw4GrpReviewTeamResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpReviewTeam}`);
-
-    // CW3 Review Team MultiSig
-    process.stdout.write("Instantiating CW3 Review Team MultiSig contract");
-    const cw3ReviewTeamResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, cw3MultiSigApplications, {
+    // await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'subdao.wasm', {});
+    // await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'subdao_bonding_token.wasm', {});
+    await storeAndInstantiateContract(juno, apTeamAddr, cw3ApTeam, 'donation_match.wasm', {
+        id: 1, // FAKE! Need to fix.
         registrar_contract: registrar,
-        group_addr: cw4GrpReviewTeam,
-        threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
-        max_voting_period: { height: max_voting_period_height },
-        // registrar_contract: registrar,
+        reserve_token: apTeamAddr, // FAKE! Need to fix.
+        lp_pair: apTeamAddr, // FAKE! Need to fix.
     });
-    cw3ReviewTeam = cw3ReviewTeamResult.contractAddress as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ReviewTeam}`);
-
-    // Setup AP Team C3 to be the admin to it's C4 Group
-    process.stdout.write("AddHook & UpdateAdmin on AP Review Team CW4 Group to point to AP Team C3");
-    await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
-        add_hook: { addr: cw3ReviewTeam },
-    });
-    await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
-        update_admin: { admin: cw3ReviewTeam },
-    });
-    console.log(chalk.green(" Done!"));
 
     process.stdout.write("Update Registrar's config with various wasm codes & contracts");
     await sendTransaction(juno, apTeamAddr, registrar, {
@@ -341,10 +251,10 @@ async function setup(
             cw4_code: cw4Group,
             halo_token: apTeamAddr, // Fake halo token addr: Need to be handled
             halo_token_lp_contract: apTeamAddr, // Fake halo token LP addr: Need to be handled
-            subdao_gov_code: subdao,
-            subdao_cw20_token_code: subdaoCw20Token,
-            subdao_bonding_token_code: subdaoBondingToken,
-            donation_match_code: subdaoDonationMatch,
+            subdao_gov_code: undefined,
+            subdao_cw20_token_code: undefined,
+            subdao_bonding_token_code: undefined,
+            donation_match_code: undefined,
             donation_match_charites_contract: donationMatchCharities,
             settings_controller: settingsController,
         },
@@ -357,12 +267,6 @@ async function turnOverApTeamMultisig(): Promise<void> {
     process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract\n");
     process.stdout.write(chalk.yellow("\n> Turning over Registrar"));
     await sendTransaction(juno, apTeamAddr, registrar, {
-        update_owner: { new_owner: cw3ApTeam },
-    });
-    console.log(chalk.green(" Done!"));
-
-    process.stdout.write(chalk.yellow("- Turning over Index Fund"));
-    await sendTransaction(juno, apTeamAddr, indexFund, {
         update_owner: { new_owner: cw3ApTeam },
     });
     console.log(chalk.green(" Done!"));

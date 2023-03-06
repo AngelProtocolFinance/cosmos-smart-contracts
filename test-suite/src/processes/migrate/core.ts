@@ -10,6 +10,7 @@ import {
     storeCode,
     migrateContract,
     storeAndMigrateContract,
+    storeAndInstantiateContract,
     toEncodedBinary,
 } from "../../utils/juno/helpers";
 import { wasm_path } from "../../config/wasmPaths";
@@ -31,16 +32,15 @@ export async function migrateCore(
     settingsController: string,
     donationMatching: string,
     giftcards: string,
-    vaultContracts: string[]
+    vaultContracts: string[],
+    axelarGateway: string,
+    axelarIbcChannel: string,
 ): Promise<void> {
-    // run the migrations desired
-    // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 0);
-    // await migrateVaults(juno, apTeam, vaultContracts);
-    await storeAndMigrateContract(juno, apTeam, registrar, "registrar.wasm", {
-        fee_charity: "0.2",
-        fee_normal: "0.2",
-        settings_controller_contract: settingsController,
-    });
+    // await storeAndMigrateContract(juno, apTeam, registrar, "registrar.wasm", {
+    //     axelar_gateway: axelarGateway,
+    //     axelar_ibc_channel: axelarIbcChannel,
+    //     accounts_settings_controller: settingsController,
+    // });
     // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
     // await storeAndMigrateContract(juno, apTeam, settingsController, 'settings_controller.wasm');
     // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
@@ -48,10 +48,12 @@ export async function migrateCore(
     // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
     // await storeAndMigrateContract(juno, apTeam, cw4GrpReviewTeam, 'cw4_group.wasm');
     // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
+    // await storeAndMigrateContract(juno, apTeam, giftcards, 'fundraising.wasm');
     // await storeAndMigrateContract(juno, apTeam, giftcards, 'gift_cards.wasm');
     // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
-    // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 1, 50);
     // await migrateVaults(juno, apTeam, vaultContracts);
+    await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 1, 25);
+    // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 1, 50);
 }
 
 // -------------------------------------------------
@@ -59,7 +61,7 @@ export async function migrateCore(
 //--------------------------------------------------
 async function migrateVaults(juno: SigningCosmWasmClient, apTeam: string, vaults: string[]): Promise<void> {
     process.stdout.write("Uploading Vault Wasm");
-    const codeId = await storeCode(juno, apTeam, path.resolve(__dirname, `${wasm_path.core}/loopswap_vault.wasm`));
+    const codeId = await storeCode(juno, apTeam, path.resolve(__dirname, `${wasm_path.mock_vault}/mock_vault.wasm`));
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
     process.stdout.write("Migrate Vault contracts\n");

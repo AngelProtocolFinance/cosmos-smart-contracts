@@ -597,7 +597,7 @@ export async function testQueryAccountsEndowmentByProposalLink(
 ): Promise<void> {
     process.stdout.write("Test - Query Accounts Endowment By Proposal Link");
     const result: any = await juno.queryContractSmart(accounts, {
-        endowment_list: {
+        endowment_by_proposal_link: {
             proposal_link,
         },
     });

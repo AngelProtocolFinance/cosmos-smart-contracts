@@ -13,18 +13,6 @@ pub struct MigrateMsg {
 }
 
 #[cw_serde]
-pub struct MigrateEndowment {
-    pub addr: String,
-    pub status: u64,
-    pub name: String,
-    pub owner: String,
-    pub tier: Option<u64>,
-    pub un_sdg: Option<u64>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-}
-
-#[cw_serde]
 pub struct InstantiateMsg {
     pub treasury: String,
     pub tax_rate: Decimal,

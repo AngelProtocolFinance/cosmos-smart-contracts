@@ -8,6 +8,8 @@ export const testnet = {
         walletPrefix: "juno",
         nativeToken: "ujunox",
         gasPrice: "0.025ujunox",
+        axelarGateway: "axelar1dv4u5k73pzqrxlzujxg3qp8kvc3pje7jtdvu72npnt5zhq05ejcsn5qme5",
+        axelarIbcChannel: "channel-7",
     },
     mnemonicKeys: {
         apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
@@ -28,6 +30,7 @@ export const testnet = {
     contracts: {
         registrar: "juno1c676xpc64x9lxjfsvpn7ajw2agutthe75553ws45k3ld46vy8pts45ans6",
         accounts: "juno1cyd63pk2wuvjkqmhlvp9884z4h89rqtn8w8xgz9m28hjd2kzj2cqf070uz",
+        settingsController: "juno12qgr27j4vmjcgagrql53rt2a8ptwyrptj5qg2l9shetk32e2er6q3ph59v",
         indexFund: "juno1d26dmz9zld4n8pzjpqae5m95adnfalvz47vldpwfzsplw4umcjmqhkle94",
         cw4GrpApTeam: "juno1qkphn8h2rnyqjjtfh8j8dtuqgh5cac57nq2286tsljducqp4lwfqac44jm",
         cw3ApTeam: "juno1ukpw6g9dqfw3fk2mqchplgcz4jaukttf6tpyrht7sw00t7mn7dpsjwpfhs",
@@ -36,7 +39,6 @@ export const testnet = {
         swapRouter: "juno1n78c8ckw5xwktg7laae7utrm7jtyrsshnfrl9n72xzlxz9gpq0zsyxcyex",
         donationMatching: "",
         giftcards: "juno16frj05cr02nkwgdc45pawjvuqql8vs6dzz0x92y6ag0spt4sfd5sju5k67",
-        settingsController: "",
         vaultLocked1: "juno1juque0va5ya8tcvrxu2kq3s4gdfrzw2yv6k7glr7z0uu563qze4sgu9yzj",
         vaultLiquid1: "juno1gjg0m75mnav5xftgwjxded5v0shlsj3vk8uh4adk9k7a33034wmssyfupc",
         vaultLocked2: "juno1durey747cm82sfqm0ph93wk63ljnm4j60euyp2y3krj8dnfqzacquzwu5l",
@@ -128,6 +130,8 @@ export const mainnet = {
         walletPrefix: "juno",
         nativeToken: "ujuno",
         gasPrice: "0.025ujuno",
+        axelarGateway: "???",
+        axelarIbcChannel: "???",
     },
     mnemonicKeys: {
         apTeam: "",

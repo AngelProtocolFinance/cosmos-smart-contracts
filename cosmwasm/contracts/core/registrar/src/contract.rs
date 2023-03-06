@@ -134,7 +134,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -161,6 +161,19 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         .get("config".as_bytes())
         .ok_or_else(|| StdError::not_found("Config not found"))?;
     let old_config: OldConfig = from_slice(&data)?;
+    // replace old juno connection with new network connection struct
+    NETWORK_CONNECTIONS.save(
+        deps.storage,
+        &env.block.chain_id.clone(),
+        &NetworkInfo {
+            accounts_contract: match old_config.accounts_contract.clone() {
+                Some(accounts) => Some(accounts.to_string()),
+                None => None,
+            },
+            router_contract: None,
+        },
+    )?;
+    // build new config struct & save
     CONFIG.save(
         deps.storage,
         &Config {
