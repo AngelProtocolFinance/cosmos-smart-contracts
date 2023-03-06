@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import { LocalTerra, Wallet, LCDClient, MsgExecuteContract } from "@terra-money/terra.js";
 
-import { sendTransaction, storeCode, instantiateContract, } from "../../../utils/terra/helpers";
+import { sendTransaction, storeCode, instantiateContract } from "../../../utils/terra/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 import { localterra } from "../../../config/localterraConstants";
 
@@ -39,9 +39,9 @@ export async function setupAstroportVaults(
         astroport_usdc_usdt_lp_pair: string;
         astroport_lp_reward_token: string;
         astroport_router: string;
-        nativeToken: any,
-        ap_tax_rate: string,
-        interest_distribution: string,
+        nativeToken: any;
+        ap_tax_rate: string;
+        interest_distribution: string;
     }
 ): Promise<void> {
     chainId = _chainId;
@@ -61,7 +61,7 @@ export async function setupAstroportVaults(
         config.astroport_router,
         config.nativeToken,
         config.ap_tax_rate,
-        config.interest_distribution,
+        config.interest_distribution
     );
 }
 
@@ -75,7 +75,7 @@ async function createAstroportVaults(
     astroport_router: string,
     native_token: string,
     ap_tax_rate: string,
-    interest_distribution: string,
+    interest_distribution: string
 ): Promise<void> {
     process.stdout.write("Uploading Vault Wasm");
     const vaultCodeId = await storeCode(terra, apTeam, `${wasm_path.core}/astroport_vault.wasm`);
@@ -110,9 +110,9 @@ async function createAstroportVaults(
                     },
                     ask_asset_info: {
                         native_token: { denom: localterra.denoms.usdc },
-                    }
-                }
-            }
+                    },
+                },
+            },
         ],
         native_to_lp0_route: [],
         native_to_lp1_route: [
@@ -123,9 +123,9 @@ async function createAstroportVaults(
                     },
                     ask_asset_info: {
                         native_token: { denom: localterra.denoms.usdt },
-                    }
-                }
-            }
+                    },
+                },
+            },
         ],
 
         name: "Vault Token for USDC-USDT pair",
@@ -170,9 +170,9 @@ async function createAstroportVaults(
                     },
                     ask_asset_info: {
                         native_token: { denom: localterra.denoms.usdc },
-                    }
-                }
-            }
+                    },
+                },
+            },
         ],
         native_to_lp0_route: [],
         native_to_lp1_route: [
@@ -183,9 +183,9 @@ async function createAstroportVaults(
                     },
                     ask_asset_info: {
                         native_token: { denom: localterra.denoms.usdt },
-                    }
-                }
-            }
+                    },
+                },
+            },
         ],
 
         name: "Vault Token for USDC-USDT pair",
@@ -203,24 +203,20 @@ async function createAstroportVaults(
 
     // Update the "sibling_vault" config of "vault1_locked"
     await sendTransaction(terra, apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            vault1_locked,
-            {
-                update_config: {
-                    sibling_vault: vault1_liquid,
-                    lp_staking_contract: undefined,
-                    lp_pair_contract: undefined,
-                    keeper: undefined,
-                    tax_collector: undefined,
+        new MsgExecuteContract(apTeam.key.accAddress, vault1_locked, {
+            update_config: {
+                sibling_vault: vault1_liquid,
+                lp_staking_contract: undefined,
+                lp_pair_contract: undefined,
+                keeper: undefined,
+                tax_collector: undefined,
 
-                    native_token: undefined,
-                    reward_to_native_route: undefined,
-                    native_to_lp0_route: undefined,
-                    native_to_lp1_route: undefined,
-                }
-            }
-        )
+                native_token: undefined,
+                reward_to_native_route: undefined,
+                native_to_lp0_route: undefined,
+                native_to_lp1_route: undefined,
+            },
+        }),
     ]);
 
     console.log(chalk.green(" Done!"));

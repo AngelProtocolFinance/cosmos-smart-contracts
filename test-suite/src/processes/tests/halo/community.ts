@@ -16,31 +16,31 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testCommunityUpdateConfig(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  pleb: string,
-  govContract: string,
-  communityContract: string,
-  spend_limit: string | undefined,
-  new_gov_contract: string | undefined,
+    juno: SigningCosmWasmClient,
+    apTeam: string,
+    pleb: string,
+    govContract: string,
+    communityContract: string,
+    spend_limit: string | undefined,
+    new_gov_contract: string | undefined
 ): Promise<void> {
-  process.stdout.write("Test - Pleb cannot update community config");
+    process.stdout.write("Test - Pleb cannot update community config");
 
-  await expect(
-    sendTransaction(juno, pleb, communityContract, {
-      update_config: { spend_limit, gov_contract: new_gov_contract },
-    })
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+    await expect(
+        sendTransaction(juno, pleb, communityContract, {
+            update_config: { spend_limit, gov_contract: new_gov_contract },
+        })
+    ).to.be.rejectedWith("Request failed with status code 400");
+    console.log(chalk.green(" Failed!"));
 
-  process.stdout.write("Test - Only gov contract can update community config");
+    process.stdout.write("Test - Only gov contract can update community config");
 
-  await expect(
-    sendTransaction(juno, govContract, communityContract, {
-      update_config: { spend_limit, gov_contract: new_gov_contract },
-    })
-  );
-  console.log(chalk.green(" Passed!"));
+    await expect(
+        sendTransaction(juno, govContract, communityContract, {
+            update_config: { spend_limit, gov_contract: new_gov_contract },
+        })
+    );
+    console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -52,35 +52,32 @@ export async function testCommunityUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testCommunitySpend(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  govContract: string,
-  communityContract: string,
-  receipient: string,
-  amount: string
+    juno: SigningCosmWasmClient,
+    apTeam: string,
+    govContract: string,
+    communityContract: string,
+    receipient: string,
+    amount: string
 ): Promise<void> {
-  process.stdout.write("Test - Send `amount` of HALO token to `receipient` for community purpose");
+    process.stdout.write("Test - Send `amount` of HALO token to `receipient` for community purpose");
 
-  await expect(
-    sendTransaction(juno, govContract, communityContract, {
-      spend: { receipient, amount },
-    })
-  );
-  console.log(chalk.green(" Passed!"));
+    await expect(
+        sendTransaction(juno, govContract, communityContract, {
+            spend: { receipient, amount },
+        })
+    );
+    console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
-export async function testQueryCommunityConfig(
-  juno: SigningCosmWasmClient,
-  communityContract: string
-): Promise<void> {
-  process.stdout.write("Test - Query Community Config");
-  const result: any = await juno.queryContractSmart(communityContract, {
-    config: {},
-  });
+export async function testQueryCommunityConfig(juno: SigningCosmWasmClient, communityContract: string): Promise<void> {
+    process.stdout.write("Test - Query Community Config");
+    const result: any = await juno.queryContractSmart(communityContract, {
+        config: {},
+    });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
+    console.log(result);
+    console.log(chalk.green(" Passed!"));
 }

@@ -13,14 +13,24 @@ import { Link, Logger } from "@confio/relayer";
 import { ChainDefinition, CosmWasmSigner } from "@confio/relayer/build/lib/helpers";
 
 import { localibc, junod, terrad } from "../../config/localIbcConstants";
-import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts, setup } from "../../utils/ibc";
+import {
+    customFundAccount,
+    customSigningClient,
+    customSigningCosmWasmClient,
+    listAccounts,
+    setup,
+} from "../../utils/ibc";
 import { SigningCosmWasmClient, toBinary } from "@cosmjs/cosmwasm-stargate";
 import { localjuno } from "../../config/localjunoConstants";
 import { sendMessageViaCw3Proposal, sendTransactionWithFunds } from "../../utils/juno/helpers";
 import { localterra } from "../../config/localterraConstants";
 import { LCDClient } from "@terra-money/terra.js";
-import { testQueryVaultConfig, testQueryVaultEndowmentBalance, testQueryVaultTokenInfo, testQueryVaultTotalBalance } from "./localterra";
-
+import {
+    testQueryVaultConfig,
+    testQueryVaultEndowmentBalance,
+    testQueryVaultTokenInfo,
+    testQueryVaultTotalBalance,
+} from "./localterra";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -34,15 +44,13 @@ let terraIcaHost: string;
 
 let junoApTeamSigner: CosmWasmSigner;
 
-export async function testExecuteIBC(
-    ibc: {
-        junoIcaController: string,
-        junoIcaHost: string,
-        terraIcaController1: string,
-        terraIcaController2: string,
-        terraIcaHost: string,
-    }
-): Promise<void> {
+export async function testExecuteIBC(ibc: {
+    junoIcaController: string;
+    junoIcaHost: string;
+    terraIcaController1: string;
+    terraIcaController2: string;
+    terraIcaHost: string;
+}): Promise<void> {
     console.log(chalk.yellow("\nStep 2. Running Tests"));
 
     junoIcaController = ibc.junoIcaController;
@@ -108,7 +116,7 @@ async function testIBCVaultsInvest(
     accountsContract: string,
     endowmentId: number,
     acct_type: string,
-    vaults: any,
+    vaults: any
 ): Promise<void> {
     process.stdout.write("IBC Test - Send amount to a single Endowment Account");
 
@@ -139,7 +147,7 @@ async function testIBCVaultsRedeem(
     accountsContract: string,
     endowmentId: number,
     acct_type: string,
-    vaults: any,
+    vaults: any
 ): Promise<void> {
     process.stdout.write("IBC Test -Redeem endowment");
 
@@ -170,22 +178,20 @@ async function testIBCVaultReinvestToLocked(
     accountsContract: string,
     endowmentId: number,
     amount: string,
-    vault_addr: string,
+    vault_addr: string
 ): Promise<void> {
     process.stdout.write("Test - Liquid vault reinvests the LP to locked vault");
 
     const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
     const cw3 = res.owner as string;
 
-    await sendMessageViaCw3Proposal(juno, sender, cw3, accountsContract,
-        {
-            reinvest_to_locked: {
-                id: endowmentId,
-                amount: amount,
-                vault_addr: vault_addr,
-            }
-        }
-    );
+    await sendMessageViaCw3Proposal(juno, sender, cw3, accountsContract, {
+        reinvest_to_locked: {
+            id: endowmentId,
+            amount: amount,
+            vault_addr: vault_addr,
+        },
+    });
     const info = await link.relayAll();
     assertPacketsFromA(info, 1, true);
     console.log(info);
@@ -208,8 +214,8 @@ async function testIbcQuery(link: Link) {
         {
             ibc_query: {
                 channel_id: channelId,
-                msgs: [{ smart: { msg: toBinary({ list_accounts: {} }), contract_addr: terraIcaHost } }]
-            }
+                msgs: [{ smart: { msg: toBinary({ list_accounts: {} }), contract_addr: terraIcaHost } }],
+            },
         },
         "auto"
     );
@@ -224,12 +230,10 @@ async function testIbcQuery(link: Link) {
     const ibcQueryResult = await junoApTeamSigner.sign.queryContractSmart(junoIcaController, {
         latest_query_result: {
             channel_id: channelId,
-        }
+        },
     });
     console.log(ibcQueryResult);
 }
-
-
 
 // throws error if not all are success
 export function assertAckSuccess(acks: AckWithMetadata[]) {

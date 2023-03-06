@@ -16,24 +16,24 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testCollectorUpdateConfig(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  collectorContract: string,
-  reward_factor: string | undefined,
-  gov_contract: string | undefined,
-  swap_factory: string | undefined
+    juno: SigningCosmWasmClient,
+    apTeam: string,
+    collectorContract: string,
+    reward_factor: string | undefined,
+    gov_contract: string | undefined,
+    swap_factory: string | undefined
 ): Promise<void> {
-  process.stdout.write("Test - Gov contract update collector config");
-  await expect(
-    sendTransaction(juno, apTeam, collectorContract, {
-      update_config: {
-        reward_factor,
-        gov_contract,
-        swap_factory,
-      },
-    })
-  );
-  console.log(chalk.green(" Passed!"));
+    process.stdout.write("Test - Gov contract update collector config");
+    await expect(
+        sendTransaction(juno, apTeam, collectorContract, {
+            update_config: {
+                reward_factor,
+                gov_contract,
+                swap_factory,
+            },
+        })
+    );
+    console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -46,55 +46,46 @@ export async function testCollectorUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testCollectorSweep(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  collectorContract: string
+    juno: SigningCosmWasmClient,
+    apTeam: string,
+    collectorContract: string
 ): Promise<void> {
-  process.stdout.write("Test - Anyone can sweep asset token => HALO token");
+    process.stdout.write("Test - Anyone can sweep asset token => HALO token");
 
-  const result = await sendTransaction(juno, apTeam, collectorContract, {
-    sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
-  });
+    const result = await sendTransaction(juno, apTeam, collectorContract, {
+        sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
+    });
 
-  const distribution_amount = result.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "distribute_amount";
-    })?.value as string;
+    const distribution_amount = result.logs[0].events
+        .find((event) => {
+            return event.type == "wasm";
+        })
+        ?.attributes.find((attribute) => {
+            return attribute.key == "distribute_amount";
+        })?.value as string;
 
-  console.log(
-    `Distributed to Gov Stakers: ${distribution_amount}`,
-    chalk.green(" Passed!")
-  );
+    console.log(`Distributed to Gov Stakers: ${distribution_amount}`, chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
-export async function testQueryCollectorConfig(
-  juno: SigningCosmWasmClient,
-  collectorContract: string
-): Promise<void> {
-  process.stdout.write("Test - Query Collector Config");
-  const result: any = await juno.queryContractSmart(collectorContract, {
-    config: {},
-  });
+export async function testQueryCollectorConfig(juno: SigningCosmWasmClient, collectorContract: string): Promise<void> {
+    process.stdout.write("Test - Query Collector Config");
+    const result: any = await juno.queryContractSmart(collectorContract, {
+        config: {},
+    });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
+    console.log(result);
+    console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryCollectorPair(
-  juno: SigningCosmWasmClient,
-  collectorContract: string
-): Promise<void> {
-  process.stdout.write("Test - Query Collector pair");
-  const result: any = await juno.queryContractSmart(collectorContract, {
-    pair: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
-  });
+export async function testQueryCollectorPair(juno: SigningCosmWasmClient, collectorContract: string): Promise<void> {
+    process.stdout.write("Test - Query Collector pair");
+    const result: any = await juno.queryContractSmart(collectorContract, {
+        pair: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
+    });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
+    console.log(result);
+    console.log(chalk.green(" Passed!"));
 }

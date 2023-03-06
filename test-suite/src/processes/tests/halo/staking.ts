@@ -16,19 +16,19 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testStakingUnbond(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  stakingContract: string,
-  amount: string
+    juno: SigningCosmWasmClient,
+    apTeam: string,
+    stakingContract: string,
+    amount: string
 ): Promise<void> {
-  process.stdout.write("Test - Unbond less than bond amount");
+    process.stdout.write("Test - Unbond less than bond amount");
 
-  await expect(
-    sendTransaction(juno, apTeam, stakingContract, {
-      unbond: { amount },
-    })
-  );
-  console.log(chalk.green(" Passed!"));
+    await expect(
+        sendTransaction(juno, apTeam, stakingContract, {
+            unbond: { amount },
+        })
+    );
+    console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -39,60 +39,54 @@ export async function testStakingUnbond(
 //
 //----------------------------------------------------------------------------------------
 export async function testStakingWithdraw(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  stakingContract: string
+    juno: SigningCosmWasmClient,
+    apTeam: string,
+    stakingContract: string
 ): Promise<void> {
-  process.stdout.write("Test - Withdraw rewards to executor");
+    process.stdout.write("Test - Withdraw rewards to executor");
 
-  await expect(
-    sendTransaction(juno, apTeam, stakingContract, {
-      withdraw: {},
-    })
-  );
-  console.log(chalk.green(" Passed!"));
+    await expect(
+        sendTransaction(juno, apTeam, stakingContract, {
+            withdraw: {},
+        })
+    );
+    console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
-export async function testQueryStakingConfig(
-  juno: SigningCosmWasmClient,
-  stakingContract: string
-): Promise<void> {
-  process.stdout.write("Test - Query Staking Config");
-  const result: any = await juno.queryContractSmart(stakingContract, {
-    config: {},
-  });
+export async function testQueryStakingConfig(juno: SigningCosmWasmClient, stakingContract: string): Promise<void> {
+    process.stdout.write("Test - Query Staking Config");
+    const result: any = await juno.queryContractSmart(stakingContract, {
+        config: {},
+    });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
+    console.log(result);
+    console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryStakingState(
-  juno: SigningCosmWasmClient,
-  stakingContract: string
-): Promise<void> {
-  process.stdout.write("Test - Query Staking State");
-  const result: any = await juno.queryContractSmart(stakingContract, {
-    state: {},
-  });
+export async function testQueryStakingState(juno: SigningCosmWasmClient, stakingContract: string): Promise<void> {
+    process.stdout.write("Test - Query Staking State");
+    const result: any = await juno.queryContractSmart(stakingContract, {
+        state: {},
+    });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
+    console.log(result);
+    console.log(chalk.green(" Passed!"));
 }
 
 export async function testQueryStakingStakerInfo(
-  juno: SigningCosmWasmClient,
-  stakingContract: string,
-  staker: string,
-  block_height: number | undefined
+    juno: SigningCosmWasmClient,
+    stakingContract: string,
+    staker: string,
+    block_height: number | undefined
 ): Promise<void> {
-  process.stdout.write("Test - Query Airdrop Latest Stage");
-  const result: any = await juno.queryContractSmart(stakingContract, {
-    staker_info: { staker, block_height },
-  });
+    process.stdout.write("Test - Query Airdrop Latest Stage");
+    const result: any = await juno.queryContractSmart(stakingContract, {
+        staker_info: { staker, block_height },
+    });
 
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
+    console.log(result);
+    console.log(chalk.green(" Passed!"));
 }

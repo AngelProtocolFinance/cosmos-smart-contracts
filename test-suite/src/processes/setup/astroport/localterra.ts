@@ -30,17 +30,15 @@ let lunaUsdtPairLpToken: string;
 let astroUsdcPair: string;
 let astroUsdcPairLpToken: string;
 
-
-
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalTerra and TestNet
 // -------------------------------------------------------------------------------------
 export async function setupAstroportPlatform(
     _terra: LocalTerra | LCDClient,
     wallets: {
-        apTeam: Wallet,
-        apTeam2: Wallet,
-        apTeam3: Wallet,
+        apTeam: Wallet;
+        apTeam2: Wallet;
+        apTeam3: Wallet;
     }
 ): Promise<void> {
     terra = _terra;
@@ -54,98 +52,56 @@ export async function setupAstroportPlatform(
     process.exit();
 }
 
-
-async function setup(
-    terra: LocalTerra | LCDClient,
-    apTeam: Wallet,
-): Promise<void> {
+async function setup(terra: LocalTerra | LCDClient, apTeam: Wallet): Promise<void> {
     // Step 1. Upload all local wasm files and capture the codes for each....
 
     process.stdout.write("Uploading Astroport Token Wasm");
-    const tokenCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_token.wasm`
-    );
+    const tokenCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_token.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${tokenCodeId}`);
 
     process.stdout.write("Uploading Astroport Pair Wasm");
-    const pairCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_pair.wasm`
-    );
+    const pairCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_pair.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${pairCodeId}`);
 
     process.stdout.write("Uploading Astroport Stable Pair Wasm");
-    const stablePairCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_pair_stable.wasm`
-    );
+    const stablePairCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_pair_stable.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${stablePairCodeId}`);
 
     process.stdout.write("Uploading Astroport Factory Wasm");
-    const factoryCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_factory.wasm`
-    );
+    const factoryCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_factory.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${factoryCodeId}`);
 
     process.stdout.write("Uploading Astroport Router Wasm");
-    const routerCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_router.wasm`
-    );
+    const routerCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_router.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${routerCodeId}`);
 
     process.stdout.write("Uploading Astroport Generator Wasm");
-    const generatorCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_generator.wasm`
-    );
+    const generatorCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_generator.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${generatorCodeId}`);
 
     process.stdout.write("Uploading Astroport Whitelist Wasm");
-    const whitelistCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_whitelist.wasm`
-    );
+    const whitelistCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_whitelist.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${whitelistCodeId}`);
 
     process.stdout.write("Uploading Astroport Vesting Wasm");
-    const vestingCodeId = await storeCode(
-        terra,
-        apTeam,
-        `${wasm_path.astroport}/astroport_vesting.wasm`
-    );
+    const vestingCodeId = await storeCode(terra, apTeam, `${wasm_path.astroport}/astroport_vesting.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${vestingCodeId}`);
 
     // Step 2. Instantiate contracts
 
-    // ASTRO token 
+    // ASTRO token
     process.stdout.write("Instantiating ASTRO token contract");
-    const astroTokenResult = await instantiateContract(
-        terra,
-        apTeam,
-        apTeam,
-        tokenCodeId,
-        {
-            "name": "Test ASTRO TOKEN",
-            "symbol": "ASTRO",
-            "decimals": 6,
-            "initial_balances": [
-                {
-                    "address": apTeam.key.accAddress,
-                    "amount": localterra.astroport.initial_ASTRO_supply,
-                }
-            ]
-        }
-    );
+    const astroTokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
+        name: "Test ASTRO TOKEN",
+        symbol: "ASTRO",
+        decimals: 6,
+        initial_balances: [
+            {
+                address: apTeam.key.accAddress,
+                amount: localterra.astroport.initial_ASTRO_supply,
+            },
+        ],
+    });
     astro = astroTokenResult.logs[0].events
         .find((event) => {
             return event.type == "instantiate";
@@ -157,41 +113,35 @@ async function setup(
 
     // AstroportFactory
     process.stdout.write("Instantiating Astroport Factory contract");
-    const astroportFactoryResult = await instantiateContract(
-        terra,
-        apTeam,
-        apTeam,
-        factoryCodeId,
-        {
-            "token_code_id": tokenCodeId,
-            "fee_address": undefined,
-            "owner": apTeam.key.accAddress,
-            "generator_address": undefined,
-            "whitelist_code_id": whitelistCodeId,
-            "pair_configs": [
-                {
-                    "code_id": pairCodeId,
-                    "pair_type": {
-                        "xyk": {}
-                    },
-                    "total_fee_bps": 0,
-                    "maker_fee_bps": 0,
-                    "is_disabled": false,
-                    "is_generator_disabled": false,
+    const astroportFactoryResult = await instantiateContract(terra, apTeam, apTeam, factoryCodeId, {
+        token_code_id: tokenCodeId,
+        fee_address: undefined,
+        owner: apTeam.key.accAddress,
+        generator_address: undefined,
+        whitelist_code_id: whitelistCodeId,
+        pair_configs: [
+            {
+                code_id: pairCodeId,
+                pair_type: {
+                    xyk: {},
                 },
-                {
-                    "code_id": stablePairCodeId,
-                    "pair_type": {
-                        "stable": {}
-                    },
-                    "total_fee_bps": 0,
-                    "maker_fee_bps": 0,
-                    "is_disabled": false,
-                    "is_generator_disabled": false,
-                }
-            ]
-        }
-    );
+                total_fee_bps: 0,
+                maker_fee_bps: 0,
+                is_disabled: false,
+                is_generator_disabled: false,
+            },
+            {
+                code_id: stablePairCodeId,
+                pair_type: {
+                    stable: {},
+                },
+                total_fee_bps: 0,
+                maker_fee_bps: 0,
+                is_disabled: false,
+                is_generator_disabled: false,
+            },
+        ],
+    });
     astroportFactory = astroportFactoryResult.logs[0].events
         .find((event) => {
             return event.type == "instantiate";
@@ -202,21 +152,14 @@ async function setup(
 
     console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroportFactory}`);
 
-
     // Astroport Generator
     //  `tokens_per_block`: "0"  -> mock value
     //  `start_block`: 0         -> mock value
-    const astroportVestingResult = await instantiateContract(
-        terra,
-        apTeam,
-        apTeam,
-        vestingCodeId,
-        {
-            "owner": apTeam.key.accAddress,
-            "token_addr": astro,
-        }
-    );
-    let astroportVesting = astroportVestingResult.logs[0].events
+    const astroportVestingResult = await instantiateContract(terra, apTeam, apTeam, vestingCodeId, {
+        owner: apTeam.key.accAddress,
+        token_addr: astro,
+    });
+    const astroportVesting = astroportVestingResult.logs[0].events
         .find((event) => {
             return event.type == "instantiate";
         })
@@ -225,26 +168,20 @@ async function setup(
         })?.value as string;
 
     process.stdout.write("Instantiating Astroport Generator contract");
-    const astroportGeneratorResult = await instantiateContract(
-        terra,
-        apTeam,
-        apTeam,
-        generatorCodeId,
-        {
-            "owner": apTeam.key.accAddress,
-            "allowed_reward_proxies": [],
-            "astro_token": astro,
-            "start_block": "0",
-            "tokens_per_block": "1000",
-            "vesting_contract": astroportVesting,
+    const astroportGeneratorResult = await instantiateContract(terra, apTeam, apTeam, generatorCodeId, {
+        owner: apTeam.key.accAddress,
+        allowed_reward_proxies: [],
+        astro_token: astro,
+        start_block: "0",
+        tokens_per_block: "1000",
+        vesting_contract: astroportVesting,
 
-            "factory": astroportFactory,
-            "generator_controller": undefined,
-            "voting_escrow": undefined,
-            "guardian": undefined,
-            "whitelist_code_id": whitelistCodeId,
-        }
-    );
+        factory: astroportFactory,
+        generator_controller: undefined,
+        voting_escrow: undefined,
+        guardian: undefined,
+        whitelist_code_id: whitelistCodeId,
+    });
 
     astroportGenerator = astroportGeneratorResult.logs[0].events
         .find((event) => {
@@ -258,15 +195,9 @@ async function setup(
 
     // Astroport Router
     process.stdout.write("Instantiating Astroport Router contract");
-    const astroportRouterResult = await instantiateContract(
-        terra,
-        apTeam,
-        apTeam,
-        routerCodeId,
-        {
-            astroport_factory: astroportFactory,
-        }
-    );
+    const astroportRouterResult = await instantiateContract(terra, apTeam, apTeam, routerCodeId, {
+        astroport_factory: astroportFactory,
+    });
 
     astroportRouter = astroportRouterResult.logs[0].events
         .find((event) => {
@@ -280,35 +211,28 @@ async function setup(
 
     // Usdc-Usdt pair
     process.stdout.write("Instantiating USDC-USDT Swap(Pair) contract");
-    const usdcUsdtPairResult = await sendTransaction(
-        terra,
-        apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportFactory,
-            {
-                "create_pair": {
-                    "pair_type": {
-                        "stable": {}
-                    },
-                    "asset_infos": [
-                        {
-                            "native_token": {
-                                "denom": localterra.denoms.usdc,
-                            }
+    const usdcUsdtPairResult = await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(apTeam.key.accAddress, astroportFactory, {
+            create_pair: {
+                pair_type: {
+                    stable: {},
+                },
+                asset_infos: [
+                    {
+                        native_token: {
+                            denom: localterra.denoms.usdc,
                         },
-                        {
-                            "native_token": {
-                                "denom": localterra.denoms.usdt
-                            }
-                        }
-                    ],
-                    "init_params": toEncodedBinary({ "amp": 1 }),
-                }
+                    },
+                    {
+                        native_token: {
+                            denom: localterra.denoms.usdt,
+                        },
+                    },
+                ],
+                init_params: toEncodedBinary({ amp: 1 }),
             },
-        )
-    ]
-    );
+        }),
+    ]);
 
     usdcUsdtPair = usdcUsdtPairResult.logs[0].events
         .find((event) => {
@@ -346,51 +270,46 @@ async function setup(
                                 native_token: { denom: localterra.denoms.usdt },
                             },
                             amount: localterra.astroport.usdc_usdt_pair_usdt_liquidity,
-                        }
+                        },
                     ],
                     slippage_tolerance: undefined,
                     auto_stake: undefined, // Option<bool> ?
                     receiver: undefined,
-                }
+                },
             },
             {
-                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": localterra.astroport.usdc_usdt_pair_usdc_liquidity,
-                "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF": localterra.astroport.usdc_usdt_pair_usdt_liquidity,
-            },
-        )
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4":
+                    localterra.astroport.usdc_usdt_pair_usdc_liquidity,
+                "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF":
+                    localterra.astroport.usdc_usdt_pair_usdt_liquidity,
+            }
+        ),
     ]);
 
     // Luna-ASTRO pair
     process.stdout.write("Instantiating Luna-ASTRO Swap(Pair) contract");
-    const lunaAstroPairResult = await sendTransaction(
-        terra,
-        apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportFactory,
-            {
-                "create_pair": {
-                    "pair_type": {
-                        "xyk": {}
-                    },
-                    "asset_infos": [
-                        {
-                            "native_token": {
-                                "denom": "uluna",
-                            }
+    const lunaAstroPairResult = await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(apTeam.key.accAddress, astroportFactory, {
+            create_pair: {
+                pair_type: {
+                    xyk: {},
+                },
+                asset_infos: [
+                    {
+                        native_token: {
+                            denom: "uluna",
                         },
-                        {
-                            "token": {
-                                "contract_addr": astro
-                            }
-                        }
-                    ],
-                    "init_params": undefined,
-                }
+                    },
+                    {
+                        token: {
+                            contract_addr: astro,
+                        },
+                    },
+                ],
+                init_params: undefined,
             },
-        )
-    ]
-    );
+        }),
+    ]);
 
     lunaAstroPair = lunaAstroPairResult.logs[0].events
         .find((event) => {
@@ -411,16 +330,12 @@ async function setup(
 
     // Send liquidity to Luna/ASTRO pair for swaps
     await sendTransaction(terra, apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astro,
-            {
-                increase_allowance: {
-                    amount: "100000000000",
-                    spender: lunaAstroPair,
-                },
-            }
-        )
+        new MsgExecuteContract(apTeam.key.accAddress, astro, {
+            increase_allowance: {
+                amount: "100000000000",
+                spender: lunaAstroPair,
+            },
+        }),
     ]);
     await sendTransaction(terra, apTeam, [
         new MsgExecuteContract(
@@ -440,50 +355,43 @@ async function setup(
                                 token: { contract_addr: astro },
                             },
                             amount: "100000000000",
-                        }
+                        },
                     ],
                     slippage_tolerance: undefined,
                     auto_stake: undefined, // Option<bool> ?
                     receiver: undefined,
-                }
+                },
             },
             {
                 uluna: "100000000000",
-            },
-        )
+            }
+        ),
     ]);
 
     // Luna-USDC pair
     process.stdout.write("Instantiating Luna-USDC Swap(Pair) contract");
-    const lunaUsdcPairResult = await sendTransaction(
-        terra,
-        apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportFactory,
-            {
-                "create_pair": {
-                    "pair_type": {
-                        "xyk": {}
-                    },
-                    "asset_infos": [
-                        {
-                            "native_token": {
-                                "denom": "uluna",
-                            }
+    const lunaUsdcPairResult = await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(apTeam.key.accAddress, astroportFactory, {
+            create_pair: {
+                pair_type: {
+                    xyk: {},
+                },
+                asset_infos: [
+                    {
+                        native_token: {
+                            denom: "uluna",
                         },
-                        {
-                            "native_token": {
-                                "denom": localterra.denoms.usdc
-                            }
-                        }
-                    ],
-                    "init_params": undefined,
-                }
+                    },
+                    {
+                        native_token: {
+                            denom: localterra.denoms.usdc,
+                        },
+                    },
+                ],
+                init_params: undefined,
             },
-        )
-    ]
-    );
+        }),
+    ]);
 
     lunaUsdcPair = lunaUsdcPairResult.logs[0].events
         .find((event) => {
@@ -521,51 +429,44 @@ async function setup(
                                 native_token: { denom: localterra.denoms.usdc },
                             },
                             amount: "100000000000",
-                        }
+                        },
                     ],
                     slippage_tolerance: undefined,
                     auto_stake: undefined, // Option<bool> ?
                     receiver: undefined,
-                }
+                },
             },
             {
                 uluna: "100000000000",
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100000000000",
-            },
-        )
+            }
+        ),
     ]);
 
     // Luna-USDT pair
     process.stdout.write("Instantiating Luna-USDT Swap(Pair) contract");
-    const lunaUsdtPairResult = await sendTransaction(
-        terra,
-        apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportFactory,
-            {
-                "create_pair": {
-                    "pair_type": {
-                        "xyk": {}
-                    },
-                    "asset_infos": [
-                        {
-                            "native_token": {
-                                "denom": "uluna",
-                            }
+    const lunaUsdtPairResult = await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(apTeam.key.accAddress, astroportFactory, {
+            create_pair: {
+                pair_type: {
+                    xyk: {},
+                },
+                asset_infos: [
+                    {
+                        native_token: {
+                            denom: "uluna",
                         },
-                        {
-                            "native_token": {
-                                "denom": localterra.denoms.usdt
-                            }
-                        }
-                    ],
-                    "init_params": undefined,
-                }
+                    },
+                    {
+                        native_token: {
+                            denom: localterra.denoms.usdt,
+                        },
+                    },
+                ],
+                init_params: undefined,
             },
-        )
-    ]
-    );
+        }),
+    ]);
 
     lunaUsdtPair = lunaUsdtPairResult.logs[0].events
         .find((event) => {
@@ -603,51 +504,44 @@ async function setup(
                                 native_token: { denom: localterra.denoms.usdt },
                             },
                             amount: "100000000000",
-                        }
+                        },
                     ],
                     slippage_tolerance: undefined,
                     auto_stake: undefined, // Option<bool> ?
                     receiver: undefined,
-                }
+                },
             },
             {
                 uluna: "100000000000",
                 "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF": "100000000000",
-            },
-        )
+            }
+        ),
     ]);
 
     // ASTRO-USDC pair
     process.stdout.write("Instantiating Astro-USDC Swap(Pair) contract");
-    const astroUsdcPairResult = await sendTransaction(
-        terra,
-        apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportFactory,
-            {
-                "create_pair": {
-                    "pair_type": {
-                        "xyk": {}
-                    },
-                    "asset_infos": [
-                        {
-                            "token": {
-                                "contract_addr": astro
-                            }
+    const astroUsdcPairResult = await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(apTeam.key.accAddress, astroportFactory, {
+            create_pair: {
+                pair_type: {
+                    xyk: {},
+                },
+                asset_infos: [
+                    {
+                        token: {
+                            contract_addr: astro,
                         },
-                        {
-                            "native_token": {
-                                "denom": localterra.denoms.usdc
-                            }
-                        }
-                    ],
-                    "init_params": undefined,
-                }
+                    },
+                    {
+                        native_token: {
+                            denom: localterra.denoms.usdc,
+                        },
+                    },
+                ],
+                init_params: undefined,
             },
-        )
-    ]
-    );
+        }),
+    ]);
 
     astroUsdcPair = astroUsdcPairResult.logs[0].events
         .find((event) => {
@@ -668,16 +562,12 @@ async function setup(
 
     // Send liquidity to ASTRO/USDC pair for swaps
     await sendTransaction(terra, apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astro,
-            {
-                increase_allowance: {
-                    amount: "100000000000",
-                    spender: astroUsdcPair,
-                },
-            }
-        )
+        new MsgExecuteContract(apTeam.key.accAddress, astro, {
+            increase_allowance: {
+                amount: "100000000000",
+                spender: astroUsdcPair,
+            },
+        }),
     ]);
     await sendTransaction(terra, apTeam, [
         new MsgExecuteContract(
@@ -697,17 +587,17 @@ async function setup(
                                 token: { contract_addr: astro },
                             },
                             amount: "100000000000",
-                        }
+                        },
                     ],
                     slippage_tolerance: undefined,
                     auto_stake: undefined, // Option<bool> ?
                     receiver: undefined,
-                }
+                },
             },
             {
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100000000000",
-            },
-        )
+            }
+        ),
     ]);
 
     // Step 3. Update the contracts' configuration
@@ -715,75 +605,58 @@ async function setup(
     // Update configuration of contracts
     process.stdout.write("Update Astroport-factory config");
     await sendTransaction(terra, apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportFactory,
-            {
-                update_config: {
-                    generator_address: astroportGenerator,
-                    token_code_id: undefined,
-                    fee_address: undefined,
-                    whitelist_code_id: undefined,
-                }
-            }
-        )
+        new MsgExecuteContract(apTeam.key.accAddress, astroportFactory, {
+            update_config: {
+                generator_address: astroportGenerator,
+                token_code_id: undefined,
+                fee_address: undefined,
+                whitelist_code_id: undefined,
+            },
+        }),
     ]);
     console.log(chalk.green(" Done!"));
 
     // Setup pools in `astroport_generator` contract
     process.stdout.write("Setup pool for USDC-USDT pair in Generator contract");
     await sendTransaction(terra, apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astroportGenerator,
-            {
-                setup_pools: {
-                    pools: [[usdcUsdtPairLpToken, "100000000000"]]
-                }
-            }
-        )
+        new MsgExecuteContract(apTeam.key.accAddress, astroportGenerator, {
+            setup_pools: {
+                pools: [[usdcUsdtPairLpToken, "100000000000"]],
+            },
+        }),
     ]);
 
     // Setup vesting schedule in vesting contract
     process.stdout.write("Setup vesting schedule in vesting contract");
     await sendTransaction(terra, apTeam, [
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astro,
-            {
-                increase_allowance: {
-                    spender: astroportVesting,
-                    amount: "100000000000000",
-                    expires: undefined,
-                }
-            }
-        ),
-        new MsgExecuteContract(
-            apTeam.key.accAddress,
-            astro,
-            {
-                send: {
-                    msg: toEncodedBinary({
-                        "register_vesting_accounts": {
-                            "vesting_accounts": [
-                                {
-                                    "address": astroportGenerator,
-                                    "schedules": [
-                                        {
-                                            "start_point": { "time": 1654599600, "amount": "1000000000000" },
-                                            "end_point": { "time": 1686135600, "amount": "100000000000000" }
-                                        }
-                                    ],
-                                }
-                            ]
-                        }
-                    }),
-                    amount: "100000000000000",
-                    contract: astroportVesting,
-                }
-            }
-
-        )
+        new MsgExecuteContract(apTeam.key.accAddress, astro, {
+            increase_allowance: {
+                spender: astroportVesting,
+                amount: "100000000000000",
+                expires: undefined,
+            },
+        }),
+        new MsgExecuteContract(apTeam.key.accAddress, astro, {
+            send: {
+                msg: toEncodedBinary({
+                    register_vesting_accounts: {
+                        vesting_accounts: [
+                            {
+                                address: astroportGenerator,
+                                schedules: [
+                                    {
+                                        start_point: { time: 1654599600, amount: "1000000000000" },
+                                        end_point: { time: 1686135600, amount: "100000000000000" },
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                }),
+                amount: "100000000000000",
+                contract: astroportVesting,
+            },
+        }),
     ]);
 
     console.log(chalk.green(" Done!"));
