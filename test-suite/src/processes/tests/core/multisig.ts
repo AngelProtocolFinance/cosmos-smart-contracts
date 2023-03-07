@@ -12,11 +12,6 @@ import {
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
-export enum VoteOption {
-  YES,
-  NO,
-}
-
 export async function testQueryMultisigConfig(
   juno: SigningCosmWasmClient,
   cw3: string
@@ -230,9 +225,7 @@ export async function testUpdateCw3Config(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  threshold: string, // decimal
-  max_voting_period: number,
-  require_execution: boolean
+  configMsg: any,
 ): Promise<void> {
   process.stdout.write(
     "Test - Endowment Member Proposes changing the CW3 configs"
@@ -248,13 +241,7 @@ export async function testUpdateCw3Config(
             execute: {
               contract_addr: cw3,
               funds: [],
-              msg: toEncodedBinary({
-                update_config: {
-                  threshold: { absolute_percentage: { percentage: threshold } },
-                  max_voting_period: { height: max_voting_period },
-                  require_execution: require_execution,
-                },
-              }),
+              msg: toEncodedBinary({ update_config: configMsg }),
             },
           },
         },

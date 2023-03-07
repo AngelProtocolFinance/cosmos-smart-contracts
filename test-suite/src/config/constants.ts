@@ -36,34 +36,25 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar:
-      "juno1c676xpc64x9lxjfsvpn7ajw2agutthe75553ws45k3ld46vy8pts45ans6",
-    accounts: "juno1cyd63pk2wuvjkqmhlvp9884z4h89rqtn8w8xgz9m28hjd2kzj2cqf070uz",
-    settingsController:
-      "juno12qgr27j4vmjcgagrql53rt2a8ptwyrptj5qg2l9shetk32e2er6q3ph59v",
-    indexFund:
-      "juno1d26dmz9zld4n8pzjpqae5m95adnfalvz47vldpwfzsplw4umcjmqhkle94",
-    cw4GrpApTeam:
-      "juno1qkphn8h2rnyqjjtfh8j8dtuqgh5cac57nq2286tsljducqp4lwfqac44jm",
-    cw3ApTeam:
-      "juno1ukpw6g9dqfw3fk2mqchplgcz4jaukttf6tpyrht7sw00t7mn7dpsjwpfhs",
-    cw4GrpReviewTeam:
-      "juno12lgc6d44c0y0tnef8fwjq8d9arrw5jgvrg8ydju5kz7nek9px72qvu8aw0",
-    cw3ReviewTeam:
-      "juno1lstuws59hjswletwmskefdajhq76pz9tlfq84perndemrzztda0q6jc3nr",
-    swapRouter:
-      "juno1n78c8ckw5xwktg7laae7utrm7jtyrsshnfrl9n72xzlxz9gpq0zsyxcyex",
+    registrar: "juno1xcxy2zzwvalfldrq4x8uu4hhr9cz2vxz30muf03eqxsuqny8dsks5c0d4y",
+    cw4GrpApTeam: "juno1tued9dnscg7qrk3yhzqamrx4as7x3cl36uvhxssjfvj57zaphfjqltgcfm",
+    cw3ApTeam: "juno1pne79yt7ygw4u2xll0cff54at8whpjd2usedafa2mjly7z80yw0qsf6rsq",
+    settingsController: "juno1z0rdce48svms0wgq5h56uewh7cxnhwees9r8efv6vthhxt9d37mss9mlnv",
+    accounts: "juno1ldh94q43mwvj6qjyz4cphqnv37u9h28t62l6y26uunvxaxnwlj2sypylzn",
+    indexFund: "juno1p3up77cufnundqfhsp5xee3egymmrksue0k89d2hvtf4y22w367sz0xt3m",
+    cw4GrpReviewTeam: "juno1vkw6gn57sqalslq8wtcj5vkscedmxgwptlve69207vklgnujw5vqsnuwfl",
+    cw3ReviewTeam: "juno15wercsuj0zqq4qkhv3xqpxjgdwawcu5rpr233denm9u60ult6u3qn5zf7d",
+    swapRouter: "juno14xj5cvgc6jgamm9gn0s5c88dswf026cv2uv0jgefl8adazfrqnws92y9wm",
     donationMatching: "",
-    giftcards:
-      "juno16frj05cr02nkwgdc45pawjvuqql8vs6dzz0x92y6ag0spt4sfd5sju5k67",
+    giftcards: "juno1nkfegrfyh29dj8zqxs70q7jhkcj2q09d69qpdskwn07m6lf5cpjqn2ts40",
     vaultLocked1:
-      "juno1juque0va5ya8tcvrxu2kq3s4gdfrzw2yv6k7glr7z0uu563qze4sgu9yzj",
+      "juno1tfdam97s98lgu6vu6z9wrdnzuwvvx5ju7qcuaukx0fs3vrt7f2nsh8caup",
     vaultLiquid1:
-      "juno1gjg0m75mnav5xftgwjxded5v0shlsj3vk8uh4adk9k7a33034wmssyfupc",
+      "juno1fjd8gf2usrys8jfvzgkmmf0gkp47633e8q0dwnrm5hpxlulmxuvsvxw3kk",
     vaultLocked2:
-      "juno1durey747cm82sfqm0ph93wk63ljnm4j60euyp2y3krj8dnfqzacquzwu5l",
+      "juno1jqt2k2j9vczl2smuqky0nrcxs9sn8cn22fw5y87lnntrym6syeuqv8vcc6",
     vaultLiquid2:
-      "juno158z8a7mnmj7qulqvvcu07wu3mh245tlymynycczsfm7hdcur2k4sr2azen",
+      "juno1rvmdacp6rkl0430vm25fqvhxcpnzuvtjqqzelkes9am9kv599evs4q2zne",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,

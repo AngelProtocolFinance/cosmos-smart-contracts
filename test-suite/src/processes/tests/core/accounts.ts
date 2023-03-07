@@ -251,7 +251,7 @@ export async function testCharityCanWithdrawLocked(
   process.stdout.write(
     "Test - Charity Member can withdraw from their Endowment's Locked account with AP Team Approval\n"
   );
-  const proposor_client = await clientSetup(proposor, networkInfo);
+  const proposor_client = await clientSetup(proposor, networkInfo.url, networkInfo.gasPrice);
   const proposor_wallet = await getWalletAddress(proposor);
   console.log(
     chalk.yellow(
@@ -300,7 +300,7 @@ export async function testCharityCanWithdrawLocked(
     // eslint-disable-next-line no-async-promise-executor
     endow_prom = endow_prom.then(async () => {
       const voter_wallet = await getWalletAddress(member);
-      const voter_client = await clientSetup(member, networkInfo);
+      const voter_client = await clientSetup(member, networkInfo.url, networkInfo.gasPrice);
       console.log(
         chalk.yellow(
           `> Endowment CW3 Member ${voter_wallet} votes YES on endowment's proposal`
@@ -345,7 +345,7 @@ export async function testCharityCanWithdrawLocked(
     // eslint-disable-next-line no-async-promise-executor
     apteam_prom = apteam_prom.then(async () => {
       const voter_wallet = await getWalletAddress(member);
-      const voter_client = await clientSetup(member, networkInfo);
+      const voter_client = await clientSetup(member, networkInfo.url, networkInfo.gasPrice);
       console.log(
         chalk.yellow(
           `> AP Team CW3 Member ${voter_wallet} votes YES on AP Team proposal`

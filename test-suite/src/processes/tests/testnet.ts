@@ -64,6 +64,7 @@ import {
   testAddMemberToC4Group,
   testProposalApprovingEndowment,
   testCw3CastVote,
+  testCw3CastApplicationVote,
   testCw3ExecutePoll,
   testQueryMultisigGroupWeight,
   testQueryMultisigVoters,
@@ -229,42 +230,42 @@ export async function testExecute(
   const networkInfo = config.networkInfo;
   const actors = {
     apTeam: {
-      client: await clientSetup(apTeam, networkInfo),
+      client: await clientSetup(apTeam, networkInfo.url, networkInfo.gasPrice),
       wallet: apTeam,
       addr: apTeamAddr,
     },
     apTeam2: {
-      client: await clientSetup(apTeam2, networkInfo),
+      client: await clientSetup(apTeam2, networkInfo.url, networkInfo.gasPrice),
       wallet: apTeam2,
       addr: apTeam2Addr,
     },
     apTeam3: {
-      client: await clientSetup(apTeam3, networkInfo),
+      client: await clientSetup(apTeam3, networkInfo.url, networkInfo.gasPrice),
       wallet: apTeam3,
       addr: apTeam3Addr,
     },
     charity1: {
-      client: await clientSetup(charity1, networkInfo),
+      client: await clientSetup(charity1, networkInfo.url, networkInfo.gasPrice),
       wallet: charity1,
       addr: charity1Addr,
     },
     charity2: {
-      client: await clientSetup(charity2, networkInfo),
+      client: await clientSetup(charity2, networkInfo.url, networkInfo.gasPrice),
       wallet: charity2,
       addr: charity2Addr,
     },
     charity3: {
-      client: await clientSetup(charity3, networkInfo),
+      client: await clientSetup(charity3, networkInfo.url, networkInfo.gasPrice),
       wallet: charity3,
       addr: charity3Addr,
     },
     pleb: {
-      client: await clientSetup(pleb, networkInfo),
+      client: await clientSetup(pleb, networkInfo.url, networkInfo.gasPrice),
       wallet: pleb,
       addr: plebAddr,
     },
     tca: {
-      client: await clientSetup(tca, networkInfo),
+      client: await clientSetup(tca, networkInfo.url, networkInfo.gasPrice),
       wallet: tca,
       addr: tcaAddr,
     },
@@ -282,12 +283,26 @@ export async function testExecute(
 
   /* --- MULTISIG contracts --- */
   // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, actors.apTeam2.addr);
-  // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, "0.5", 25000, false);
+  // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, {
+  //   threshold: { absolute_percentage: { percentage: "0.3" } },
+  //   max_voting_period: { height: 25000 },
+  //   require_execution: false,
+  //   seed_asset: undefined,
+  //   seed_split_to_liquid: "0",
+  //   new_endow_gas_money: undefined,
+  // });
+  // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, {
+  //   threshold: { absolute_percentage: { percentage: "0.3" } },
+  //   max_voting_period: { height: 25000 },
+  //   require_execution: false,
+  // });
   // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, 1);
-  // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 4, `yes`);
-  // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 3);
-  // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
-  // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
+  // await testQueryMultisigVoters(actors.apTeam.client, cw3ReviewTeam);
+  // await testQueryProposal(actors.apTeam.client, cw3ReviewTeam, 6);
+  // await testCw3CastVote(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, 6, `yes`);
+  await testCw3CastApplicationVote(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, 6, `yes`)
+  // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, 6);
+  // await testQueryListProposals(actors.apTeam.client, cw3ApTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
   // await testQueryMultisigConfig(actors.apTeam.client, cw3ReviewTeam);
@@ -618,33 +633,33 @@ export async function testExecute(
   // });
 
   // Test query
-  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  await testQueryRegistrarNetworkConnection(
-    actors.apTeam.client,
-    registrar,
-    networkInfo.chainId
-  );
+  // await testQueryRegistrarNetworkConnection(
+  //   actors.apTeam.client,
+  //   registrar,
+  //   networkInfo.chainId
+  // );
 
-  await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
-  await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
 
-  await testQuerySettingsControllerConfig(
-    actors.apTeam.client,
-    settingsController
-  );
-  await testQuerySettingsControllerEndowSettings(
-    actors.apTeam.client,
-    settingsController,
-    endowId1
-  );
+  // await testQuerySettingsControllerConfig(
+  //   actors.apTeam.client,
+  //   settingsController
+  // );
+  // await testQuerySettingsControllerEndowSettings(
+  //   actors.apTeam.client,
+  //   settingsController,
+  //   endowId1
+  // );
   // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr, actors.apTeam.addr);
 
-  await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
-  await testQueryIndexFundState(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundState(actors.apTeam.client, indexFund);
   // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
   // await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
   // await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);

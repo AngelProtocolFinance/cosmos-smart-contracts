@@ -14,7 +14,6 @@ import { wasm_path } from "../../../config/wasmPaths";
 let client: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeamAddr: string;
-let registrar: string;
 
 // setup charity endowments
 export async function setupGiftcards(
@@ -22,11 +21,9 @@ export async function setupGiftcards(
   juno: SigningCosmWasmClient,
   apTeamWallet: DirectSecp256k1HdWallet,
   keeper: string,
-  _registrar: string
+  registrar: string
 ): Promise<void> {
-  apTeam = apTeamWallet;
-
-  const apTeamAddr = await getWalletAddress(apTeam);
+  const apTeamAddr = await getWalletAddress(apTeamWallet);
 
   // store wasm
   process.stdout.write("Uploading Gift Cards Wasm");

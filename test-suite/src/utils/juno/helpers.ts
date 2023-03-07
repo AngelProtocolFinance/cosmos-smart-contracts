@@ -11,14 +11,14 @@ import { GasPrice } from "@cosmjs/stargate";
 export enum VoteOption {
   YES,
   NO,
-}
+};
+
 export type Endowment = {
   ref_id: string;
   name: string;
   owner: string;
   tier: number;
   overview: string;
-  url: string;
   un_sdgs: number[];
   logo: string;
   image: string;
@@ -50,13 +50,14 @@ export type Actor = {
 
 export async function clientSetup(
   wallet: DirectSecp256k1HdWallet,
-  networkInfo: any
+  url: string,
+  gasPrice: string,
 ) {
   const client = await SigningCosmWasmClient.connectWithSigner(
-    networkInfo.url,
+    url,
     wallet,
     {
-      gasPrice: GasPrice.fromString(networkInfo.gasPrice),
+      gasPrice: GasPrice.fromString(gasPrice),
     }
   );
   return client;
@@ -184,6 +185,11 @@ export async function instantiateContract(
     "auto",
     { admin: admin }
   );
+  const resultContract = result.contractAddress as string;
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${resultContract}`
+  );
   return result;
 }
 
@@ -266,7 +272,7 @@ export async function storeAndInstantiateContract(
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
-  process.stdout.write(`Migrate ${wasmFilename} contract`);
+  process.stdout.write(`Instantiating ${wasmFilename} contract`);
   const result = await juno.instantiate(
     deployer,
     codeId,
@@ -480,7 +486,7 @@ export async function sendApplicationViaCw3Proposal(
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[]
 ): Promise<number> {
-  const proposor_client = await clientSetup(proposor, networkInfo);
+  const proposor_client = await clientSetup(proposor, networkInfo.url, networkInfo.gasPrice);
   const proposor_wallet = await getWalletAddress(proposor);
   console.log(
     chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`)
@@ -532,7 +538,7 @@ export async function sendApplicationViaCw3Proposal(
   members.forEach((member) => {
     prom = prom.then(async () => {
       const voter_wallet = await getWalletAddress(member);
-      const voter_client = await clientSetup(member, networkInfo);
+      const voter_client = await clientSetup(member, networkInfo.url, networkInfo.gasPrice);
       console.log(
         chalk.yellow(
           `> CW3 Review Member ${voter_wallet} votes YES on application proposal`

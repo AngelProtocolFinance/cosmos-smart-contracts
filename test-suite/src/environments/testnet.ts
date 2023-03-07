@@ -451,6 +451,8 @@ export async function startSetupCore(): Promise<void> {
         ],
         cw20: [],
       },
+      axelar_gateway: config.networkInfo.axelarGateway,
+      axelar_ibc_channel: config.networkInfo.axelarIbcChannel,
     }
   );
 }

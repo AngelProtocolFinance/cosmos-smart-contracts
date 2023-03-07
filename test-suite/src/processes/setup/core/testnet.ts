@@ -77,6 +77,8 @@ export async function setupCore(
     charity_cw3_threshold_abs_perc: string;
     charity_cw3_max_voting_period: number;
     accepted_tokens: any | undefined;
+    axelar_gateway: string;
+    axelar_ibc_channel: string;
   }
 ): Promise<void> {
   networkUrl = _networkUrl;
@@ -97,7 +99,9 @@ export async function setupCore(
     config.fund_rotation,
     config.fund_member_limit,
     config.funding_goal,
-    config.accepted_tokens
+    config.accepted_tokens,
+    config.axelar_gateway,
+    config.axelar_ibc_channel,
   );
   await turnOverApTeamMultisig();
   // await createIndexFunds();
@@ -111,7 +115,9 @@ async function setup(
   fund_rotation: number | undefined,
   fund_member_limit: number | undefined,
   funding_goal: string | undefined,
-  accepted_tokens: any | undefined
+  accepted_tokens: any | undefined,
+  axelar_gateway: string,
+  axelar_ibc_channel: string,
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each and instantiate the contracts
   registrar = await storeAndInstantiateContract(
@@ -124,13 +130,16 @@ async function setup(
       treasury: treasury_address,
       split_to_liquid: undefined,
       accepted_tokens: accepted_tokens,
+      axelar_gateway,
+      axelar_ibc_channel,
     }
   );
-  cw4GrpApTeam = await storeAndInstantiateContract(
+  cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
+  const cw4GrpApTeamResult = await instantiateContract(
     juno,
     apTeamAddr,
     apTeamAddr,
-    "cw4_group.wasm",
+    cw4Group,
     {
       admin: apTeamAddr,
       members: [
@@ -139,6 +148,7 @@ async function setup(
       ],
     }
   );
+  cw4GrpApTeam = cw4GrpApTeamResult.contractAddress as string;
   cw3ApTeam = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
@@ -169,7 +179,7 @@ async function setup(
     juno,
     apTeamAddr,
     cw3ApTeam,
-    "settings_controller.wasm",
+    "accounts_settings_controller.wasm",
     {
       owner_sc: cw3ApTeam,
       registrar_contract: registrar,
@@ -195,15 +205,27 @@ async function setup(
       fund_rotation: fund_rotation,
       fund_member_limit: fund_member_limit,
       funding_goal: funding_goal,
-      accepted_tokens: accepted_tokens,
     }
   );
-  cw4Group = await storeCode(juno, apTeamAddr, "cw3_group.wasm");
   cw3MultiSigEndowment = await storeCode(
     juno,
     apTeamAddr,
-    "cw3_endowment.wasm"
+    `${wasm_path.core}/cw3_endowment.wasm`
   );
+  const cw4GrpReviewTeamResult = await instantiateContract(
+    juno,
+    apTeamAddr,
+    apTeamAddr,
+    cw4Group,
+    {
+      admin: apTeamAddr,
+      members: [
+        { addr: apTeamAddr, weight: 1 },
+        { addr: apTeam2Addr, weight: 1 },
+      ],
+    }
+  );
+  cw4GrpReviewTeam = cw4GrpReviewTeamResult.contractAddress as string; 
   cw3ReviewTeam = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
@@ -216,17 +238,6 @@ async function setup(
         absolute_percentage: { percentage: threshold_absolute_percentage },
       },
       max_voting_period: { height: max_voting_period_height },
-      // registrar_contract: registrar,
-    }
-  );
-  cw4GrpReviewTeam = await storeAndInstantiateContract(
-    juno,
-    apTeamAddr,
-    apTeamAddr,
-    `cw4_group.wasm`,
-    {
-      admin: apTeamAddr,
-      members: [{ addr: apTeamAddr, weight: 1 }],
     }
   );
   // Setup AP Team C3 to be the admin to it's C4 Group
@@ -299,18 +310,18 @@ async function setup(
   );
   // await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'subdao.wasm', {});
   // await storeAndInstantiateContract(juno, apTeamAddr, apTeamAddr, 'subdao_bonding_token.wasm', {});
-  await storeAndInstantiateContract(
-    juno,
-    apTeamAddr,
-    cw3ApTeam,
-    "donation_match.wasm",
-    {
-      id: 1, // FAKE! Need to fix.
-      registrar_contract: registrar,
-      reserve_token: apTeamAddr, // FAKE! Need to fix.
-      lp_pair: apTeamAddr, // FAKE! Need to fix.
-    }
-  );
+  // donationMatching = await storeAndInstantiateContract(
+  //   juno,
+  //   apTeamAddr,
+  //   cw3ApTeam,
+  //   "donation_match.wasm",
+  //   {
+  //     id: 1, // FAKE! Need to fix.
+  //     registrar_contract: registrar,
+  //     reserve_token: apTeamAddr, // FAKE! Need to fix.
+  //     lp_pair: apTeamAddr, // FAKE! Need to fix.
+  //   }
+  // );
 
   process.stdout.write(
     "Update Registrar's config with various wasm codes & contracts"
@@ -318,6 +329,7 @@ async function setup(
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
       accounts_contract: accounts,
+      accounts_settings_controller: settingsController,
       applications_review: cw3ReviewTeam,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSigEndowment,
@@ -328,8 +340,7 @@ async function setup(
       subdao_cw20_token_code: undefined,
       subdao_bonding_token_code: undefined,
       donation_match_code: undefined,
-      donation_match_charites_contract: donationMatchCharities,
-      settings_controller: settingsController,
+      donation_match_charites_contract: undefined,
     },
   });
   console.log(chalk.green(" Done!"));
