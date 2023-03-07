@@ -12,6 +12,7 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "gift_cards"
 
 [features]
 # for more explicit tests, cargo test --features=backtraces

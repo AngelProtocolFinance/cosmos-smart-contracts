@@ -41,7 +41,7 @@ export async function migrateCore(
   //     axelar_ibc_channel: axelarIbcChannel,
   //     accounts_settings_controller: settingsController,
   // });
-  // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
+  await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
   // await storeAndMigrateContract(juno, apTeam, settingsController, 'settings_controller.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');

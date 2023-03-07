@@ -60,7 +60,7 @@ pub fn instantiate(
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
         swaps_router: None,
-        accounts_settings_controller: deps.api.addr_validate(&msg.accounts_settings_controller)?,
+        accounts_settings_controller: None,
         axelar_gateway: msg.axelar_gateway,
         axelar_ibc_channel: msg.axelar_ibc_channel,
     };
@@ -153,7 +153,8 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // Get the new addr configs from migrate msg input
-    let accounts_settings_controller = deps.api.addr_validate(&msg.accounts_settings_controller)?;
+    let accounts_settings_controller =
+        Some(deps.api.addr_validate(&msg.accounts_settings_controller)?);
 
     // setup the new config struct and save to storage
     let data = deps

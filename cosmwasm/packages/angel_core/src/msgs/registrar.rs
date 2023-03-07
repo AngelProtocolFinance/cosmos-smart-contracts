@@ -20,7 +20,6 @@ pub struct InstantiateMsg {
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<String>,
-    pub accounts_settings_controller: String,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
 }
@@ -138,7 +137,7 @@ pub struct ConfigResponse {
     pub swap_factory: Option<String>,
     pub applications_review: String,
     pub swaps_router: Option<String>,
-    pub accounts_settings_controller: String,
+    pub accounts_settings_controller: Option<String>,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
 }

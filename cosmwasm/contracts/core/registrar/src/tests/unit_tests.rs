@@ -27,7 +27,6 @@ fn instantiate_msg() -> InstantiateMsg {
             cw20: vec![],
         }),
         swap_factory: None,
-        accounts_settings_controller: "accounts-settings-controller".to_string(),
         axelar_gateway: "axelar-gateway".to_string(),
         axelar_ibc_channel: "channel-1".to_string(),
     };

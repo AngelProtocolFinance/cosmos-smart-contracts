@@ -12,6 +12,7 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "halo_community"
 
 [features]
 # for quicker tests, cargo test --lib

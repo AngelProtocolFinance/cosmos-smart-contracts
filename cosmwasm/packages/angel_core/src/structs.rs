@@ -5,7 +5,56 @@ use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Expiration;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::fmt;
+
+// OLD Struct for purposes of supporting migrations of Endowments (remove in next major version)
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct OneOffVaults {
+    pub locked: Vec<Addr>,
+    pub liquid: Vec<Addr>,
+}
+
+// OLD Struct for purposes of supporting migrations of Endowments (remove in next major version)
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AccountStrategies {
+    pub locked: Vec<StrategyComponent>,
+    pub liquid: Vec<StrategyComponent>,
+}
+
+impl AccountStrategies {
+    pub fn default() -> Self {
+        AccountStrategies {
+            locked: vec![],
+            liquid: vec![],
+        }
+    }
+
+    pub fn get(&self, acct_type: AccountType) -> Vec<StrategyComponent> {
+        match acct_type {
+            AccountType::Locked => self.locked.clone(),
+            AccountType::Liquid => self.liquid.clone(),
+        }
+    }
+
+    pub fn set(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
+        match acct_type {
+            AccountType::Locked => self.locked = strategy,
+            AccountType::Liquid => self.liquid = strategy,
+        }
+    }
+}
+
+// OLD Struct for purposes of supporting migrations of Endowments (remove in next major version)
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct StrategyComponent {
+    pub vault: String,       // Vault SC Address
+    pub percentage: Decimal, // percentage of funds to invest
+}
 
 #[cw_serde]
 pub struct Delegate {

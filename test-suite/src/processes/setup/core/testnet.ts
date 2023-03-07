@@ -122,7 +122,6 @@ async function setup(
     {
       tax_rate,
       treasury: treasury_address,
-      default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
       accepted_tokens: accepted_tokens,
     }

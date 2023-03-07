@@ -52,7 +52,7 @@ pub struct Config {
     pub fundraising_contract: Option<Addr>,
     pub rebalance: RebalanceDetails,
     pub swaps_router: Option<Addr>,
-    pub accounts_settings_controller: Addr, // contract address used for storing extra Endowment settings
+    pub accounts_settings_controller: Option<Addr>, // contract address used for storing extra Endowment settings
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
 }

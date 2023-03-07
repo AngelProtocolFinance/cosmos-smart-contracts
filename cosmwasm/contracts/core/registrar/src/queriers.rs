@@ -59,7 +59,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
         applications_review: config.applications_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
-        accounts_settings_controller: config.accounts_settings_controller.to_string(),
+        accounts_settings_controller: match config.accounts_settings_controller {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
         axelar_gateway: config.axelar_gateway,
         axelar_ibc_channel: config.axelar_ibc_channel,
     })

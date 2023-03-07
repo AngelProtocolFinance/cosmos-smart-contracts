@@ -1,11 +1,12 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG};
+use crate::state::{Config, Endowment, OldEndowment, CONFIG, ENDOWMENTS};
 use angel_core::errors::core::ContractError;
 use angel_core::msgs::accounts::*;
+use angel_core::structs::Investments;
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdError, StdResult,
+    entry_point, from_binary, from_slice, to_binary, Binary, Deps, DepsMut, Env, MessageInfo,
+    Reply, Response, StdError, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -249,6 +250,45 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // pull up the Config from storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let config: Config = from_slice(&data)?;
+
+    // setup the new Endowment struct and save to storage for all existing Accounts
+    for endow_id in 1..config.next_account_id {
+        let key = ENDOWMENTS.key(endow_id);
+        let data = deps.storage.get(&key).ok_or_else(|| {
+            StdError::not_found(format!("Endowment not found for ID {}", endow_id))
+        })?;
+        let old_endow: OldEndowment = from_slice(&data)?;
+        ENDOWMENTS.save(
+            deps.storage,
+            endow_id,
+            &Endowment {
+                owner: old_endow.owner,
+                name: old_endow.name,
+                categories: old_endow.categories,
+                tier: old_endow.tier,
+                endow_type: old_endow.endow_type,
+                logo: old_endow.logo,
+                image: old_endow.image,
+                status: old_endow.status,
+                deposit_approved: old_endow.deposit_approved,
+                withdraw_approved: old_endow.withdraw_approved,
+                maturity_time: old_endow.maturity_time,
+                rebalance: old_endow.rebalance,
+                kyc_donors_only: old_endow.kyc_donors_only,
+                pending_redemptions: old_endow.pending_redemptions,
+                proposal_link: old_endow.proposal_link,
+                invested_strategies: Investments::default(),
+                referral_id: None,
+            },
+        )?;
+    }
 
     Ok(Response::default())
 }

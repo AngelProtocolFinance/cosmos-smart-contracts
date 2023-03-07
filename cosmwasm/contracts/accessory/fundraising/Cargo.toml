@@ -15,6 +15,7 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "fundraising"
 
 [features]
 backtraces = ["cosmwasm-std/backtraces"]

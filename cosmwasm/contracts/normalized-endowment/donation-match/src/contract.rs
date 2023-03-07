@@ -136,7 +136,7 @@ fn execute_donor_match(
         &AccountQueryMsg::Endowment { id: endowment_id },
     )?;
     let endow_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_settings_controller,
+        registrar_config.accounts_settings_controller.unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings {
             id: endowment_id,
         },
