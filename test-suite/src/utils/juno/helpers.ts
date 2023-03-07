@@ -11,7 +11,7 @@ import { GasPrice } from "@cosmjs/stargate";
 export enum VoteOption {
   YES,
   NO,
-};
+}
 
 export type Endowment = {
   ref_id: string;
@@ -51,15 +51,11 @@ export type Actor = {
 export async function clientSetup(
   wallet: DirectSecp256k1HdWallet,
   url: string,
-  gasPrice: string,
+  gasPrice: string
 ) {
-  const client = await SigningCosmWasmClient.connectWithSigner(
-    url,
-    wallet,
-    {
-      gasPrice: GasPrice.fromString(gasPrice),
-    }
-  );
+  const client = await SigningCosmWasmClient.connectWithSigner(url, wallet, {
+    gasPrice: GasPrice.fromString(gasPrice),
+  });
   return client;
 }
 
@@ -486,7 +482,11 @@ export async function sendApplicationViaCw3Proposal(
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[]
 ): Promise<number> {
-  const proposor_client = await clientSetup(proposor, networkInfo.url, networkInfo.gasPrice);
+  const proposor_client = await clientSetup(
+    proposor,
+    networkInfo.url,
+    networkInfo.gasPrice
+  );
   const proposor_wallet = await getWalletAddress(proposor);
   console.log(
     chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`)
@@ -538,7 +538,11 @@ export async function sendApplicationViaCw3Proposal(
   members.forEach((member) => {
     prom = prom.then(async () => {
       const voter_wallet = await getWalletAddress(member);
-      const voter_client = await clientSetup(member, networkInfo.url, networkInfo.gasPrice);
+      const voter_client = await clientSetup(
+        member,
+        networkInfo.url,
+        networkInfo.gasPrice
+      );
       console.log(
         chalk.yellow(
           `> CW3 Review Member ${voter_wallet} votes YES on application proposal`

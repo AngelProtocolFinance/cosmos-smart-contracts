@@ -225,7 +225,7 @@ export async function testUpdateCw3Config(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  configMsg: any,
+  configMsg: any
 ): Promise<void> {
   process.stdout.write(
     "Test - Endowment Member Proposes changing the CW3 configs"

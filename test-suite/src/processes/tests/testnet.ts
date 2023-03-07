@@ -245,17 +245,29 @@ export async function testExecute(
       addr: apTeam3Addr,
     },
     charity1: {
-      client: await clientSetup(charity1, networkInfo.url, networkInfo.gasPrice),
+      client: await clientSetup(
+        charity1,
+        networkInfo.url,
+        networkInfo.gasPrice
+      ),
       wallet: charity1,
       addr: charity1Addr,
     },
     charity2: {
-      client: await clientSetup(charity2, networkInfo.url, networkInfo.gasPrice),
+      client: await clientSetup(
+        charity2,
+        networkInfo.url,
+        networkInfo.gasPrice
+      ),
       wallet: charity2,
       addr: charity2Addr,
     },
     charity3: {
-      client: await clientSetup(charity3, networkInfo.url, networkInfo.gasPrice),
+      client: await clientSetup(
+        charity3,
+        networkInfo.url,
+        networkInfo.gasPrice
+      ),
       wallet: charity3,
       addr: charity3Addr,
     },
@@ -300,7 +312,13 @@ export async function testExecute(
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryProposal(actors.apTeam.client, cw3ReviewTeam, 6);
   // await testCw3CastVote(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, 6, `yes`);
-  await testCw3CastApplicationVote(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, 6, `yes`)
+  await testCw3CastApplicationVote(
+    actors.apTeam.client,
+    actors.apTeam.addr,
+    cw3ReviewTeam,
+    6,
+    `yes`
+  );
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, 6);
   // await testQueryListProposals(actors.apTeam.client, cw3ApTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);

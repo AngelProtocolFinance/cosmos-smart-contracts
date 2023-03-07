@@ -101,7 +101,7 @@ export async function setupCore(
     config.funding_goal,
     config.accepted_tokens,
     config.axelar_gateway,
-    config.axelar_ibc_channel,
+    config.axelar_ibc_channel
   );
   await turnOverApTeamMultisig();
   // await createIndexFunds();
@@ -117,7 +117,7 @@ async function setup(
   funding_goal: string | undefined,
   accepted_tokens: any | undefined,
   axelar_gateway: string,
-  axelar_ibc_channel: string,
+  axelar_ibc_channel: string
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each and instantiate the contracts
   registrar = await storeAndInstantiateContract(
@@ -134,7 +134,11 @@ async function setup(
       axelar_ibc_channel,
     }
   );
-  cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
+  cw4Group = await storeCode(
+    juno,
+    apTeamAddr,
+    `${wasm_path.core}/cw4_group.wasm`
+  );
   const cw4GrpApTeamResult = await instantiateContract(
     juno,
     apTeamAddr,
@@ -225,7 +229,7 @@ async function setup(
       ],
     }
   );
-  cw4GrpReviewTeam = cw4GrpReviewTeamResult.contractAddress as string; 
+  cw4GrpReviewTeam = cw4GrpReviewTeamResult.contractAddress as string;
   cw3ReviewTeam = await storeAndInstantiateContract(
     juno,
     apTeamAddr,

@@ -36,17 +36,26 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno1xcxy2zzwvalfldrq4x8uu4hhr9cz2vxz30muf03eqxsuqny8dsks5c0d4y",
-    cw4GrpApTeam: "juno1tued9dnscg7qrk3yhzqamrx4as7x3cl36uvhxssjfvj57zaphfjqltgcfm",
-    cw3ApTeam: "juno1pne79yt7ygw4u2xll0cff54at8whpjd2usedafa2mjly7z80yw0qsf6rsq",
-    settingsController: "juno1z0rdce48svms0wgq5h56uewh7cxnhwees9r8efv6vthhxt9d37mss9mlnv",
+    registrar:
+      "juno1xcxy2zzwvalfldrq4x8uu4hhr9cz2vxz30muf03eqxsuqny8dsks5c0d4y",
+    cw4GrpApTeam:
+      "juno1tued9dnscg7qrk3yhzqamrx4as7x3cl36uvhxssjfvj57zaphfjqltgcfm",
+    cw3ApTeam:
+      "juno1pne79yt7ygw4u2xll0cff54at8whpjd2usedafa2mjly7z80yw0qsf6rsq",
+    settingsController:
+      "juno1z0rdce48svms0wgq5h56uewh7cxnhwees9r8efv6vthhxt9d37mss9mlnv",
     accounts: "juno1ldh94q43mwvj6qjyz4cphqnv37u9h28t62l6y26uunvxaxnwlj2sypylzn",
-    indexFund: "juno1p3up77cufnundqfhsp5xee3egymmrksue0k89d2hvtf4y22w367sz0xt3m",
-    cw4GrpReviewTeam: "juno1vkw6gn57sqalslq8wtcj5vkscedmxgwptlve69207vklgnujw5vqsnuwfl",
-    cw3ReviewTeam: "juno15wercsuj0zqq4qkhv3xqpxjgdwawcu5rpr233denm9u60ult6u3qn5zf7d",
-    swapRouter: "juno14xj5cvgc6jgamm9gn0s5c88dswf026cv2uv0jgefl8adazfrqnws92y9wm",
+    indexFund:
+      "juno1p3up77cufnundqfhsp5xee3egymmrksue0k89d2hvtf4y22w367sz0xt3m",
+    cw4GrpReviewTeam:
+      "juno1vkw6gn57sqalslq8wtcj5vkscedmxgwptlve69207vklgnujw5vqsnuwfl",
+    cw3ReviewTeam:
+      "juno15wercsuj0zqq4qkhv3xqpxjgdwawcu5rpr233denm9u60ult6u3qn5zf7d",
+    swapRouter:
+      "juno14xj5cvgc6jgamm9gn0s5c88dswf026cv2uv0jgefl8adazfrqnws92y9wm",
     donationMatching: "",
-    giftcards: "juno1nkfegrfyh29dj8zqxs70q7jhkcj2q09d69qpdskwn07m6lf5cpjqn2ts40",
+    giftcards:
+      "juno1nkfegrfyh29dj8zqxs70q7jhkcj2q09d69qpdskwn07m6lf5cpjqn2ts40",
     vaultLocked1:
       "juno1tfdam97s98lgu6vu6z9wrdnzuwvvx5ju7qcuaukx0fs3vrt7f2nsh8caup",
     vaultLiquid1:
