@@ -56,7 +56,6 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct UpdateConfigMsg {
-    pub accounts_contract: Option<String>,
     pub rebalance: Option<RebalanceDetails>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
@@ -73,6 +72,8 @@ pub struct UpdateConfigMsg {
     pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
     pub donation_match_code: Option<u64>,    // donation matching contract wasm code
     /// CONTRACT ADDRESSES
+    pub accounts_contract: Option<String>,
+    pub accounts_settings_controller: Option<String>,
     pub index_fund_contract: Option<String>,
     pub gov_contract: Option<String>,
     pub treasury: Option<String>,
@@ -85,7 +86,6 @@ pub struct UpdateConfigMsg {
     pub fundraising_contract: Option<String>,
     pub applications_review: Option<String>,
     pub swaps_router: Option<String>,
-    pub accounts_settings_controller: Option<String>,
 }
 
 #[cw_serde]

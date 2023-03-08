@@ -41,7 +41,7 @@ export async function migrateCore(
   //     axelar_ibc_channel: axelarIbcChannel,
   //     accounts_settings_controller: settingsController,
   // });
-  await storeAndMigrateContract(juno, apTeam, accounts, "accounts.wasm");
+  // await storeAndMigrateContract(juno, apTeam, accounts, "accounts.wasm");
   // await storeAndMigrateContract(juno, apTeam, settingsController, 'settings_controller.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
@@ -52,15 +52,15 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, giftcards, 'gift_cards.wasm');
   // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
   // await migrateVaults(juno, apTeam, vaultContracts);
-  await migrateEndowmentCw3s(
-    juno,
-    apTeam,
-    cw3ApTeam,
-    registrar,
-    accounts,
-    1,
-    25
-  );
+  // await migrateEndowmentCw3s(
+  //   juno,
+  //   apTeam,
+  //   cw3ApTeam,
+  //   registrar,
+  //   accounts,
+  //   1,
+  //   25
+  // );
   // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 1, 50);
 }
 
@@ -78,8 +78,6 @@ async function migrateVaults(
     apTeam,
     path.resolve(__dirname, `${wasm_path.mock_vault}/mock_vault.wasm`)
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-
   process.stdout.write("Migrate Vault contracts\n");
   let prom = Promise.resolve();
   let id = 1;
@@ -113,7 +111,6 @@ async function migrateEndowmentCw3s(
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/cw3_endowment.wasm`)
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write(
     "Ensure Registrar has the latest Endowment CW3 Wasm code set"

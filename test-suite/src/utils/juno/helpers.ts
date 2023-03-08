@@ -50,11 +50,10 @@ export type Actor = {
 
 export async function clientSetup(
   wallet: DirectSecp256k1HdWallet,
-  url: string,
-  gasPrice: string
+  networkInfo: any
 ) {
-  const client = await SigningCosmWasmClient.connectWithSigner(url, wallet, {
-    gasPrice: GasPrice.fromString(gasPrice),
+  const client = await SigningCosmWasmClient.connectWithSigner(networkInfo.url, wallet, {
+    gasPrice: GasPrice.fromString(networkInfo.gasPrice),
   });
   return client;
 }
@@ -156,8 +155,11 @@ export async function storeCode(
   deployer: string,
   filepath: string
 ): Promise<number> {
+  
+  process.stdout.write(`Uploading ${filepath} Wasm`);
   const code = fs.readFileSync(filepath);
   const result = await juno.upload(deployer, code, "auto");
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${result.codeId}`);
   return result.codeId;
 }
 
@@ -235,14 +237,11 @@ export async function storeAndMigrateContract(
   wasmFilename: string,
   msg = {}
 ): Promise<void> {
-  process.stdout.write(`Uploading ${wasmFilename} Wasm`);
   const codeId = await storeCode(
     juno,
     apTeam,
     `${wasm_path.core}/${wasmFilename}`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-
   process.stdout.write(`Migrate ${wasmFilename} contract`);
   const result = await migrateContract(juno, apTeam, contract, codeId, msg);
   console.log(chalk.green(" Done!"));
@@ -260,13 +259,11 @@ export async function storeAndInstantiateContract(
   instantiateMsg: Record<string, unknown>,
   label: string | undefined = undefined
 ) {
-  process.stdout.write(`Uploading ${wasmFilename} Wasm`);
   const codeId = await storeCode(
     juno,
     deployer,
     `${wasm_path.core}/${wasmFilename}`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write(`Instantiating ${wasmFilename} contract`);
   const result = await juno.instantiate(
@@ -468,7 +465,7 @@ export async function sendMessagesViaCw3Proposal(
 //----------------------------------------------------------------------------------------
 // Abstract away steps to send an Application proposal message to Review Team CW3 multisig and approve:
 // 1. Create Application Proposal on CW3 to execute endowment create msg on Accounts contract
-// 2. Capture the Proposal ID
+// 2. Capture the new Proposal's ID
 // 3. Optional: Addtional CW3 member(s) vote on the open poll
 // 4. Proposal needs to be executed and new endowment ID captured
 //----------------------------------------------------------------------------------------
@@ -482,15 +479,9 @@ export async function sendApplicationViaCw3Proposal(
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[]
 ): Promise<number> {
-  const proposor_client = await clientSetup(
-    proposor,
-    networkInfo.url,
-    networkInfo.gasPrice
-  );
-  const proposor_wallet = await getWalletAddress(proposor);
-  console.log(
-    chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`)
-  );
+  let proposor_client = await clientSetup(proposor, networkInfo);
+  let proposor_wallet = await getWalletAddress(proposor);
+  console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
   // 1. Create the new proposal (no vote is cast here)
   const proposal = await sendTransaction(
     proposor_client,
@@ -540,8 +531,7 @@ export async function sendApplicationViaCw3Proposal(
       const voter_wallet = await getWalletAddress(member);
       const voter_client = await clientSetup(
         member,
-        networkInfo.url,
-        networkInfo.gasPrice
+        networkInfo
       );
       console.log(
         chalk.yellow(

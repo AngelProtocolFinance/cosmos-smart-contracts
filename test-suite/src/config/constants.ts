@@ -37,33 +37,28 @@ export const testnet = {
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
     registrar:
-      "juno1xcxy2zzwvalfldrq4x8uu4hhr9cz2vxz30muf03eqxsuqny8dsks5c0d4y",
+      "juno16gyc3r5uxhgqw2mjtxv2795l8fwqn00m9j9fj25cyxk8dls2z5ls82n6vg",
     cw4GrpApTeam:
-      "juno1tued9dnscg7qrk3yhzqamrx4as7x3cl36uvhxssjfvj57zaphfjqltgcfm",
+      "juno1qckn4pkxgpt04azwufygcxm5sx90gvwsgq6d8mc34ugw45tdf3vs6renxh",
     cw3ApTeam:
-      "juno1pne79yt7ygw4u2xll0cff54at8whpjd2usedafa2mjly7z80yw0qsf6rsq",
+      "juno1d3ls7cdjaj5tfgsc367ql843wrcztc2g7n7lupejujgeqnrvw5fqh9hm5s",
     settingsController:
-      "juno1z0rdce48svms0wgq5h56uewh7cxnhwees9r8efv6vthhxt9d37mss9mlnv",
-    accounts: "juno1ldh94q43mwvj6qjyz4cphqnv37u9h28t62l6y26uunvxaxnwlj2sypylzn",
+      "juno1ed9a2268ksgv7fufutnx3sxcyqxnmn839efyrkvnqpuyc0es5x9qs24j5z",
+    accounts: "juno1d4v5h5yr920xjjwcuret5n3meee5l04c58fpjhghdgml8kp57spqvmg4lx",
     indexFund:
-      "juno1p3up77cufnundqfhsp5xee3egymmrksue0k89d2hvtf4y22w367sz0xt3m",
+      "juno1zkxltk53aa8p4djzc76nuxtyf2pnygjy64ky0e48rhf7c3r0gk7sv0y7r3",
     cw4GrpReviewTeam:
-      "juno1vkw6gn57sqalslq8wtcj5vkscedmxgwptlve69207vklgnujw5vqsnuwfl",
+      "juno1ge3qfdl2p3fe99ysffcshh9d8fe4tp94d5n0tmqf8fjs69gxvuqqd5kx32",
     cw3ReviewTeam:
-      "juno15wercsuj0zqq4qkhv3xqpxjgdwawcu5rpr233denm9u60ult6u3qn5zf7d",
+      "juno198p9uuzwwurjfa5fwfg0exm65h2ldn363kuh6mtkxmxuxwe0yy8q7y4jws",
     swapRouter:
-      "juno14xj5cvgc6jgamm9gn0s5c88dswf026cv2uv0jgefl8adazfrqnws92y9wm",
+      "juno15mgqc7cep5v9l3w4kkaednyvw5ve79njkzs4t72wxeq26rurgt6s483kpk",
     donationMatching: "",
-    giftcards:
-      "juno1nkfegrfyh29dj8zqxs70q7jhkcj2q09d69qpdskwn07m6lf5cpjqn2ts40",
-    vaultLocked1:
-      "juno1tfdam97s98lgu6vu6z9wrdnzuwvvx5ju7qcuaukx0fs3vrt7f2nsh8caup",
-    vaultLiquid1:
-      "juno1fjd8gf2usrys8jfvzgkmmf0gkp47633e8q0dwnrm5hpxlulmxuvsvxw3kk",
-    vaultLocked2:
-      "juno1jqt2k2j9vczl2smuqky0nrcxs9sn8cn22fw5y87lnntrym6syeuqv8vcc6",
-    vaultLiquid2:
-      "juno1rvmdacp6rkl0430vm25fqvhxcpnzuvtjqqzelkes9am9kv599evs4q2zne",
+    giftcards: "",
+    vaultLocked1: "",
+    vaultLiquid1: "",
+    vaultLocked2: "",
+    vaultLiquid2: "",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,

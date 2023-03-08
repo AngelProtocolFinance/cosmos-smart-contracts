@@ -253,8 +253,7 @@ export async function testCharityCanWithdrawLocked(
   );
   const proposor_client = await clientSetup(
     proposor,
-    networkInfo.url,
-    networkInfo.gasPrice
+    networkInfo
   );
   const proposor_wallet = await getWalletAddress(proposor);
   console.log(
@@ -306,8 +305,7 @@ export async function testCharityCanWithdrawLocked(
       const voter_wallet = await getWalletAddress(member);
       const voter_client = await clientSetup(
         member,
-        networkInfo.url,
-        networkInfo.gasPrice
+        networkInfo
       );
       console.log(
         chalk.yellow(
@@ -355,8 +353,7 @@ export async function testCharityCanWithdrawLocked(
       const voter_wallet = await getWalletAddress(member);
       const voter_client = await clientSetup(
         member,
-        networkInfo.url,
-        networkInfo.gasPrice
+        networkInfo
       );
       console.log(
         chalk.yellow(
@@ -548,7 +545,7 @@ export async function testCreateEndowment(
   members: DirectSecp256k1HdWallet[] // Should be [apTeam]
 ): Promise<void> {
   process.stdout.write(
-    "Create a new endowment via the CW3 Applications contract"
+    "Create a new Charity Endowment via the CW3 Applications contract"
   );
   const endow_id = await sendApplicationViaCw3Proposal(
     networkInfo,
@@ -570,7 +567,7 @@ export async function testCreateNormalEndowment(
   msg: any
 ): Promise<void> {
   process.stdout.write(
-    "Create a new endowment via the CW3 Applications contract"
+    "Create a new Normal Endowment directly via the Accounts contract"
   );
   const endow_res = await sendTransaction(juno, apTeam, accounts, {
     create_endowment: msg,

@@ -139,6 +139,7 @@ async function setup(
     apTeamAddr,
     `${wasm_path.core}/cw4_group.wasm`
   );
+  console.log("\nSetting up CW4 Group for AP Team");
   const cw4GrpApTeamResult = await instantiateContract(
     juno,
     apTeamAddr,
@@ -216,6 +217,7 @@ async function setup(
     apTeamAddr,
     `${wasm_path.core}/cw3_endowment.wasm`
   );
+  console.log("\nSetting up CW4 Group for AP Team");
   const cw4GrpReviewTeamResult = await instantiateContract(
     juno,
     apTeamAddr,
@@ -242,6 +244,12 @@ async function setup(
         absolute_percentage: { percentage: threshold_absolute_percentage },
       },
       max_voting_period: { height: max_voting_period_height },
+      seed_split_to_liquid: "0.5",
+      seed_asset: {
+        info: { native: "ujunox" },
+        amount: "100000",
+      },
+      new_endow_gas_money: { denom: "ujunox", amount: "100000" },
     }
   );
   // Setup AP Team C3 to be the admin to it's C4 Group
@@ -347,6 +355,12 @@ async function setup(
       donation_match_charites_contract: undefined,
     },
   });
+  console.log(chalk.green(" Done!"));
+  
+  process.stdout.write(
+    "Top up the AP Applications CW3 with wallet dusting & seed contribution tokens"
+  );
+  await juno.sendTokens(apTeamAddr, cw3ReviewTeam, [{ denom: "ujunox", amount: "100000" }], "auto", "initial dust & seed funds");
   console.log(chalk.green(" Done!"));
 }
 

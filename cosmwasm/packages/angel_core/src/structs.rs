@@ -156,7 +156,8 @@ impl SettingsPermissions {
     }
 }
 
-#[cw_serde]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum AccountType {
     Locked = 0,
     Liquid = 1,
@@ -564,7 +565,8 @@ pub enum Beneficiary {
     Wallet { address: String },
 }
 
-#[cw_serde]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub enum EndowmentType {
     Charity,
     Normal,
