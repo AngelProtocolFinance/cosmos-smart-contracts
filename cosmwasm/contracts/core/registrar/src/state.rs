@@ -9,6 +9,7 @@ use cw_storage_plus::{Item, Map};
 pub struct OldConfig {
     pub owner: Addr,               // AP TEAM MULTISIG
     pub applications_review: Addr, // Charity Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
+    pub applications_impact_review: Addr,
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
@@ -51,7 +52,7 @@ pub struct Config {
     pub fundraising_contract: Option<Addr>,
     pub rebalance: RebalanceDetails,
     pub swaps_router: Option<Addr>,
-    pub accounts_settings_controller: Addr, // contract address used for storing extra Endowment settings
+    pub accounts_settings_controller: Option<Addr>, // contract address used for storing extra Endowment settings
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
 }

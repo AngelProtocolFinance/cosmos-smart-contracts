@@ -25,30 +25,22 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         subdao_distributor_code: config.subdao_distributor_code,
         donation_match_code: config.donation_match_code,
         split_to_liquid: config.split_to_liquid,
-        halo_token: Some(
-            config
-                .halo_token
-                .map(|addr| addr.to_string())
-                .unwrap_or_else(|| "".to_string()),
-        ),
-        halo_token_lp_contract: Some(
-            config
-                .halo_token_lp_contract
-                .map(|addr| addr.to_string())
-                .unwrap_or_else(|| "".to_string()),
-        ),
-        gov_contract: Some(
-            config
-                .gov_contract
-                .map(|addr| addr.to_string())
-                .unwrap_or_else(|| "".to_string()),
-        ),
-        donation_match_charites_contract: Some(
-            config
-                .donation_match_charites_contract
-                .map(|addr| addr.to_string())
-                .unwrap_or_else(|| "".to_string()),
-        ),
+        halo_token: match config.halo_token {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
+        halo_token_lp_contract: match config.halo_token_lp_contract {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
+        gov_contract: match config.gov_contract {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
+        donation_match_charites_contract: match config.donation_match_charites_contract {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
         collector_addr: config
             .collector_addr
             .map(|addr| addr.to_string())
@@ -59,7 +51,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
         applications_review: config.applications_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
-        accounts_settings_controller: config.accounts_settings_controller.to_string(),
+        accounts_settings_controller: match config.accounts_settings_controller {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
         axelar_gateway: config.axelar_gateway,
         axelar_ibc_channel: config.axelar_ibc_channel,
     })

@@ -17,6 +17,9 @@ pub struct InstantiateMsg {
     pub group_addr: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub seed_asset: Option<Asset>,
+    pub seed_split_to_liquid: Decimal,
+    pub new_endow_gas_money: Option<Coin>,
 }
 
 // TODO: add some T variants? Maybe good enough as fixed Empty for now

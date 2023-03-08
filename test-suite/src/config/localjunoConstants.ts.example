@@ -9,6 +9,8 @@ export const localjuno = {
     walletPrefix: "juno",
     nativeToken: "ujuno",
     gasPrice: "0.01ujuno",
+    axelarGateway: "axelar1dv4u5k73pzqrxlzujxg3qp8kvc3pje7jtdvu72npnt5zhq05ejcsn5qme5",
+    axelarIbcChannel: "channel-7",
   },
 
   mnemonicKeys: {

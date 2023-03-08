@@ -13,18 +13,6 @@ pub struct MigrateMsg {
 }
 
 #[cw_serde]
-pub struct MigrateEndowment {
-    pub addr: String,
-    pub status: u64,
-    pub name: String,
-    pub owner: String,
-    pub tier: Option<u64>,
-    pub un_sdg: Option<u64>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-}
-
-#[cw_serde]
 pub struct InstantiateMsg {
     pub treasury: String,
     pub tax_rate: Decimal,
@@ -32,7 +20,6 @@ pub struct InstantiateMsg {
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<String>,
-    pub accounts_settings_controller: String,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
 }
@@ -69,7 +56,6 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct UpdateConfigMsg {
-    pub accounts_contract: Option<String>,
     pub rebalance: Option<RebalanceDetails>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
@@ -86,6 +72,8 @@ pub struct UpdateConfigMsg {
     pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
     pub donation_match_code: Option<u64>,    // donation matching contract wasm code
     /// CONTRACT ADDRESSES
+    pub accounts_contract: Option<String>,
+    pub accounts_settings_controller: Option<String>,
     pub index_fund_contract: Option<String>,
     pub gov_contract: Option<String>,
     pub treasury: Option<String>,
@@ -98,7 +86,6 @@ pub struct UpdateConfigMsg {
     pub fundraising_contract: Option<String>,
     pub applications_review: Option<String>,
     pub swaps_router: Option<String>,
-    pub accounts_settings_controller: Option<String>,
 }
 
 #[cw_serde]
@@ -150,7 +137,7 @@ pub struct ConfigResponse {
     pub swap_factory: Option<String>,
     pub applications_review: String,
     pub swaps_router: Option<String>,
-    pub accounts_settings_controller: String,
+    pub accounts_settings_controller: Option<String>,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
 }

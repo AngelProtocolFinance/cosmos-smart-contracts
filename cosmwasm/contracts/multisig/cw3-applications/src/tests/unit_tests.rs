@@ -84,6 +84,9 @@ fn instantiate_flex(
         group_addr: group_addr.to_string(),
         threshold,
         max_voting_period,
+        new_endow_gas_money: None,
+        seed_asset: None,
+        seed_split_to_liquid: Decimal::zero(),
     };
     app.instantiate_contract(flex_id, Addr::unchecked(OWNER), &msg, &[], "flex", None)
         .unwrap()
@@ -251,6 +254,9 @@ fn test_instantiate_works() {
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
+        new_endow_gas_money: None,
+        seed_asset: None,
+        seed_split_to_liquid: Decimal::zero(),
     };
     let _ = app
         .instantiate_contract(
@@ -269,6 +275,9 @@ fn test_instantiate_works() {
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
+        new_endow_gas_money: None,
+        seed_asset: None,
+        seed_split_to_liquid: Decimal::zero(),
     };
     let _ = app
         .instantiate_contract(
@@ -287,6 +296,9 @@ fn test_instantiate_works() {
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,
+        new_endow_gas_money: None,
+        seed_asset: None,
+        seed_split_to_liquid: Decimal::zero(),
     };
     let flex_addr = app
         .instantiate_contract(

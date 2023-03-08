@@ -61,9 +61,9 @@ pub fn instantiate(
         max_voting_period: msg.max_voting_period,
         group_addr,
         require_execution: false,
-        seed_asset: None,
-        seed_split_to_liquid: Decimal::percent(0), // all to LOCKED
-        new_endow_gas_money: None,
+        seed_asset: msg.seed_asset,
+        seed_split_to_liquid: msg.seed_split_to_liquid,
+        new_endow_gas_money: msg.new_endow_gas_money,
     };
     CONFIG.save(deps.storage, &cfg)?;
 

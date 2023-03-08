@@ -15,6 +15,7 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "ve_token"
 
 [features]
 # for quicker tests, cargo test --lib

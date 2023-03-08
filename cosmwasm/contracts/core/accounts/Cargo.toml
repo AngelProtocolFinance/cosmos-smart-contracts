@@ -1,6 +1,6 @@
 [package]
 name = "accounts"
-version = "2.0.0"
+version = "2.0.2"
 authors.workspace = true
 edition.workspace = true
 
@@ -14,6 +14,7 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "accounts"
 
 [features]
 # for more explicit tests, cargo test --features=backtraces

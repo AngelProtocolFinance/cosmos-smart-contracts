@@ -190,7 +190,10 @@ pub fn create_endowment(
 
     // Create the Endowment settings in "endowment_controller" contract
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: registrar_config.accounts_settings_controller.clone(),
+        contract_addr: registrar_config
+            .accounts_settings_controller
+            .clone()
+            .unwrap(),
         msg: to_binary(
             &angel_core::msgs::accounts_settings_controller::ExecuteMsg::CreateEndowmentSettings(
                 CreateEndowSettingsMsg {
@@ -226,7 +229,10 @@ pub fn create_endowment(
     ) {
         (Some(dao_setup), Some(_token_code), Some(_gov_code)) => {
             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: registrar_config.accounts_settings_controller,
+                contract_addr: registrar_config
+                    .accounts_settings_controller
+                    .clone()
+                    .unwrap(),
                 msg: to_binary(
                     &angel_core::msgs::accounts_settings_controller::ExecuteMsg::SetupDao {
                         endowment_id: config.next_account_id,
@@ -434,7 +440,10 @@ pub fn update_endowment_details(
         .querier
         .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
     let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_settings_controller.clone(),
+        registrar_config
+            .accounts_settings_controller
+            .clone()
+            .unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentPermissions {
             id: msg.id,
             setting_updater: info.sender.clone(),
@@ -442,7 +451,10 @@ pub fn update_endowment_details(
         },
     )?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_settings_controller,
+        registrar_config
+            .accounts_settings_controller
+            .clone()
+            .unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
@@ -954,7 +966,7 @@ pub fn deposit(
     )?;
     let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_settings_controller,
+        registrar_config.accounts_settings_controller.unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id: msg.id },
     )?;
 
@@ -1492,7 +1504,7 @@ pub fn withdraw(
     )?;
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_settings_controller,
+        registrar_config.accounts_settings_controller.unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
 

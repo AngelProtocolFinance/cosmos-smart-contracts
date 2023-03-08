@@ -6,6 +6,7 @@ edition.workspace = true
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "halo_vesting"
 
 [features]
 backtraces = ["cosmwasm-std/backtraces"]

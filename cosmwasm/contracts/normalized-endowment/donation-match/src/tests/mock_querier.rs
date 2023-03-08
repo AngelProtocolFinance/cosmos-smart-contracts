@@ -190,7 +190,7 @@ impl WasmMockQuerier {
                                     cw20: vec![],
                                 },
                                 swap_factory: Some("swap-factory".to_string()),
-                                accounts_settings_controller: "accounts-settings-controller".to_string(),
+                                accounts_settings_controller: Some("accounts-settings-controller".to_string()),
                                 axelar_gateway: "axelar-gateway".to_string(),
                                 axelar_ibc_channel: "channel-1".to_string(),
                             })
