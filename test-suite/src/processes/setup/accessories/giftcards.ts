@@ -5,9 +5,8 @@ import fs from "fs";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import {
-  instantiateContract,
+  storeAndInstantiateContract,
   getWalletAddress,
-  storeCode,
 } from "../../../utils/juno/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
@@ -24,35 +23,15 @@ export async function setupGiftcards(
   registrar: string
 ): Promise<void> {
   const apTeamAddr = await getWalletAddress(apTeamWallet);
-
-  // store wasm
-  process.stdout.write("Uploading Gift Cards Wasm");
-  const giftcardsCodeId = await storeCode(
-    juno,
-    apTeamAddr,
-    `${wasm_path.core}/gift_cards.wasm`
-  );
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("codeId")}=${giftcardsCodeId}`
-  );
-
-  // instantiate gift card contract
-  process.stdout.write("Instantiating Gift Cards contract");
-  const giftcardsResult = await instantiateContract(
+  const giftcardsResult = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
     apTeamAddr,
-    giftcardsCodeId,
+    `gift_cards.wasm`,
     {
       registrar_contract: registrar,
       keeper,
     },
     "ap-GiftCards"
-  );
-  const giftcards = giftcardsResult.contractAddress as string;
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${giftcards}`
   );
 }
