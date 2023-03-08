@@ -356,11 +356,17 @@ async function setup(
     },
   });
   console.log(chalk.green(" Done!"));
-  
+
   process.stdout.write(
     "Top up the AP Applications CW3 with wallet dusting & seed contribution tokens"
   );
-  await juno.sendTokens(apTeamAddr, cw3ReviewTeam, [{ denom: "ujunox", amount: "100000" }], "auto", "initial dust & seed funds");
+  await juno.sendTokens(
+    apTeamAddr,
+    cw3ReviewTeam,
+    [{ denom: "ujunox", amount: "100000" }],
+    "auto",
+    "initial dust & seed funds"
+  );
   console.log(chalk.green(" Done!"));
 }
 

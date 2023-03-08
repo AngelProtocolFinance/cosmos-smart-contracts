@@ -52,9 +52,13 @@ export async function clientSetup(
   wallet: DirectSecp256k1HdWallet,
   networkInfo: any
 ) {
-  const client = await SigningCosmWasmClient.connectWithSigner(networkInfo.url, wallet, {
-    gasPrice: GasPrice.fromString(networkInfo.gasPrice),
-  });
+  const client = await SigningCosmWasmClient.connectWithSigner(
+    networkInfo.url,
+    wallet,
+    {
+      gasPrice: GasPrice.fromString(networkInfo.gasPrice),
+    }
+  );
   return client;
 }
 
@@ -155,11 +159,13 @@ export async function storeCode(
   deployer: string,
   filepath: string
 ): Promise<number> {
-  
   process.stdout.write(`Uploading ${filepath} Wasm`);
   const code = fs.readFileSync(filepath);
   const result = await juno.upload(deployer, code, "auto");
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${result.codeId}`);
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("codeId")}=${result.codeId}`
+  );
   return result.codeId;
 }
 
@@ -481,7 +487,9 @@ export async function sendApplicationViaCw3Proposal(
 ): Promise<number> {
   let proposor_client = await clientSetup(proposor, networkInfo);
   let proposor_wallet = await getWalletAddress(proposor);
-  console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
+  console.log(
+    chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`)
+  );
   // 1. Create the new proposal (no vote is cast here)
   const proposal = await sendTransaction(
     proposor_client,
@@ -529,10 +537,7 @@ export async function sendApplicationViaCw3Proposal(
   members.forEach((member) => {
     prom = prom.then(async () => {
       const voter_wallet = await getWalletAddress(member);
-      const voter_client = await clientSetup(
-        member,
-        networkInfo
-      );
+      const voter_client = await clientSetup(member, networkInfo);
       console.log(
         chalk.yellow(
           `> CW3 Review Member ${voter_wallet} votes YES on application proposal`
