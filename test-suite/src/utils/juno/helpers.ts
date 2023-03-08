@@ -485,8 +485,8 @@ export async function sendApplicationViaCw3Proposal(
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[]
 ): Promise<number> {
-  let proposor_client = await clientSetup(proposor, networkInfo);
-  let proposor_wallet = await getWalletAddress(proposor);
+  const proposor_client = await clientSetup(proposor, networkInfo);
+  const proposor_wallet = await getWalletAddress(proposor);
   console.log(
     chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`)
   );
