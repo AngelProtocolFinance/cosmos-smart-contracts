@@ -5,6 +5,8 @@ import { GasPrice } from "@cosmjs/stargate";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
+import * as readline from "node:readline/promises";
+
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
 import {
@@ -30,10 +32,13 @@ import jsonData from "../processes/setup/endowments/endowments_list_mainnet.json
 // Variables
 // -------------------------------------------------------------------------------------
 let juno: SigningCosmWasmClient;
+
+// ap team wallet - pulled from user input (NEVER set in config constants)
 let apTeam: DirectSecp256k1HdWallet;
+let apTeamMnemonic: string;
+let apTeamAccount: string;
 
 // wallet addresses
-let apTeamAccount: string;
 let apTreasuryAccount: string;
 let keeperAccount: string;
 
@@ -60,20 +65,28 @@ let haloGovHodler: string;
 let haloStaking: string;
 let haloVesting: string;
 
+
 // -------------------------------------------------------------------------------------
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
+  // always get the mainnet AP Team seed phrase from user input
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const apTeamMnemonic = await rl.question('Enter AP Team wallet mnemonic(Juno MAINNET): ');
+  rl.close();
+
+  // derive the wallet signing keys from the seed
   apTeam = await DirectSecp256k1HdWallet.fromMnemonic(
-    config.mnemonicKeys.apTeam,
+    apTeamMnemonic,
     {
       prefix: config.networkInfo.walletPrefix,
     }
   );
   apTeamAccount = await getWalletAddress(apTeam);
-  // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
-  apTreasuryAccount = config.mnemonicKeys.apTreasury;
-  keeperAccount = config.mnemonicKeys.keeper;
+  
+  // AP Treasury & Keeper are held as wallet addresses (not seed phrase)
+  apTreasuryAccount = config.wallets.apTreasury;
+  keeperAccount = config.wallets.keeper;
 
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(

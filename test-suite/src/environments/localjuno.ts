@@ -177,7 +177,7 @@ async function initialize() {
   charity3Account = await getWalletAddress(charity3);
   plebAccount = await getWalletAddress(pleb);
   tcaAccount = await getWalletAddress(tca);
-  keeperAccount = config.mnemonicKeys.keeper;
+  keeperAccount = config.wallets.keeper;
 
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTeam2Account)} as Angel Team #2`);

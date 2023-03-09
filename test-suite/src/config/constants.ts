@@ -12,6 +12,7 @@ export const testnet = {
       "axelar1dv4u5k73pzqrxlzujxg3qp8kvc3pje7jtdvu72npnt5zhq05ejcsn5qme5",
     axelarIbcChannel: "channel-7",
   },
+
   mnemonicKeys: {
     apTeam:
       "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
@@ -32,8 +33,12 @@ export const testnet = {
 
     junoIbcClient:
       "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
+  },
+
+  wallets: {
     keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
+  
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
     registrar:
@@ -149,12 +154,13 @@ export const mainnet = {
     axelarGateway: "???",
     axelarIbcChannel: "???",
   },
-  mnemonicKeys: {
-    apTeam: "",
+
+  wallets: {
     apTreasury:
       "juno1fz8jx4qhkgdrm5vm3s20n670mf872xsp2c0a6cl0yuncquzmj4jss2cfgj", // this is the CW3 of the AP Endowment
     keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
   },
+  
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
     registrar:
