@@ -1,4 +1,4 @@
-# CosmWsm Smart Contracts (see `contracts` folder)
+# CosmWsm Smart Contracts (see `cosmwasm` folder)
 
 ![Angel Protocol Endowment Smart Contracts - v1 8 Overview](https://user-images.githubusercontent.com/85138450/191880770-7518d238-45a9-4f9b-9da1-cd94753a64b8.png)
 
