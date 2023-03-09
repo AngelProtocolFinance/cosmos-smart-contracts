@@ -10,6 +10,7 @@ import {
   storeCode,
   migrateContract,
   storeAndMigrateContract,
+  storeAndMigrateContractViaCw3,
   storeAndInstantiateContract,
   toEncodedBinary,
 } from "../../utils/juno/helpers";
@@ -42,7 +43,9 @@ export async function migrateCore(
   //     accounts_settings_controller: settingsController,
   // });
   // await storeAndMigrateContract(juno, apTeam, accounts, "accounts.wasm");
-  // await storeAndMigrateContract(juno, apTeam, settingsController, 'settings_controller.wasm');
+  // await storeAndMigrateContractViaCw3(juno, apTeam, cw3ApTeam, accounts, "accounts.wasm");
+  // await storeAndMigrateContract(juno, apTeam, settingsController, 'accounts_settings_controller.wasm');
+  // await storeAndMigrateContractViaCw3(juno, apTeam, cw3ApTeam, settingsController, 'accounts_settings_controller.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');

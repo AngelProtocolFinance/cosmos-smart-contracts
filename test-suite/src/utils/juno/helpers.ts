@@ -159,7 +159,7 @@ export async function storeCode(
   deployer: string,
   filepath: string
 ): Promise<number> {
-  process.stdout.write(`Uploading ${filepath} Wasm`);
+  process.stdout.write(`Uploading Wasm: ${filepath}`);
   const code = fs.readFileSync(filepath);
   const result = await juno.upload(deployer, code, "auto");
   console.log(
@@ -250,6 +250,45 @@ export async function storeAndMigrateContract(
   );
   process.stdout.write(`Migrate ${wasmFilename} contract`);
   const result = await migrateContract(juno, apTeam, contract, codeId, msg);
+  console.log(chalk.green(" Done!"));
+}
+
+// --------------------------------------------------
+// Wrapper Function:
+// Stores wasm, gets new code, and migrates a contract via CW3 proposal
+//---------------------------------------------------
+export async function storeAndMigrateContractViaCw3(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  contract: string,
+  wasmFilename: string,
+  msg = {}
+): Promise<void> {
+  const codeId = await storeCode(
+    juno,
+    apTeam,
+    `${wasm_path.core}/${wasmFilename}`
+  );
+  process.stdout.write(`Migrate ${wasmFilename} contract`);
+  // push a migration message via a CW3 proposal
+  const result = await sendMessagesViaCw3Proposal(
+    juno,
+    apTeam,
+    cw3,
+    `Migrate protected contract: ${contract}`,
+    [
+      {
+        wasm: {
+          migrate: {
+            contract_addr: contract,
+            new_code_id: codeId,
+            msg: toEncodedBinary(msg),
+          },
+        },
+      },
+    ]
+  );
   console.log(chalk.green(" Done!"));
 }
 
