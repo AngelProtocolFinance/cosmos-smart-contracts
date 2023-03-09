@@ -206,7 +206,7 @@ pub fn create_endowment(
                     endowment_controller: msg
                         .endowment_controller
                         .clone()
-                        .unwrap_or(EndowmentController::default()),
+                        .unwrap_or(EndowmentController::default(&msg.endow_type)),
                     parent: msg.parent,
                     split_to_liquid: split_settings.0,
                     ignore_user_splits: split_settings.1,
@@ -446,8 +446,7 @@ pub fn update_endowment_details(
             .unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentPermissions {
             id: msg.id,
-            setting_updater: info.sender.clone(),
-            endowment_owner: endowment.owner.clone(),
+            updater: info.sender.clone(),
         },
     )?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(

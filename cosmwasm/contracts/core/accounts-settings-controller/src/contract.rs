@@ -93,17 +93,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::EndowmentController { id } => {
             to_binary(&queriers::query_endowment_controller(deps, id)?)
         }
-        QueryMsg::EndowmentPermissions {
-            id,
-            setting_updater,
-            endowment_owner,
-        } => to_binary(&queriers::query_endowment_permissions(
-            deps,
-            env,
-            id,
-            setting_updater,
-            endowment_owner,
-        )?),
+        QueryMsg::EndowmentPermissions { id, updater } => to_binary(
+            &queriers::query_endowment_permissions(deps, env, id, updater)?,
+        ),
     }
 }
 

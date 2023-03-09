@@ -193,8 +193,7 @@ export async function testQuerySettingsControllerEndowPermissions(
   juno: SigningCosmWasmClient,
   settingsControllerContract: string,
   endowmentId: number,
-  settingUpdater: string,
-  endowmentOwner: string
+  updater: string
 ): Promise<void> {
   process.stdout.write(
     "Test - Query SettingsController EndowmentPermissions for "
@@ -205,8 +204,7 @@ export async function testQuerySettingsControllerEndowPermissions(
     {
       endowment_permissions: {
         id: endowmentId,
-        setting_updater: settingUpdater,
-        endowment_owner: endowmentOwner,
+        updater: updater,
       },
     }
   );

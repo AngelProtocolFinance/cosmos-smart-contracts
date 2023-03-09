@@ -183,7 +183,7 @@ async function setup(
   settingsController = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
-    cw3ApTeam,
+    apTeamAddr,
     "accounts_settings_controller.wasm",
     {
       owner_sc: cw3ApTeam,
@@ -193,7 +193,7 @@ async function setup(
   accounts = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
-    cw3ApTeam,
+    apTeamAddr,
     "accounts.wasm",
     {
       owner_sc: cw3ApTeam,
@@ -203,7 +203,7 @@ async function setup(
   indexFund = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
-    cw3ApTeam,
+    apTeamAddr,
     "index_fund.wasm",
     {
       registrar_contract: registrar,
@@ -267,7 +267,7 @@ async function setup(
   swapRouter = await storeAndInstantiateContract(
     juno,
     apTeamAddr,
-    cw3ApTeam,
+    apTeamAddr,
     "swap_router.wasm",
     {
       registrar_contract: registrar,

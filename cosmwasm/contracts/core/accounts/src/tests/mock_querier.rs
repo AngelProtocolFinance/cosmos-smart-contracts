@@ -19,31 +19,17 @@ use std::marker::PhantomData;
 #[cw_serde]
 pub enum QueryMsg {
     Config {},
-    Strategy {
-        strategy_key: String,
-    },
+    Strategy { strategy_key: String },
     // Mock the "vault::balance { endowment_id: u32 }" query
-    Balance {
-        endowment_id: u32,
-    },
+    Balance { endowment_id: u32 },
     // Mock the "registrar::fee { name: String }" query
-    Fee {
-        name: String,
-    },
+    Fee { name: String },
     // Mock the "endowment_controller::EndowmentSettings {id: [EndowmentID]}" query
-    EndowmentSettings {
-        id: u32,
-    },
+    EndowmentSettings { id: u32 },
     // Mock the "endowment_controller::EndowmentPermissions {id: [EndowmentID]}" query
-    EndowmentPermissions {
-        id: u32,
-        setting_updater: Addr,
-        endowment_owner: Addr,
-    },
+    EndowmentPermissions { id: u32, updater: Addr },
     // Mock Network Connection from Registrar for an EVM and Native chain
-    NetworkConnection {
-        chain_id: String,
-    },
+    NetworkConnection { chain_id: String },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -228,12 +214,10 @@ impl WasmMockQuerier {
                 )),
                 QueryMsg::EndowmentPermissions {
                     id: _,
-                    setting_updater: _,
-                    endowment_owner: _,
+                    updater: _,
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentPermissionsResponse {
                         endowment_controller: false,
-                        strategies: false,
                         beneficiaries_allowlist: false,
                         contributors_allowlist: false,
                         maturity_allowlist: false,

@@ -621,7 +621,7 @@ export async function testExecute(
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
-  // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 1); // proposal_link: number
+  // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 4); // proposal_link: number
 
   // await testQuerySettingsControllerConfig(
   //   actors.apTeam.client,
@@ -632,7 +632,7 @@ export async function testExecute(
   //   settingsController,
   //   endowId1
   // );
-  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr, actors.apTeam.addr);
+  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr);
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);

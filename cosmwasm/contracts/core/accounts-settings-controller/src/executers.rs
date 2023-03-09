@@ -161,14 +161,7 @@ pub fn update_endowment_settings(
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
-    let mut settings = SETTINGS
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentSettings::default());
-    let controller = CONTROLLER
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentController::default());
     let config = CONFIG.load(deps.storage)?;
-
     let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
         config.registrar_contract,
         &angel_core::msgs::registrar::QueryMsg::Config {},
@@ -179,11 +172,18 @@ pub fn update_endowment_settings(
         accounts_contract.to_string(),
         &angel_core::msgs::accounts::QueryMsg::Endowment { id: msg.id },
     )?;
+
+    let mut settings = SETTINGS
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentSettings::default());
+    let controller = CONTROLLER
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentController::default(&endow_detail.endow_type));
+
     let endow_state: angel_core::msgs::accounts::StateResponse = deps.querier.query_wasm_smart(
         accounts_contract,
         &angel_core::msgs::accounts::QueryMsg::State { id: msg.id },
     )?;
-
     if endow_state.closing_endowment {
         return Err(ContractError::UpdatesAfterClosed {});
     }
@@ -280,14 +280,7 @@ pub fn update_endowment_controller(
     info: MessageInfo,
     msg: UpdateEndowmentControllerMsg,
 ) -> Result<Response, ContractError> {
-    let settings = SETTINGS
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentSettings::default());
-    let mut controller = CONTROLLER
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentController::default());
     let config = CONFIG.load(deps.storage)?;
-
     let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
         config.registrar_contract,
         &angel_core::msgs::registrar::QueryMsg::Config {},
@@ -298,11 +291,18 @@ pub fn update_endowment_controller(
         accounts_contract.to_string(),
         &angel_core::msgs::accounts::QueryMsg::Endowment { id: msg.id },
     )?;
+
+    let settings = SETTINGS
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentSettings::default());
+    let mut controller = CONTROLLER
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentController::default(&endow_detail.endow_type));
+
     let endow_state: angel_core::msgs::accounts::StateResponse = deps.querier.query_wasm_smart(
         accounts_contract,
         &angel_core::msgs::accounts::QueryMsg::State { id: msg.id },
     )?;
-
     if endow_state.closing_endowment {
         return Err(ContractError::UpdatesAfterClosed {});
     }
@@ -419,7 +419,7 @@ pub fn update_delegate(
         .unwrap_or(EndowmentSettings::default());
     let mut controller = CONTROLLER
         .load(deps.storage, id)
-        .unwrap_or(EndowmentController::default());
+        .unwrap_or(EndowmentController::default(&endow_detail.endow_type));
 
     // grab the current permissions for the setting of interest
     let mut permissions = controller.get_permissions(setting.clone())?;
@@ -459,13 +459,6 @@ pub fn update_endowment_fees(
     info: MessageInfo,
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
-    let mut settings = SETTINGS
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentSettings::default());
-    let controller = CONTROLLER
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentController::default());
-
     let config = CONFIG.load(deps.storage)?;
     let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
         config.registrar_contract,
@@ -475,6 +468,13 @@ pub fn update_endowment_fees(
         registrar_config.accounts_contract.unwrap(),
         &angel_core::msgs::accounts::QueryMsg::Endowment { id: msg.id },
     )?;
+
+    let controller = CONTROLLER
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentController::default(&endow_detail.endow_type));
+    let mut settings = SETTINGS
+        .load(deps.storage, msg.id)
+        .unwrap_or(EndowmentSettings::default());
 
     // only normalized endowments can update the additional fees
     if endow_detail.endow_type == EndowmentType::Charity {

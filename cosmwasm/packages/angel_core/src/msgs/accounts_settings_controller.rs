@@ -122,11 +122,7 @@ pub enum QueryMsg {
     #[returns(EndowmentController)]
     EndowmentController { id: u32 },
     #[returns(EndowmentPermissionsResponse)]
-    EndowmentPermissions {
-        id: u32,
-        setting_updater: Addr,
-        endowment_owner: Addr,
-    },
+    EndowmentPermissions { id: u32, updater: Addr },
 }
 
 #[cw_serde]
@@ -156,7 +152,6 @@ pub struct EndowmentSettingsResponse {
 #[cw_serde]
 pub struct EndowmentPermissionsResponse {
     pub endowment_controller: bool,
-    pub strategies: bool,
     pub beneficiaries_allowlist: bool,
     pub contributors_allowlist: bool,
     pub maturity_allowlist: bool,
