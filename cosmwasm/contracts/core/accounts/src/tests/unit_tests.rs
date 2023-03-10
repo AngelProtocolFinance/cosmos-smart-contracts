@@ -71,29 +71,22 @@ fn create_endowment() -> (
         referral_id: None,
     };
 
-    let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
-        registrar_contract: REGISTRAR_CONTRACT.to_string(),
-    };
+    // Setup the Accounts Contract
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let env = mock_env();
     let acct_contract = env.contract.address.to_string();
-    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-
-    let info = mock_info(AP_TEAM, &[]);
-    let _ = execute(
+    let _res = instantiate(
         deps.as_mut(),
         env.clone(),
-        info,
-        ExecuteMsg::UpdateConfig {
-            new_owner: None,
-            new_registrar: Some(REGISTRAR_CONTRACT.to_string()),
-            max_general_category_id: Some(1),
-            ibc_controller: None,
+        info.clone(),
+        InstantiateMsg {
+            owner_sc: AP_TEAM.to_string(),
+            registrar_contract: REGISTRAR_CONTRACT.to_string(),
         },
     )
     .unwrap();
 
+    // create a new endowment
     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let _ = execute(
         deps.as_mut(),
@@ -103,6 +96,7 @@ fn create_endowment() -> (
     )
     .unwrap();
 
+    // pull the new endowment's details
     let res = query(
         deps.as_ref(),
         env.clone(),
@@ -228,7 +222,7 @@ fn test_update_endowment_status() {
 }
 
 #[test]
-fn test_change_configs_() {
+fn test_change_configs() {
     let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
     // change the owner to some pleb
@@ -241,7 +235,6 @@ fn test_change_configs_() {
             new_owner: None,
             new_registrar: Some(PLEB.to_string()),
             max_general_category_id: Some(2),
-            ibc_controller: None,
         },
     )
     .unwrap();
@@ -257,7 +250,6 @@ fn test_change_configs_() {
         new_owner: None,
         new_registrar: Some(PLEB.to_string()),
         max_general_category_id: Some(100),
-        ibc_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -279,7 +271,6 @@ fn test_change_admin() {
             new_owner: Some(PLEB.to_string()),
             new_registrar: None,
             max_general_category_id: None,
-            ibc_controller: None,
         },
     )
     .unwrap();
@@ -295,7 +286,6 @@ fn test_change_admin() {
         new_owner: Some(CHARITY_ADDR.to_string()),
         new_registrar: None,
         max_general_category_id: None,
-        ibc_controller: None,
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth "));
     // This should fail with an error!

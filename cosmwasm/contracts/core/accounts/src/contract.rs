@@ -20,7 +20,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -29,7 +29,6 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            ibc_controller: info.sender, // set as orig sender initially
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_account_id: 1_u32,
@@ -123,7 +122,6 @@ pub fn execute(
             new_owner,
             new_registrar,
             max_general_category_id,
-            ibc_controller,
         } => executers::update_config(
             deps,
             env,
@@ -131,7 +129,6 @@ pub fn execute(
             new_owner,
             new_registrar,
             max_general_category_id,
-            ibc_controller,
         ),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)

@@ -5,7 +5,7 @@ use angel_core::msgs::accounts::EndowmentDetailsResponse;
 use angel_core::msgs::accounts::QueryMsg::Endowment as EndowmentDetails;
 use angel_core::msgs::cw3_apteam::ExecuteMsg;
 use angel_core::msgs::cw3_multisig::*;
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigResponse;
 use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::structs::AccountType;
 use cosmwasm_std::{

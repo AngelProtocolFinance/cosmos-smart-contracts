@@ -2,6 +2,7 @@ use angel_core::msgs::accounts_settings_controller::{
     EndowmentPermissionsResponse, EndowmentSettingsResponse,
 };
 use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, StrategyDetailResponse,
 };
 use angel_core::structs::{
@@ -19,6 +20,7 @@ use std::marker::PhantomData;
 #[cw_serde]
 pub enum QueryMsg {
     Config {},
+    ConfigExtension {},
     Strategy { strategy_key: String },
     // Mock the "vault::balance { endowment_id: u32 }" query
     Balance { endowment_id: u32 },
@@ -84,15 +86,26 @@ impl WasmMockQuerier {
                     to_binary(&RegistrarConfigResponse {
                         owner: "juno1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string(), // APT TEAM ADDR
                         version: "registrar-0.1.0".to_string(),
-                        accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         rebalance: RebalanceDetails::default(),
-                        index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
                             min: Decimal::zero(),
                             max: Decimal::one(),
                             default: Decimal::percent(50),
                         },
+                        accepted_tokens: AcceptedTokens {
+                            native: vec!["ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string()],
+                            cw20: vec!["test-cw20".to_string()],
+                        },
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::ConfigExtension {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&RegistrarConfigExtensionResponse {
+                        accounts_contract: Some("accounts_contract_addr".to_string()),
+                        index_fund: Some("index_fund".to_string()),
                         subdao_gov_code: None,
                         subdao_cw20_token_code: Some(4_u64),
                         subdao_bonding_token_code: Some(3_u64),
@@ -101,23 +114,16 @@ impl WasmMockQuerier {
                         donation_match_code: None,
                         donation_match_charites_contract: None,
                         collector_addr: "collector-addr".to_string(),
-                        collector_share: Decimal::one(),
                         halo_token: Some("halo_token".to_string()),
                         halo_token_lp_contract: Some("halo_token_lp_contract".to_string()),
                         gov_contract: Some("gov_contract".to_string()),
                         charity_shares_contract: Some("charity_shares".to_string()),
                         cw3_code: Some(2),
                         cw4_code: Some(3),
-                        accepted_tokens: AcceptedTokens {
-                            native: vec!["ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string()],
-                            cw20: vec!["test-cw20".to_string()],
-                        },
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: Some("accounts-settings-controller".to_string()),
-                        axelar_gateway: "axelar-gateway".to_string(),
-                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

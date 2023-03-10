@@ -1,6 +1,7 @@
 // Contains mock functionality to test multi-contract scenarios
 // use angel_core::msgs::accounts::ReceiveMsg::SwapReceipt;
 use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
     ConfigResponse as RegistrarConfigResponse, StrategyDetailResponse,
 };
 use angel_core::structs::{
@@ -18,6 +19,7 @@ use std::marker::PhantomData;
 #[cw_serde]
 pub enum QueryMsg {
     Config {},
+    ConfigExtension {},
     Strategy { strategy_key: String },
 }
 
@@ -71,42 +73,46 @@ impl WasmMockQuerier {
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
                         version: "0.1.0".to_string(),
-                        accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         rebalance: RebalanceDetails::default(),
-                        index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
                             min: Decimal::zero(),
                             max: Decimal::one(),
                             default: Decimal::percent(50),
                         },
-                        subdao_gov_code: None,
-                        subdao_bonding_token_code: None,
-                        subdao_cw20_token_code: None,
+                        accepted_tokens: AcceptedTokens {
+                            native: vec!["ujuno".to_string()],
+                            cw20: vec!["test-cw20".to_string()],
+                        },
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::ConfigExtension {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&RegistrarConfigExtensionResponse {
+                        index_fund: Some("index_fund".to_string()),
+                        accounts_contract: Some("accounts_contract_addr".to_string()),
+                        subdao_gov_code: Some(333),
+                        subdao_cw20_token_code: Some(4_u64),
+                        subdao_bonding_token_code: Some(3_u64),
                         subdao_cw900_code: None,
                         subdao_distributor_code: None,
-                        donation_match_code: None,
+                        donation_match_code: Some(334),
                         donation_match_charites_contract: None,
                         collector_addr: "collector-addr".to_string(),
-                        collector_share: Decimal::one(),
                         halo_token: Some("halo_token".to_string()),
                         halo_token_lp_contract: Some("halo_token_lp_contract".to_string()),
                         gov_contract: Some("gov_contract".to_string()),
                         charity_shares_contract: Some("charity_shares".to_string()),
                         cw3_code: Some(2),
                         cw4_code: Some(3),
-                        accepted_tokens: AcceptedTokens {
-                            native: vec!["ujuno".to_string()],
-                            cw20: vec!["test-cw20".to_string()],
-                        },
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         accounts_settings_controller: Some(
                             "accounts-settings-controller".to_string(),
                         ),
-                        axelar_gateway: "axelar-gateway".to_string(),
-                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

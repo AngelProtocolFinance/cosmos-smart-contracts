@@ -3,7 +3,7 @@ use angel_core::msgs::accounts::EndowmentDetailsResponse;
 use angel_core::msgs::accounts_settings_controller::{
     ConfigResponse, EndowmentPermissionsResponse,
 };
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigResponse;
 use angel_core::structs::{EndowmentController, EndowmentSettings, EndowmentType};
 use cosmwasm_std::{Addr, Deps, Env, StdResult};
 
@@ -39,7 +39,7 @@ pub fn query_endowment_permissions(
     let config = CONFIG.load(deps.storage)?;
     let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
         config.registrar_contract,
-        &angel_core::msgs::registrar::QueryMsg::Config {},
+        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
     )?;
     let accounts_contract = registrar_config.accounts_contract.unwrap();
 

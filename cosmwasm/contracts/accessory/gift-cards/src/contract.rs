@@ -1,5 +1,5 @@
 use angel_core::errors::core::ContractError;
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigExtensionResponse;
 use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::structs::GenericBalance;
 use angel_core::utils::validate_deposit_fund;
@@ -256,10 +256,10 @@ pub fn execute_spend(
 
     // build deposit msg to desired Accounts contract Endowment
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse =
+    let registrar_config: RegistrarConfigExtensionResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
         }))?;
     let message = match &fund.info {
         AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {

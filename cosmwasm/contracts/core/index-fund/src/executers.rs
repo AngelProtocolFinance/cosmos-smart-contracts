@@ -1,8 +1,11 @@
 use crate::state::{read_funds, CONFIG, FUND, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::msgs::index_fund::*;
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
+    ConfigResponse as RegistrarConfigResponse,
+};
 use angel_core::structs::{IndexFund, SplitDetails};
 use angel_core::utils::{percentage_checks, validate_deposit_fund};
 use cosmwasm_std::{
@@ -254,11 +257,10 @@ pub fn remove_member(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    let registrar_config: angel_core::msgs::registrar::ConfigResponse =
-        deps.querier.query_wasm_smart(
-            config.registrar_contract,
-            &angel_core::msgs::registrar::QueryMsg::Config {},
-        )?;
+    let registrar_config: RegistrarConfigExtensionResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract,
+        &RegistrarQuerier::ConfigExtension {},
+    )?;
 
     if let Some(accounts_contract) = registrar_config.accounts_contract {
         if info.sender != accounts_contract {
@@ -326,6 +328,11 @@ pub fn deposit(
         }
     };
 
+    let registrar_config_ext: RegistrarConfigExtensionResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
+        }))?;
     // Get the Registrar SC Split to liquid parameters
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -440,7 +447,7 @@ pub fn deposit(
     Ok(Response::new()
         .add_submessages(build_donation_messages(
             deps.as_ref(),
-            registrar_config.accounts_contract.unwrap(),
+            registrar_config_ext.accounts_contract.unwrap(),
             donation_messages,
             deposit_fund.info,
         ))

@@ -8,8 +8,11 @@ use crate::state::{
 };
 use angel_core::msgs::accounts::EndowmentDetailsResponse;
 use angel_core::msgs::accounts::QueryMsg as AccountQueryMsg;
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::msgs::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
+    ConfigResponse as RegistrarConfigResponse,
+};
 use angel_core::structs::{EndowmentStatus, GenericBalance};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -153,9 +156,9 @@ pub fn execute_create(
     // check the sender is an approved endowment in the Registrar
     let config = CONFIG.load(deps.storage)?;
     let accounts_contract = sender.to_string();
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+    let registrar_config: RegistrarConfigExtensionResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.clone(),
-        &RegistrarQueryMsg::Config {},
+        &RegistrarQueryMsg::ConfigExtension {},
     )?;
 
     match registrar_config.accounts_contract {

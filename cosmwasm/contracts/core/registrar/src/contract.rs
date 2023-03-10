@@ -1,9 +1,12 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, OldConfig, CONFIG, FEES, NETWORK_CONNECTIONS};
+use crate::state::{OldConfig, CONFIG, CONFIG_EXTENSION, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::msgs::registrar::*;
-use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
+use angel_core::structs::{
+    AcceptedTokens, NetworkInfo, RebalanceDetails, RegistrarConfigCore, RegistrarConfigExtension,
+    SplitDetails,
+};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     entry_point, from_slice, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
@@ -31,12 +34,21 @@ pub fn instantiate(
     }
     .unwrap();
 
-    let configs = Config {
+    let config = RegistrarConfigCore {
         owner: info.sender.clone(),
+        treasury: deps.api.addr_validate(&msg.treasury)?,
+        rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
+        split_to_liquid: splits,
+        accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
+        axelar_gateway: msg.axelar_gateway,
+        axelar_ibc_channel: msg.axelar_ibc_channel,
+    };
+    CONFIG.save(deps.storage, &config)?;
+
+    let extension = RegistrarConfigExtension {
         applications_review: info.sender.clone(),
         index_fund_contract: None,
         accounts_contract: None,
-        treasury: deps.api.addr_validate(&msg.treasury)?,
         cw3_code: None,
         cw4_code: None,
         subdao_gov_code: None,
@@ -45,27 +57,20 @@ pub fn instantiate(
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
-        rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
-        split_to_liquid: splits,
         halo_token: None,
         halo_token_lp_contract: None,
         gov_contract: None,
         donation_match_charites_contract: None,
         collector_addr: None,
-        collector_share: Decimal::percent(50_u64),
         charity_shares_contract: None,
-        accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
         fundraising_contract: None,
         swap_factory: msg
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
         swaps_router: None,
         accounts_settings_controller: None,
-        axelar_gateway: msg.axelar_gateway,
-        axelar_ibc_channel: msg.axelar_ibc_channel,
     };
-
-    CONFIG.save(deps.storage, &configs)?;
+    CONFIG_EXTENSION.save(deps.storage, &extension)?;
 
     // setup first basic fees
     FEES.save(deps.storage, &"vaults_harvest", &tax_rate)?;
@@ -76,7 +81,7 @@ pub fn instantiate(
         deps.storage,
         &env.block.chain_id.clone(),
         &NetworkInfo {
-            accounts_contract: match configs.accounts_contract {
+            accounts_contract: match extension.accounts_contract {
                 Some(accounts) => Some(accounts.to_string()),
                 None => None,
             },
@@ -96,6 +101,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateConfigExtension(msg) => {
+            executers::update_config_extension(deps, env, info, msg)
+        }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -123,6 +131,7 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
+        QueryMsg::ConfigExtension {} => to_binary(&queriers::query_config_extension(deps)?),
         QueryMsg::Strategy { strategy_key } => {
             to_binary(&queriers::query_strategy(deps, strategy_key)?)
         }
@@ -162,6 +171,7 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
         .get("config".as_bytes())
         .ok_or_else(|| StdError::not_found("Config not found"))?;
     let old_config: OldConfig = from_slice(&data)?;
+
     // replace old juno connection with new network connection struct
     NETWORK_CONNECTIONS.save(
         deps.storage,
@@ -177,20 +187,27 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
     // build new config struct & save
     CONFIG.save(
         deps.storage,
-        &Config {
+        &RegistrarConfigCore {
             owner: old_config.owner,
+            treasury: old_config.treasury,
+            split_to_liquid: old_config.split_to_liquid,
+            accepted_tokens: old_config.accepted_tokens,
+            rebalance: old_config.rebalance,
+            axelar_gateway: msg.axelar_gateway,
+            axelar_ibc_channel: msg.axelar_ibc_channel,
+        },
+    )?;
+    CONFIG_EXTENSION.save(
+        deps.storage,
+        &RegistrarConfigExtension {
             applications_review: old_config.applications_review,
             index_fund_contract: old_config.index_fund_contract,
             accounts_contract: old_config.accounts_contract,
-            treasury: old_config.treasury,
             cw3_code: old_config.cw3_code,
             cw4_code: old_config.cw4_code,
-            split_to_liquid: old_config.split_to_liquid,
             halo_token: old_config.halo_token,
             gov_contract: old_config.gov_contract,
             charity_shares_contract: old_config.charity_shares_contract,
-            accepted_tokens: old_config.accepted_tokens,
-            rebalance: old_config.rebalance,
             swaps_router: old_config.swaps_router,
             subdao_gov_code: None,
             subdao_cw20_token_code: None,
@@ -201,11 +218,8 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
             donation_match_charites_contract: None,
             halo_token_lp_contract: None,
             collector_addr: None,
-            collector_share: Decimal::zero(),
             swap_factory: None,
             fundraising_contract: None,
-            axelar_gateway: msg.axelar_gateway,
-            axelar_ibc_channel: msg.axelar_ibc_channel,
             accounts_settings_controller,
         },
     )?;

@@ -42,9 +42,12 @@ fn proper_initialization() {
     assert_eq!(0, res.messages.len());
 
     // Check the result
+    let config_ext_res = query(deps.as_ref(), mock_env(), QueryMsg::ConfigExtension {}).unwrap();
+    let config_ext_response: ConfigExtensionResponse = from_binary(&config_ext_res).unwrap();
+    assert_eq!(None, config_ext_response.accounts_contract);
+
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(None, config_response.accounts_contract);
     assert_eq!(ap_team.clone(), config_response.owner);
     assert_eq!(RebalanceDetails::default(), config_response.rebalance);
 }
@@ -83,10 +86,7 @@ fn update_config() {
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
 
     // Only config.owner can update the config
-    let info = mock_info("anyone", &coins(1000, "earth"));
     let update_config_message = UpdateConfigMsg {
-        accounts_contract: Some("accounts_contract_addr".to_string()),
-        index_fund_contract: Some(index_fund_contract.clone()),
         treasury: Some(ap_team.clone()),
         rebalance: Some(RebalanceDetails {
             rebalance_liquid_invested_profits: true,
@@ -98,6 +98,14 @@ fn update_config() {
         split_max: Some(Decimal::one()),
         split_min: Some(Decimal::zero()),
         split_default: Some(Decimal::percent(30)),
+        accepted_tokens: None,
+        axelar_gateway: None,
+        axelar_ibc_channel: None,
+    };
+
+    let update_config_ext_message = UpdateConfigExtensionMsg {
+        accounts_contract: Some("accounts_contract_addr".to_string()),
+        index_fund_contract: Some(index_fund_contract.clone()),
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
@@ -106,11 +114,9 @@ fn update_config() {
         applications_review: Some(REVIEW_TEAM.to_string()),
         swaps_router: Some("swaps_router_addr".to_string()),
         fundraising_contract: None,
-        accepted_tokens: None,
         halo_token_lp_contract: None,
         donation_match_charites_contract: None,
         collector_addr: None,
-        collector_share: None,
         swap_factory: None,
         subdao_gov_code: None,
         subdao_cw20_token_code: None,
@@ -120,53 +126,26 @@ fn update_config() {
         donation_match_code: None,
         accounts_settings_controller: Some("accounts-settings-controller".to_string()),
     };
-    let msg = ExecuteMsg::UpdateConfig(update_config_message);
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    // Only config.owner can update the config
+    let info = mock_info("anyone", &coins(1000, "earth"));
+    let msg = ExecuteMsg::UpdateConfig(update_config_message.clone());
+    let err = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
+    let msg_ext = ExecuteMsg::UpdateConfigExtension(update_config_ext_message.clone());
+    let err_ext = execute(deps.as_mut(), mock_env(), info.clone(), msg_ext).unwrap_err();
+    assert_eq!(err_ext, ContractError::Unauthorized {});
 
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
-    let update_config_message = UpdateConfigMsg {
-        accounts_contract: Some("accounts_contract_addr".to_string()),
-        index_fund_contract: Some(index_fund_contract.clone()),
-        fundraising_contract: None,
-        treasury: Some(ap_team.clone()),
-        rebalance: Some(RebalanceDetails {
-            rebalance_liquid_invested_profits: true,
-            locked_interests_to_liquid: true,
-            interest_distribution: Decimal::one(),
-            locked_principle_to_liquid: true,
-            principle_distribution: Decimal::one(),
-        }),
-        split_max: Some(Decimal::one()),
-        split_min: Some(Decimal::zero()),
-        split_default: Some(Decimal::percent(30)),
-        charity_shares_contract: None,
-        gov_contract: None,
-        halo_token: None,
-        halo_token_lp_contract: None,
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
-        accepted_tokens: None,
-        donation_match_charites_contract: None,
-        collector_addr: None,
-        collector_share: None,
-        swap_factory: None,
-        subdao_gov_code: None,
-        subdao_cw20_token_code: None,
-        subdao_bonding_token_code: None,
-        subdao_cw900_code: None,
-        subdao_distributor_code: None,
-        donation_match_code: None,
-        applications_review: Some(REVIEW_TEAM.to_string()),
-        swaps_router: Some("swaps_router_addr".to_string()),
-        accounts_settings_controller: Some("accounts-settings-controller".to_string()),
-    };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len());
+    let msg_ext = ExecuteMsg::UpdateConfigExtension(update_config_ext_message);
+    let res_ext = execute(deps.as_mut(), mock_env(), info, msg_ext).unwrap();
+    assert_eq!(0, res_ext.messages.len());
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_response: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::ConfigExtension {}).unwrap();
+    let config_response: ConfigExtensionResponse = from_binary(&res).unwrap();
     assert_eq!(
         index_fund_contract.clone(),
         config_response.index_fund.unwrap()
@@ -331,37 +310,17 @@ fn test_add_update_and_remove_accepted_tokens() {
     // add new token denom "new_token" to "accepted_tokens"
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_msg = UpdateConfigMsg {
-        accounts_contract: None,
-        index_fund_contract: None,
-        fundraising_contract: None,
         treasury: None,
         rebalance: None,
         split_max: None,
         split_min: None,
         split_default: None,
-        charity_shares_contract: None,
-        gov_contract: None,
-        halo_token: None,
-        halo_token_lp_contract: None,
-        cw3_code: None,
-        cw4_code: None,
         accepted_tokens: Some(AcceptedTokens {
             native: vec!["new_token".to_string()],
             cw20: vec!["terraFloki4Life".to_string()],
         }),
-        donation_match_charites_contract: None,
-        collector_addr: None,
-        collector_share: None,
-        swap_factory: None,
-        subdao_gov_code: None,
-        subdao_cw20_token_code: None,
-        subdao_bonding_token_code: None,
-        subdao_cw900_code: None,
-        subdao_distributor_code: None,
-        donation_match_code: None,
-        applications_review: Some(REVIEW_TEAM.to_string()),
-        swaps_router: Some("swaps_router_addr".to_string()),
-        accounts_settings_controller: Some("accounts-settings-controller".to_string()),
+        axelar_gateway: None,
+        axelar_ibc_channel: None,
     };
     let res = execute(
         deps.as_mut(),

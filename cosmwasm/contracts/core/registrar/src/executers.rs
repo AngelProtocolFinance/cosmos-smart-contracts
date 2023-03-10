@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, STRATEGIES};
+use crate::state::{CONFIG, CONFIG_EXTENSION, FEES, NETWORK_CONNECTIONS, STRATEGIES};
 use angel_core::errors::core::ContractError;
 use angel_core::msgs::registrar::*;
 use angel_core::structs::{NetworkInfo, StrategyApprovalState, StrategyParams};
@@ -56,36 +56,7 @@ pub fn update_config(
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-
     // update config attributes with newly passed configs
-    config.applications_review = match msg.applications_review {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.applications_review,
-    };
-    config.accounts_contract = match msg.accounts_contract {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
-        None => config.accounts_contract,
-    };
-    config.swaps_router = match msg.swaps_router {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
-        None => config.swaps_router,
-    };
-    config.cw3_code = match msg.cw3_code {
-        Some(v) => Some(v),
-        None => config.cw3_code,
-    };
-    config.cw4_code = match msg.cw4_code {
-        Some(v) => Some(v),
-        None => config.cw4_code,
-    };
-    config.charity_shares_contract = match msg.charity_shares_contract {
-        Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
-        None => config.charity_shares_contract,
-    };
-    config.index_fund_contract = match msg.index_fund_contract {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
-        None => config.index_fund_contract,
-    };
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
@@ -106,67 +77,114 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
-    config.donation_match_charites_contract = match msg.donation_match_charites_contract {
-        Some(v) => Some(deps.api.addr_validate(v.as_str())?),
-        None => config.donation_match_charites_contract,
-    };
     config.accepted_tokens = match msg.accepted_tokens {
         Some(tokens) => tokens,
         None => config.accepted_tokens,
     };
-    config.fundraising_contract = match msg.fundraising_contract {
+    config.axelar_gateway = match msg.axelar_gateway {
+        Some(gateway) => gateway,
+        None => config.axelar_gateway,
+    };
+    config.axelar_ibc_channel = match msg.axelar_ibc_channel {
+        Some(channel) => channel,
+        None => config.axelar_ibc_channel,
+    };
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "update_config"))
+}
+
+pub fn update_config_extension(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigExtensionMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let mut extension = CONFIG_EXTENSION.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+    // update config attributes with newly passed configs
+    extension.applications_review = match msg.applications_review {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => extension.applications_review,
+    };
+    extension.accounts_contract = match msg.accounts_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => extension.accounts_contract,
+    };
+    extension.swaps_router = match msg.swaps_router {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => extension.swaps_router,
+    };
+    extension.cw3_code = match msg.cw3_code {
+        Some(v) => Some(v),
+        None => extension.cw3_code,
+    };
+    extension.cw4_code = match msg.cw4_code {
+        Some(v) => Some(v),
+        None => extension.cw4_code,
+    };
+    extension.charity_shares_contract = match msg.charity_shares_contract {
+        Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
+        None => extension.charity_shares_contract,
+    };
+    extension.index_fund_contract = match msg.index_fund_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => extension.index_fund_contract,
+    };
+    extension.donation_match_charites_contract = match msg.donation_match_charites_contract {
+        Some(v) => Some(deps.api.addr_validate(v.as_str())?),
+        None => extension.donation_match_charites_contract,
+    };
+    extension.fundraising_contract = match msg.fundraising_contract {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
-        None => config.fundraising_contract,
+        None => extension.fundraising_contract,
     };
-    config.collector_addr = msg
-        .collector_addr
-        .map(|addr| deps.api.addr_validate(&addr).unwrap());
-    config.collector_share = match msg.collector_share {
-        Some(share) => share,
-        None => config.collector_share,
-    };
-    config.subdao_gov_code = match msg.subdao_gov_code {
+    extension.subdao_gov_code = match msg.subdao_gov_code {
         Some(u64) => Some(u64),
-        None => config.subdao_gov_code,
+        None => extension.subdao_gov_code,
     };
-    config.subdao_bonding_token_code = match msg.subdao_bonding_token_code {
+    extension.subdao_bonding_token_code = match msg.subdao_bonding_token_code {
         Some(u64) => Some(u64),
-        None => config.subdao_bonding_token_code,
+        None => extension.subdao_bonding_token_code,
     };
-    config.subdao_cw20_token_code = match msg.subdao_cw20_token_code {
+    extension.subdao_cw20_token_code = match msg.subdao_cw20_token_code {
         Some(u64) => Some(u64),
-        None => config.subdao_cw20_token_code,
+        None => extension.subdao_cw20_token_code,
     };
-    config.subdao_cw900_code = match msg.subdao_cw900_code {
+    extension.subdao_cw900_code = match msg.subdao_cw900_code {
         Some(u64) => Some(u64),
-        None => config.subdao_cw900_code,
+        None => extension.subdao_cw900_code,
     };
-    config.subdao_distributor_code = match msg.subdao_distributor_code {
+    extension.subdao_distributor_code = match msg.subdao_distributor_code {
         Some(u64) => Some(u64),
-        None => config.subdao_distributor_code,
+        None => extension.subdao_distributor_code,
     };
-    config.donation_match_code = match msg.donation_match_code {
+    extension.donation_match_code = match msg.donation_match_code {
         Some(u64) => Some(u64),
-        None => config.donation_match_code,
+        None => extension.donation_match_code,
     };
-    config.swap_factory = match msg.swap_factory {
+    extension.swap_factory = match msg.swap_factory {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
-        None => config.swap_factory,
+        None => extension.swap_factory,
     };
-    config.halo_token = match msg.halo_token {
+    extension.halo_token = match msg.halo_token {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
-        None => config.halo_token,
+        None => extension.halo_token,
     };
-    config.halo_token_lp_contract = match msg.halo_token_lp_contract {
+    extension.halo_token_lp_contract = match msg.halo_token_lp_contract {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
-        None => config.halo_token_lp_contract,
+        None => extension.halo_token_lp_contract,
     };
-    config.accounts_settings_controller = match msg.accounts_settings_controller {
+    extension.accounts_settings_controller = match msg.accounts_settings_controller {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
-        None => config.accounts_settings_controller,
+        None => extension.accounts_settings_controller,
     };
 
-    CONFIG.save(deps.storage, &config)?;
+    CONFIG_EXTENSION.save(deps.storage, &extension)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
 }
