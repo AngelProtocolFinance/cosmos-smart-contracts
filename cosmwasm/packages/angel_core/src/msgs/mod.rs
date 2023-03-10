@@ -8,6 +8,7 @@ pub mod donation_match;
 pub mod fee_distributor;
 pub mod index_fund;
 pub mod registrar;
+pub mod registrar_partial;
 pub mod subdao;
 pub mod subdao_bonding_token;
 pub mod swap_router;

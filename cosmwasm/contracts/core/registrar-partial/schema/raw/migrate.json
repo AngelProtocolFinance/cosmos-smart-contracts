@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MigrateMsg",
+  "type": "object",
+  "required": [
+    "accounts_settings_controller",
+    "axelar_gateway",
+    "axelar_ibc_channel"
+  ],
+  "properties": {
+    "accounts_settings_controller": {
+      "type": "string"
+    },
+    "axelar_gateway": {
+      "type": "string"
+    },
+    "axelar_ibc_channel": {
+      "type": "string"
+    },
+    "vault_router": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

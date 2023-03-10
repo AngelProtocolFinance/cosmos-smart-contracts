@@ -1,0 +1,262 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ConfigResponse",
+  "type": "object",
+  "required": [
+    "accepted_tokens",
+    "accounts_settings_controller",
+    "applications_impact_review",
+    "applications_review",
+    "axelar_gateway",
+    "axelar_ibc_channel",
+    "collector_addr",
+    "collector_share",
+    "owner",
+    "rebalance",
+    "split_to_liquid",
+    "treasury",
+    "version"
+  ],
+  "properties": {
+    "accepted_tokens": {
+      "$ref": "#/definitions/AcceptedTokens"
+    },
+    "accounts_contract": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "accounts_settings_controller": {
+      "type": "string"
+    },
+    "applications_impact_review": {
+      "type": "string"
+    },
+    "applications_review": {
+      "type": "string"
+    },
+    "axelar_gateway": {
+      "type": "string"
+    },
+    "axelar_ibc_channel": {
+      "type": "string"
+    },
+    "charity_shares_contract": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "collector_addr": {
+      "type": "string"
+    },
+    "collector_share": {
+      "$ref": "#/definitions/Decimal"
+    },
+    "cw3_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "cw4_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "donation_match_charites_contract": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "donation_match_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "gov_contract": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "halo_token": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "halo_token_lp_contract": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "index_fund": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "owner": {
+      "type": "string"
+    },
+    "rebalance": {
+      "$ref": "#/definitions/RebalanceDetails"
+    },
+    "split_to_liquid": {
+      "$ref": "#/definitions/SplitDetails"
+    },
+    "subdao_bonding_token_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "subdao_cw20_token_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "subdao_cw900_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "subdao_distributor_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "subdao_gov_code": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "swap_factory": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "swaps_router": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "treasury": {
+      "type": "string"
+    },
+    "vault_router": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "version": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "AcceptedTokens": {
+      "type": "object",
+      "required": [
+        "cw20",
+        "native"
+      ],
+      "properties": {
+        "cw20": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "native": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
+    "RebalanceDetails": {
+      "type": "object",
+      "required": [
+        "interest_distribution",
+        "locked_interests_to_liquid",
+        "locked_principle_to_liquid",
+        "principle_distribution",
+        "rebalance_liquid_invested_profits"
+      ],
+      "properties": {
+        "interest_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "locked_interests_to_liquid": {
+          "type": "boolean"
+        },
+        "locked_principle_to_liquid": {
+          "type": "boolean"
+        },
+        "principle_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "rebalance_liquid_invested_profits": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SplitDetails": {
+      "type": "object",
+      "required": [
+        "default",
+        "max",
+        "min"
+      ],
+      "properties": {
+        "default": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "max": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "min": {
+          "$ref": "#/definitions/Decimal"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
