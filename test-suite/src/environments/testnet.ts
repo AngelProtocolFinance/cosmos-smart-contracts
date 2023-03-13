@@ -683,7 +683,7 @@ export async function startMigrateCore(): Promise<void> {
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
     config.networkInfo.axelarGateway,
     config.networkInfo.axelarIbcChannel,
-    config.networkInfo.axelarChainId,
+    config.networkInfo.axelarChainId
   );
 }
 
