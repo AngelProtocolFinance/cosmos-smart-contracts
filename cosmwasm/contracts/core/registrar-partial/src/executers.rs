@@ -89,6 +89,10 @@ pub fn update_config(
         Some(channel) => channel,
         None => config.axelar_ibc_channel,
     };
+    config.axelar_chain_id = match msg.axelar_chain_id {
+        Some(chain) => chain,
+        None => config.axelar_chain_id,
+    };
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))

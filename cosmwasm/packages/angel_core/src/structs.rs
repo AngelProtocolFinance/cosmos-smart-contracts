@@ -66,6 +66,7 @@ pub struct RegistrarConfigCore {
     pub rebalance: RebalanceDetails,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
+    pub axelar_chain_id: String,
 }
 
 // EXTENSION REGISTRAR CONFIG INFO - Information that is only needed on a Cosmos chain with an Accounts contract (ie. a "full" Registrar)

@@ -40,6 +40,7 @@ pub fn instantiate(
         rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
         split_to_liquid: splits,
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
+        axelar_chain_id: msg.axelar_chain_id,
         axelar_gateway: msg.axelar_gateway,
         axelar_ibc_channel: msg.axelar_ibc_channel,
     };
@@ -143,7 +144,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -175,7 +176,7 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
     // replace old juno connection with new network connection struct
     NETWORK_CONNECTIONS.save(
         deps.storage,
-        &env.block.chain_id.clone(),
+        &msg.axelar_chain_id,
         &NetworkInfo {
             accounts_contract: match old_config.accounts_contract.clone() {
                 Some(accounts) => Some(accounts.to_string()),
@@ -195,6 +196,7 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Con
             rebalance: old_config.rebalance,
             axelar_gateway: msg.axelar_gateway,
             axelar_ibc_channel: msg.axelar_ibc_channel,
+            axelar_chain_id: msg.axelar_chain_id,
         },
     )?;
     CONFIG_EXTENSION.save(

@@ -21,7 +21,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -42,6 +42,7 @@ pub fn instantiate(
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
         axelar_gateway: msg.axelar_gateway,
         axelar_ibc_channel: msg.axelar_ibc_channel,
+        axelar_chain_id: msg.axelar_chain_id.clone(),
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -52,7 +53,7 @@ pub fn instantiate(
     // setup basic JUNO network info for native Strategies
     NETWORK_CONNECTIONS.save(
         deps.storage,
-        &env.block.chain_id.clone(),
+        &msg.axelar_chain_id,
         &NetworkInfo {
             accounts_contract: None,
             router_contract: None,

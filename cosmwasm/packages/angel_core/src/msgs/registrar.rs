@@ -10,6 +10,7 @@ pub struct MigrateMsg {
     pub accounts_settings_controller: String,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
+    pub axelar_chain_id: String,
 }
 
 #[cw_serde]
@@ -22,6 +23,7 @@ pub struct InstantiateMsg {
     pub swap_factory: Option<String>,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
+    pub axelar_chain_id: String,
 }
 
 #[cw_serde]
@@ -65,6 +67,7 @@ pub struct UpdateConfigMsg {
     pub treasury: Option<String>,
     pub axelar_gateway: Option<String>,
     pub axelar_ibc_channel: Option<String>,
+    pub axelar_chain_id: Option<String>,
 }
 
 #[cw_serde]

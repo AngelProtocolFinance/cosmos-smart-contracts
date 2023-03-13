@@ -29,6 +29,7 @@ fn instantiate_msg() -> InstantiateMsg {
         swap_factory: None,
         axelar_gateway: "axelar-gateway".to_string(),
         axelar_ibc_channel: "channel-1".to_string(),
+        axelar_chain_id: "juno".to_string(),
     };
 }
 
@@ -101,6 +102,7 @@ fn update_config() {
         accepted_tokens: None,
         axelar_gateway: None,
         axelar_ibc_channel: None,
+        axelar_chain_id: None,
     };
 
     let update_config_ext_message = UpdateConfigExtensionMsg {
@@ -321,6 +323,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         }),
         axelar_gateway: None,
         axelar_ibc_channel: None,
+        axelar_chain_id: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -356,7 +359,7 @@ fn test_add_update_and_remove_network_infos() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::NetworkConnection {
-            chain_id: CHAIN_ID.to_string(),
+            chain_id: "terra".to_string(),
         },
     )
     .unwrap_err();
