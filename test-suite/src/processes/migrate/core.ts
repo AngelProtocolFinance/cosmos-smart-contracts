@@ -35,13 +35,15 @@ export async function migrateCore(
   giftcards: string,
   vaultContracts: string[],
   axelarGateway: string,
-  axelarIbcChannel: string
+  axelarIbcChannel: string,
+  axelarChainId: string,
 ): Promise<void> {
-  // await storeAndMigrateContract(juno, apTeam, registrar, "registrar.wasm", {
-  //     axelar_gateway: axelarGateway,
-  //     axelar_ibc_channel: axelarIbcChannel,
-  //     accounts_settings_controller: settingsController,
-  // });
+  await storeAndMigrateContract(juno, apTeam, registrar, "registrar.wasm", {
+      axelar_gateway: axelarGateway,
+      axelar_ibc_channel: axelarIbcChannel,
+      axelar_chain_id: axelarChainId,
+      accounts_settings_controller: settingsController,
+  });
   // await storeAndMigrateContract(juno, apTeam, accounts, "accounts.wasm");
   // await storeAndMigrateContractViaCw3(juno, apTeam, cw3ApTeam, accounts, "accounts.wasm");
   // await storeAndMigrateContract(juno, apTeam, settingsController, 'accounts_settings_controller.wasm');

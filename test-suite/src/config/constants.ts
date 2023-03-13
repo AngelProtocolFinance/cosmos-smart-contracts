@@ -11,6 +11,7 @@ export const testnet = {
     axelarGateway:
       "axelar1dv4u5k73pzqrxlzujxg3qp8kvc3pje7jtdvu72npnt5zhq05ejcsn5qme5",
     axelarIbcChannel: "channel-7",
+    axelarChainId: "juno",
   },
 
   mnemonicKeys: {
@@ -153,6 +154,7 @@ export const mainnet = {
     gasPrice: "0.025ujuno",
     axelarGateway: "???",
     axelarIbcChannel: "???",
+    axelarChainId: "juno",
   },
 
   wallets: {

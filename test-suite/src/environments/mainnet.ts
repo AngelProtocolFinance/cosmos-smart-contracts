@@ -307,7 +307,8 @@ export async function startMigrateCore(): Promise<void> {
     giftcards,
     [],
     config.networkInfo.axelarGateway,
-    config.networkInfo.axelarIbcChannel
+    config.networkInfo.axelarIbcChannel,
+    config.networkInfo.axelarChainId,
   );
 }
 
