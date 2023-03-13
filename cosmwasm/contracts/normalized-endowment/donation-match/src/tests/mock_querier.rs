@@ -1,7 +1,10 @@
 use angel_core::msgs::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
 use angel_core::msgs::accounts_settings_controller::EndowmentSettingsResponse;
-use angel_core::msgs::registrar::{ConfigResponse, StrategyDetailResponse};
+use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
+    ConfigResponse as RegistrarConfigResponse, StrategyDetailResponse,
+};
 use angel_core::structs::{
     AcceptedTokens, Categories, Investments, RebalanceDetails, SplitDetails, StrategyApprovalState,
     StrategyLocale, StrategyParams,
@@ -9,8 +12,8 @@ use angel_core::structs::{
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
-    Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
+    from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Empty, OwnedDeps, Querier,
+    QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
 use std::collections::HashMap;
@@ -23,6 +26,7 @@ pub enum QueryMsg {
     Balance { address: String },
     // Mock the `registrar` config
     Config {},
+    ConfigExtension {},
     Strategy { strategy_key: String },
     // Mock the `accounts` endowment
     Endowment { id: u32 },
@@ -157,31 +161,12 @@ impl WasmMockQuerier {
                                 max_general_category_id: 1,
                             }).unwrap())),
                         "registrar-contract" => SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&ConfigResponse {
+                            to_binary(&RegistrarConfigResponse {
                                 version: "1.7.0".to_string(),
                                 owner: "Test-Endowment-Owner".to_string(),
-                                accounts_contract: Some("accounts-contract".to_string()),
-                                rebalance: RebalanceDetails::default(),
-                                applications_review: "applications-review".to_string(),
-                                swaps_router: Some("swaps-router".to_string()),
-                                cw3_code: Some(124),
-                                cw4_code: Some(125),
-                                subdao_gov_code: Some(126),
-                                subdao_bonding_token_code: Some(127),
-                                subdao_cw20_token_code: Some(129),
-                                subdao_cw900_code: Some(128),
-                                subdao_distributor_code: None,
-                                donation_match_code: None,
-                                halo_token: None,
-                                halo_token_lp_contract: None,
-                                gov_contract: None,
                                 treasury: "treasury-address".to_string(),
-                                index_fund: None,
                                 split_to_liquid: SplitDetails::default(),
-                                donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
-                                collector_addr: "collector-addr".to_string(),
-                                collector_share: Decimal::percent(50),
-                                charity_shares_contract: None,
+                                rebalance: RebalanceDetails::default(),
                                 accepted_tokens: AcceptedTokens {
                                     native: vec![
                                         "uluna".to_string(),
@@ -189,8 +174,6 @@ impl WasmMockQuerier {
                                     ],
                                     cw20: vec![],
                                 },
-                                swap_factory: Some("swap-factory".to_string()),
-                                accounts_settings_controller: Some("accounts-settings-controller".to_string()),
                                 axelar_gateway: "axelar-gateway".to_string(),
                                 axelar_ibc_channel: "channel-1".to_string(),
                             })
@@ -199,6 +182,33 @@ impl WasmMockQuerier {
                         _ => unreachable!(),
                     }
                 }
+                QueryMsg::ConfigExtension {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&RegistrarConfigExtensionResponse {
+                        index_fund: Some("index_fund".to_string()),
+                        accounts_contract: Some("accounts-contract".to_string()),
+                        cw3_code: Some(124),
+                                cw4_code: Some(125),
+                                subdao_gov_code: Some(126),
+                                subdao_bonding_token_code: Some(127),
+                                subdao_cw20_token_code: Some(129),
+                                subdao_cw900_code: Some(128),
+                                subdao_distributor_code: None,
+                        donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
+                        donation_match_code: None,
+                        collector_addr: "collector-addr".to_string(),
+                        halo_token: Some("halo_token".to_string()),
+                        halo_token_lp_contract: Some("halo_token_lp_contract".to_string()),
+                        gov_contract: Some("gov_contract".to_string()),
+                        charity_shares_contract: Some("charity_shares".to_string()),
+                        swap_factory: None,
+                        applications_review: "applications-review".to_string(),
+                        swaps_router: Some("swaps_router_addr".to_string()),
+                        accounts_settings_controller: Some(
+                            "accounts-settings-controller".to_string(),
+                        ),
+                    })
+                    .unwrap(),
+                )),
                 QueryMsg::Strategy { strategy_key: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&StrategyDetailResponse {
                         strategy: StrategyParams {

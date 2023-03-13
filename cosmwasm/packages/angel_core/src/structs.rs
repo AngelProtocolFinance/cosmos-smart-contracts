@@ -56,6 +56,47 @@ pub struct StrategyComponent {
     pub percentage: Decimal, // percentage of funds to invest
 }
 
+// CORE REGISTRAR CONFIG INFO - Common to both a "full" Registrar & "partial" registrar
+#[cw_serde]
+pub struct RegistrarConfigCore {
+    pub owner: Addr, // AP TEAM MULTISIG
+    pub treasury: Addr,
+    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
+    pub rebalance: RebalanceDetails,
+    pub axelar_gateway: String,
+    pub axelar_ibc_channel: String,
+    pub axelar_chain_id: String,
+}
+
+// EXTENSION REGISTRAR CONFIG INFO - Information that is only needed on a Cosmos chain with an Accounts contract (ie. a "full" Registrar)
+#[cw_serde]
+pub struct RegistrarConfigExtension {
+    // WASM CODES
+    pub cw3_code: Option<u64>,                  // multisig wasm code
+    pub cw4_code: Option<u64>,                  // multisig wasm code
+    pub subdao_gov_code: Option<u64>,           // subdao gov wasm code
+    pub subdao_cw20_token_code: Option<u64>,    // subdao gov cw20 token wasm code
+    pub subdao_bonding_token_code: Option<u64>, // subdao gov bonding curve token wasm code
+    pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
+    pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
+    pub donation_match_code: Option<u64>, // donation matching contract wasm code
+    // CONTRACTS
+    pub accounts_contract: Option<Addr>,
+    pub accounts_settings_controller: Option<Addr>, // contract address used for storing extra Endowment settings
+    pub index_fund_contract: Option<Addr>,
+    pub applications_review: Addr, // Charity Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
+    pub halo_token: Option<Addr>,  // TerraSwap HALO token addr
+    pub halo_token_lp_contract: Option<Addr>,
+    pub collector_addr: Option<Addr>, // Collector address for new fee
+    pub donation_match_charites_contract: Option<Addr>, // donation matching contract address for "Charities" endowments
+    pub charity_shares_contract: Option<Addr>,
+    pub fundraising_contract: Option<Addr>,
+    pub gov_contract: Option<Addr>, // AP governance contract
+    pub swap_factory: Option<Addr>,
+    pub swaps_router: Option<Addr>,
+}
+
 #[cw_serde]
 pub struct Delegate {
     address: Addr,

@@ -7,7 +7,7 @@ use angel_core::msgs::donation_match::{
 use angel_core::msgs::accounts::EndowmentDetailsResponse;
 use angel_core::msgs::accounts::QueryMsg as AccountQueryMsg;
 use angel_core::msgs::accounts_settings_controller::EndowmentSettingsResponse;
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfig;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfig;
 use angel_core::msgs::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::msgs::subdao_bonding_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::structs::{EndowmentStatus, EndowmentType};
@@ -119,7 +119,7 @@ fn execute_donor_match(
     // Validation 1. Check if the tx sender is valid accounts contract & endowment ID is valid
     let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
         config.registrar_contract.clone(),
-        &RegistrarQueryMsg::Config {},
+        &RegistrarQueryMsg::ConfigExtension {},
     )?;
 
     match registrar_config.accounts_contract {
@@ -151,7 +151,7 @@ fn execute_donor_match(
         EndowmentType::Charity => {
             let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
                 config.registrar_contract.clone(),
-                &RegistrarQueryMsg::Config {},
+                &RegistrarQueryMsg::ConfigExtension {},
             )?;
             if env.contract.address != registrar_config.donation_match_charites_contract.unwrap() {
                 return Err(ContractError::Unauthorized {});

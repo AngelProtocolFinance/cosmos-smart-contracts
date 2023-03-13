@@ -12,7 +12,7 @@ use angel_core::msgs::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg as AccountsExecuteMsg,
 };
 use angel_core::msgs::cw3_multisig::QueryMsg;
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigResponse;
 use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::structs::EndowmentType;
 use angel_core::utils::validate_deposit_fund;

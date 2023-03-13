@@ -78,7 +78,6 @@ pub enum ExecuteMsg {
         new_owner: Option<String>,
         new_registrar: Option<String>,
         max_general_category_id: Option<u8>,
-        ibc_controller: Option<String>,
     },
     // Update an Endowment owner, beneficiary, and other core items
     UpdateEndowmentDetails(UpdateEndowmentDetailsMsg),

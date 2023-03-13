@@ -65,25 +65,26 @@ let haloGovHodler: string;
 let haloStaking: string;
 let haloVesting: string;
 
-
 // -------------------------------------------------------------------------------------
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
   // always get the mainnet AP Team seed phrase from user input
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const apTeamMnemonic = await rl.question('Enter AP Team wallet mnemonic(Juno MAINNET): ');
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  const apTeamMnemonic = await rl.question(
+    "Enter AP Team wallet mnemonic(Juno MAINNET): "
+  );
   rl.close();
 
   // derive the wallet signing keys from the seed
-  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(
-    apTeamMnemonic,
-    {
-      prefix: config.networkInfo.walletPrefix,
-    }
-  );
+  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(apTeamMnemonic, {
+    prefix: config.networkInfo.walletPrefix,
+  });
   apTeamAccount = await getWalletAddress(apTeam);
-  
+
   // AP Treasury & Keeper are held as wallet addresses (not seed phrase)
   apTreasuryAccount = config.wallets.apTreasury;
   keeperAccount = config.wallets.keeper;
@@ -307,7 +308,8 @@ export async function startMigrateCore(): Promise<void> {
     giftcards,
     [],
     config.networkInfo.axelarGateway,
-    config.networkInfo.axelarIbcChannel
+    config.networkInfo.axelarIbcChannel,
+    config.networkInfo.axelarChainId
   );
 }
 

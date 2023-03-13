@@ -1,4 +1,7 @@
-use angel_core::msgs::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
+    ConfigResponse as RegistrarConfigResponse,
+};
 use angel_core::structs::{AcceptedTokens, RebalanceDetails, SplitDetails};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -13,6 +16,7 @@ use std::marker::PhantomData;
 pub enum QueryMsg {
     // Mock the `registrar::QueryMsg::Config {}` query
     Config {},
+    ConfigExtension {},
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -64,24 +68,31 @@ impl WasmMockQuerier {
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
                         version: "0.1.0".to_string(),
-                        accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         rebalance: RebalanceDetails::default(),
-                        index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
                             min: Decimal::zero(),
                             max: Decimal::one(),
                             default: Decimal::percent(50),
                         },
-                        halo_token: Some("halo_token".to_string()),
-                        gov_contract: Some("gov_contract".to_string()),
-                        charity_shares_contract: Some("charity_shares".to_string()),
-                        cw3_code: Some(2),
-                        cw4_code: Some(3),
                         accepted_tokens: AcceptedTokens {
                             native: vec!["ujuno".to_string()],
                             cw20: vec!["test-cw20".to_string()],
                         },
+                        axelar_gateway: "axelar-gateway".to_string(),
+                        axelar_ibc_channel: "channel-1".to_string(),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::ConfigExtension {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&RegistrarConfigExtensionResponse {
+                        index_fund: Some("index_fund".to_string()),
+                        halo_token: Some("halo_token".to_string()),
+                        gov_contract: Some("gov_contract".to_string()),
+                        accounts_contract: Some("accounts_contract_addr".to_string()),
+                        charity_shares_contract: Some("charity_shares".to_string()),
+                        cw3_code: Some(2),
+                        cw4_code: Some(3),
                         applications_review: "applications-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
                         subdao_gov_code: None,
@@ -93,13 +104,10 @@ impl WasmMockQuerier {
                         halo_token_lp_contract: None,
                         donation_match_charites_contract: None,
                         collector_addr: "collector-contract-addr".to_string(),
-                        collector_share: Decimal::zero(),
                         swap_factory: None,
                         accounts_settings_controller: Some(
                             "accounts-settings-controller-addr".to_string(),
                         ),
-                        axelar_gateway: "axelar-gateway".to_string(),
-                        axelar_ibc_channel: "channel-1".to_string(),
                     })
                     .unwrap(),
                 )),

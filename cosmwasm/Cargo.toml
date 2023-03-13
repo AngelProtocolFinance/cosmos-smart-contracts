@@ -11,6 +11,7 @@ members = [
     "contracts/core/accounts-settings-controller",
     "contracts/core/index-fund",
     "contracts/core/registrar",
+    "contracts/core/registrar-partial",
     "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-apteam",
     "contracts/multisig/cw3-generic",

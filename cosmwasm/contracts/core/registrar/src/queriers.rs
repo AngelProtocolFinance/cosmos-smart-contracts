@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, STRATEGIES};
+use crate::state::{CONFIG, CONFIG_EXTENSION, FEES, NETWORK_CONNECTIONS, STRATEGIES};
 use angel_core::msgs::registrar::*;
 use cosmwasm_std::{Decimal, Deps, StdResult};
 use cw2::get_contract_version;
@@ -12,51 +12,58 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
             get_contract_version(deps.storage)?.contract,
             get_contract_version(deps.storage)?.version
         ),
-        accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
         rebalance: config.rebalance,
-        index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
-        cw3_code: config.cw3_code,
-        cw4_code: config.cw4_code,
-        subdao_gov_code: config.subdao_gov_code,
-        subdao_cw20_token_code: config.subdao_cw20_token_code,
-        subdao_bonding_token_code: config.subdao_bonding_token_code,
-        subdao_cw900_code: config.subdao_cw900_code,
-        subdao_distributor_code: config.subdao_distributor_code,
-        donation_match_code: config.donation_match_code,
         split_to_liquid: config.split_to_liquid,
-        halo_token: match config.halo_token {
+        accepted_tokens: config.accepted_tokens,
+        axelar_gateway: config.axelar_gateway,
+        axelar_ibc_channel: config.axelar_ibc_channel,
+    })
+}
+
+pub fn query_config_extension(deps: Deps) -> StdResult<ConfigExtensionResponse> {
+    let extension = CONFIG_EXTENSION.load(deps.storage)?;
+    Ok(ConfigExtensionResponse {
+        accounts_contract: extension.accounts_contract.map(|addr| addr.to_string()),
+        index_fund: extension.index_fund_contract.map(|addr| addr.to_string()),
+        cw3_code: extension.cw3_code,
+        cw4_code: extension.cw4_code,
+        subdao_gov_code: extension.subdao_gov_code,
+        subdao_cw20_token_code: extension.subdao_cw20_token_code,
+        subdao_bonding_token_code: extension.subdao_bonding_token_code,
+        subdao_cw900_code: extension.subdao_cw900_code,
+        subdao_distributor_code: extension.subdao_distributor_code,
+        donation_match_code: extension.donation_match_code,
+        halo_token: match extension.halo_token {
             Some(addr) => Some(addr.to_string()),
             None => None,
         },
-        halo_token_lp_contract: match config.halo_token_lp_contract {
+        halo_token_lp_contract: match extension.halo_token_lp_contract {
             Some(addr) => Some(addr.to_string()),
             None => None,
         },
-        gov_contract: match config.gov_contract {
+        gov_contract: match extension.gov_contract {
             Some(addr) => Some(addr.to_string()),
             None => None,
         },
-        donation_match_charites_contract: match config.donation_match_charites_contract {
+        donation_match_charites_contract: match extension.donation_match_charites_contract {
             Some(addr) => Some(addr.to_string()),
             None => None,
         },
-        collector_addr: config
+        collector_addr: extension
             .collector_addr
             .map(|addr| addr.to_string())
             .unwrap_or_else(|| "".to_string()),
-        collector_share: config.collector_share,
-        accepted_tokens: config.accepted_tokens,
-        charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
-        swap_factory: config.swap_factory.map(|addr| addr.to_string()),
-        applications_review: config.applications_review.to_string(),
-        swaps_router: config.swaps_router.map(|addr| addr.to_string()),
-        accounts_settings_controller: match config.accounts_settings_controller {
+        charity_shares_contract: extension
+            .charity_shares_contract
+            .map(|addr| addr.to_string()),
+        swap_factory: extension.swap_factory.map(|addr| addr.to_string()),
+        applications_review: extension.applications_review.to_string(),
+        swaps_router: extension.swaps_router.map(|addr| addr.to_string()),
+        accounts_settings_controller: match extension.accounts_settings_controller {
             Some(addr) => Some(addr.to_string()),
             None => None,
         },
-        axelar_gateway: config.axelar_gateway,
-        axelar_ibc_channel: config.axelar_ibc_channel,
     })
 }
 

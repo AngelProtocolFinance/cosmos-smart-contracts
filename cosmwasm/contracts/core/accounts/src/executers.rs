@@ -9,6 +9,7 @@ use angel_core::msgs::accounts_settings_controller::{
 use angel_core::msgs::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::msgs::registrar::{
+    ConfigExtensionResponse as RegistrarConfigExtensionResponse,
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, StrategyDetailResponse,
 };
 use angel_core::msgs::swap_router::ExecuteMsg as SwapRouterExecuteMsg;
@@ -71,10 +72,10 @@ pub fn create_endowment(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    let registrar_config: RegistrarConfigResponse =
+    let registrar_config: RegistrarConfigExtensionResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
         }))?;
 
     // Charity endowments must be created through the CW3 Review Applications
@@ -280,6 +281,12 @@ pub fn update_endowment_status(
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
+    let registrar_config_ext: RegistrarConfigExtensionResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
+        }))?;
+
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
@@ -306,7 +313,7 @@ pub fn update_endowment_status(
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
     // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
-    let index_fund_contract = match registrar_config.index_fund {
+    let index_fund_contract = match registrar_config_ext.index_fund {
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
@@ -396,7 +403,6 @@ pub fn update_config(
     new_owner: Option<String>,
     new_registrar: Option<String>,
     max_general_category_id: Option<u8>,
-    ibc_controller: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
@@ -418,10 +424,6 @@ pub fn update_config(
         Some(id) => id,
         None => config.max_general_category_id,
     };
-    config.ibc_controller = match ibc_controller {
-        Some(ibc_controller) => deps.api.addr_validate(&ibc_controller)?,
-        None => config.ibc_controller,
-    };
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -436,9 +438,10 @@ pub fn update_endowment_details(
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps
-        .querier
-        .query_wasm_smart(config.registrar_contract, &RegistrarQuerier::Config {})?;
+    let registrar_config: RegistrarConfigExtensionResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract,
+        &RegistrarQuerier::ConfigExtension {},
+    )?;
     let endowment_permissions: EndowmentPermissionsResponse = deps.querier.query_wasm_smart(
         registrar_config
             .accounts_settings_controller
@@ -600,10 +603,10 @@ pub fn swap_token(
     }
 
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse =
+    let registrar_config: RegistrarConfigExtensionResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
         }))?;
 
     let mut state = STATES.load(deps.storage, id)?;
@@ -727,10 +730,10 @@ pub fn swap_receipt(
     acct_type: AccountType,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse =
+    let registrar_config: RegistrarConfigExtensionResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
         }))?;
 
     if sender_addr != registrar_config.swaps_router.unwrap() {
@@ -841,10 +844,10 @@ pub fn distribute_to_beneficiary(
         }
         Some(Beneficiary::IndexFund { id }) => {
             // get index fund addr from registrar
-            let registrar_config: RegistrarConfigResponse =
+            let registrar_config: RegistrarConfigExtensionResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Config {})?,
+                    msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
                 }))?;
             // get index fund members list & count
             let index_fund: angel_core::msgs::index_fund::FundDetailsResponse =
@@ -959,9 +962,9 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     let mut res = Response::default();
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+    let registrar_config: RegistrarConfigExtensionResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.to_string(),
-        &RegistrarQuerier::Config {},
+        &RegistrarQuerier::ConfigExtension {},
     )?;
     let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
@@ -1033,13 +1036,18 @@ pub fn deposit(
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
+    let registrar_config_ext: RegistrarConfigExtensionResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
+        }))?;
 
     let mut locked_split = msg.locked_percentage;
     let mut liquid_split = msg.liquid_percentage;
 
     // check split passed by the donor against the Registrar SC split params & Endowment-level splits (if set)
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
-    let index_fund = match registrar_config.index_fund {
+    let index_fund = match registrar_config_ext.index_fund {
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
@@ -1501,9 +1509,14 @@ pub fn withdraw(
         config.registrar_contract.to_string(),
         &RegistrarQuerier::Config {},
     )?;
+    let registrar_config_ext: RegistrarConfigExtensionResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::ConfigExtension {})?,
+        }))?;
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let endowment_settings: EndowmentSettingsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_settings_controller.unwrap(),
+        registrar_config_ext.accounts_settings_controller.unwrap(),
         &angel_core::msgs::accounts_settings_controller::QueryMsg::EndowmentSettings { id },
     )?;
 
@@ -1572,12 +1585,6 @@ pub fn withdraw(
             }
         }
     }
-
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
 
     let withdraw_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: config.registrar_contract.to_string(),
@@ -1660,7 +1667,7 @@ pub fn withdraw(
                     }),
                     // Build message to deposit funds to beneficiary's liquid account
                     true => to_binary(&cw20::Cw20ExecuteMsg::Send {
-                        contract: registrar_config.accounts_contract.clone().unwrap(),
+                        contract: registrar_config_ext.accounts_contract.clone().unwrap(),
                         amount: asset.amount - withdraw_fee,
                         msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
                             angel_core::msgs::accounts::DepositMsg {
@@ -1712,7 +1719,7 @@ pub fn withdraw(
             }
             (true, false) => {
                 messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+                    contract_addr: registrar_config_ext.accounts_contract.unwrap().to_string(),
                     msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
                         angel_core::msgs::accounts::DepositMsg {
                             id: beneficiary_endow.unwrap(),
@@ -1730,7 +1737,7 @@ pub fn withdraw(
             }
             (true, true) => {
                 messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+                    contract_addr: registrar_config_ext.accounts_contract.unwrap().to_string(),
                     msg: to_binary(&angel_core::msgs::accounts::ExecuteMsg::Deposit(
                         angel_core::msgs::accounts::DepositMsg {
                             id: beneficiary_endow.unwrap(),
