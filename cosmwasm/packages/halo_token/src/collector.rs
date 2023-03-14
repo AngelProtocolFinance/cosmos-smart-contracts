@@ -1,5 +1,6 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Decimal;
+#[allow(unused_imports)]
 use cw_asset::AssetInfo;
 
 #[cw_serde]

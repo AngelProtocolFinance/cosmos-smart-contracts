@@ -195,6 +195,7 @@ impl WasmMockQuerier {
                         },
                         axelar_gateway: "axelar-gateway".to_string(),
                         axelar_ibc_channel: "channel-1".to_string(),
+                        axelar_chain_id: "juno".to_string(),
                     })
                     .unwrap(),
                 )),

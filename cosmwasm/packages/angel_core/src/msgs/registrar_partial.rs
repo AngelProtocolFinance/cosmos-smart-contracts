@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use crate::msgs::registrar::{
     ConfigResponse, FeesResponse, NetworkConnectionResponse, StrategyDetailResponse,
     UpdateConfigMsg,

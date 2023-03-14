@@ -131,6 +131,7 @@ pub struct ConfigResponse {
     pub accepted_tokens: AcceptedTokens,
     pub axelar_gateway: String,
     pub axelar_ibc_channel: String,
+    pub axelar_chain_id: String,
 }
 
 #[cw_serde]

@@ -1,8 +1,10 @@
 use crate::common::OrderBy;
+#[allow(unused_imports)]
 use crate::staking::StakerInfoResponse;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
+#[allow(unused_imports)]
 use cw_controllers::{Claim, ClaimsResponse};
 use cw_utils::Duration;
 use std::fmt;

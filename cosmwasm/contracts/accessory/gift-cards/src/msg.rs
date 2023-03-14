@@ -1,4 +1,6 @@
+#[allow(unused_imports)]
 use crate::state::{Config, Deposit};
+#[allow(unused_imports)]
 use angel_core::structs::GenericBalance;
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Decimal;

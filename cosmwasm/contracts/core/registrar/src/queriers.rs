@@ -18,6 +18,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accepted_tokens: config.accepted_tokens,
         axelar_gateway: config.axelar_gateway,
         axelar_ibc_channel: config.axelar_ibc_channel,
+        axelar_chain_id: config.axelar_chain_id,
     })
 }
 
