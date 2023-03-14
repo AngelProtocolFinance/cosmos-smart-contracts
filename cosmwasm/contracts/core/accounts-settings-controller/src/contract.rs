@@ -1,14 +1,12 @@
+use crate::state::{Config, CONFIG};
+use crate::{executers, queriers};
+use angel_core::errors::core::ContractError;
+use angel_core::msgs::accounts_settings_controller::*;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
     StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
-
-use angel_core::errors::core::ContractError;
-use angel_core::msgs::accounts_settings_controller::*;
-
-use crate::state::{Config, CONFIG};
-use crate::{executers, queriers};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts-settings-controller";

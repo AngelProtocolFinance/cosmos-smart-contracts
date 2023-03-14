@@ -453,6 +453,7 @@ export async function startSetupCore(): Promise<void> {
       },
       axelar_gateway: config.networkInfo.axelarGateway,
       axelar_ibc_channel: config.networkInfo.axelarIbcChannel,
+      axelar_chain_id: config.networkInfo.axelarChainId,
     }
   );
 }

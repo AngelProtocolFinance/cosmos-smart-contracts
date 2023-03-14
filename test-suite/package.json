@@ -31,6 +31,7 @@
     "test:localjuno-tests": "npm run test --mode=localjuno_tests",
     "test:localjuno-setup-core": "npm run test --mode=localjuno_setup_core",
     "test:localjuno-setup-endowments": "npm run test --mode=localjuno_setup_endowments",
+    "test:localjuno-setup-giftcards": "npm run test --mode=localjuno_setup_giftcards",
     "test:localjuno-setup-mockvaults": "npm run test --mode=localjuno_setup_mockvaults",
     "test:localjuno-setup-loopvaults": "npm run test --mode=localjuno_setup_loopvaults",
     "test:localjuno-setup-loopswap": "npm run test --mode=localjuno_setup_loopswap",

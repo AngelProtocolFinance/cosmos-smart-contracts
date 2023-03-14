@@ -12,8 +12,8 @@ use angel_core::msgs::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg as AccountsExecuteMsg,
 };
 use angel_core::msgs::cw3_multisig::QueryMsg;
-use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigResponse;
-use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigExtensionResponse;
+use angel_core::msgs::registrar::QueryMsg::ConfigExtension as RegistrarConfigExtension;
 use angel_core::structs::EndowmentType;
 use angel_core::utils::validate_deposit_fund;
 use cosmwasm_std::{
@@ -110,12 +110,12 @@ pub fn application_reply(
             let mut res = Response::default();
 
             // query registrar config in order to get the accounts contract
-            let registrar_config: RegistrarConfigResponse =
+            let registrar_config_ext: RegistrarConfigExtensionResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: cfg.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarConfig {})?,
+                    msg: to_binary(&RegistrarConfigExtension {})?,
                 }))?;
-            let accounts_contract = registrar_config.accounts_contract.unwrap();
+            let accounts_contract = registrar_config_ext.accounts_contract.unwrap();
             let endow: EndowmentDetailsResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: accounts_contract.to_string(),
@@ -380,12 +380,12 @@ pub fn execute_propose_application(
     // ensure charity specific params are set correctly (regardless of what user passes)
     msg.maturity_time = None;
 
-    let registrar_config: RegistrarConfigResponse =
+    let registrar_config_ext: RegistrarConfigExtensionResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: cfg.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarConfigExtension {})?,
         }))?;
-    let accounts_contract = registrar_config.accounts_contract.unwrap();
+    let accounts_contract = registrar_config_ext.accounts_contract.unwrap();
 
     // check that at least 1 SDG category is set for charity endowments
     if msg.categories.sdgs.is_empty() {

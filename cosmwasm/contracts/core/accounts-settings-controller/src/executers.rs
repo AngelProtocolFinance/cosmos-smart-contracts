@@ -2,8 +2,8 @@ use crate::state::{CONFIG, CONTROLLER, SETTINGS};
 use angel_core::errors::core::ContractError;
 use angel_core::msgs::accounts::EndowmentDetailsResponse;
 use angel_core::msgs::accounts_settings_controller::*;
-use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigResponse;
-use angel_core::msgs::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigExtensionResponse;
+use angel_core::msgs::registrar::QueryMsg::ConfigExtension as RegistrarConfigExtension;
 use angel_core::msgs::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::structs::{
     DaoSetup, DonationMatch, EndowmentController, EndowmentSettings, EndowmentType,
@@ -121,13 +121,12 @@ pub fn create_endowment_settings(
     msg: CreateEndowSettingsMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract,
-        &RegistrarQuerier::ConfigExtension {},
-    )?;
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarConfigExtension {})?;
 
     // Only the "accounts_contract" can call this entry.
-    if info.sender != registrar_config.accounts_contract.unwrap() {
+    if info.sender != registrar_config_ext.accounts_contract.unwrap() {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -163,11 +162,10 @@ pub fn update_endowment_settings(
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract,
-        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
-    )?;
-    let accounts_contract = registrar_config.accounts_contract.unwrap();
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarConfigExtension {})?;
+    let accounts_contract = registrar_config_ext.accounts_contract.unwrap();
 
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
         accounts_contract.to_string(),
@@ -282,11 +280,10 @@ pub fn update_endowment_controller(
     msg: UpdateEndowmentControllerMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract,
-        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
-    )?;
-    let accounts_contract = registrar_config.accounts_contract.unwrap();
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarConfigExtension {})?;
+    let accounts_contract = registrar_config_ext.accounts_contract.unwrap();
 
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
         accounts_contract.to_string(),
@@ -405,12 +402,11 @@ pub fn update_delegate(
     delegate_expiry: Option<u64>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract,
-        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
-    )?;
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarConfigExtension {})?;
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_contract.unwrap(),
+        registrar_config_ext.accounts_contract.unwrap(),
         &angel_core::msgs::accounts::QueryMsg::Endowment { id },
     )?;
 
@@ -461,12 +457,11 @@ pub fn update_endowment_fees(
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract,
-        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
-    )?;
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps
+        .querier
+        .query_wasm_smart(config.registrar_contract, &RegistrarConfigExtension {})?;
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_contract.unwrap(),
+        registrar_config_ext.accounts_contract.unwrap(),
         &angel_core::msgs::accounts::QueryMsg::Endowment { id: msg.id },
     )?;
 
@@ -539,11 +534,11 @@ pub fn setup_dao(
         .load(deps.storage, endowment_id)
         .unwrap_or(EndowmentSettings::default());
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.to_string(),
-        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
+        &RegistrarConfigExtension {},
     )?;
-    let accounts_contract = registrar_config
+    let accounts_contract = registrar_config_ext
         .accounts_contract
         .expect("Cannot get the accounts contract address");
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
@@ -564,7 +559,7 @@ pub fn setup_dao(
     Ok(Response::new().add_submessage(SubMsg {
         id: 1,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.subdao_gov_code.unwrap(),
+            code_id: registrar_config_ext.subdao_gov_code.unwrap(),
             admin: None,
             label: "new endowment dao contract".to_string(),
             msg: to_binary(&DaoInstantiateMsg {
@@ -599,12 +594,12 @@ pub fn setup_donation_match(
         .load(deps.storage, endowment_id)
         .unwrap_or(EndowmentSettings::default());
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+    let registrar_config_ext: RegistrarConfigExtensionResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.to_string(),
-        &angel_core::msgs::registrar::QueryMsg::ConfigExtension {},
+        &RegistrarConfigExtension {},
     )?;
     let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
-        registrar_config.accounts_contract.unwrap(),
+        registrar_config_ext.accounts_contract.unwrap(),
         &angel_core::msgs::accounts::QueryMsg::Endowment { id: endowment_id },
     )?;
 
@@ -625,7 +620,7 @@ pub fn setup_donation_match(
     }
 
     let mut res = Response::default();
-    let match_code = match registrar_config.donation_match_code {
+    let match_code = match registrar_config_ext.donation_match_code {
         Some(match_code) => match_code,
         None => {
             return Err(ContractError::Std(StdError::GenericErr {
@@ -636,8 +631,8 @@ pub fn setup_donation_match(
     match setup {
         DonationMatch::HaloTokenReserve {} => {
             match (
-                registrar_config.halo_token,
-                registrar_config.halo_token_lp_contract,
+                registrar_config_ext.halo_token,
+                registrar_config_ext.halo_token_lp_contract,
             ) {
                 (Some(reserve_addr), Some(lp_addr)) => {
                     res = res.add_submessage(SubMsg {

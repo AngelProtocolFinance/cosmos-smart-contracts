@@ -74,7 +74,7 @@ export async function testQueryGiftcardsBalance(
 ): Promise<void> {
   process.stdout.write("Test - Query Gift Cards Balance for some address");
   const result = await juno.queryContractSmart(giftcards, {
-    Balance: { address },
+    balance: { address },
   });
 
   console.log(result);
@@ -87,7 +87,7 @@ export async function testQueryGiftcardsConfig(
 ): Promise<void> {
   process.stdout.write("Test - Query Gift Cards config");
   const result = await juno.queryContractSmart(giftcards, {
-    Config: {},
+    config: {},
   });
 
   console.log(result);
@@ -101,7 +101,7 @@ export async function testQueryGiftcardsDeposit(
 ): Promise<void> {
   process.stdout.write("Test - Query Gift Cards Deposit record");
   const result = await juno.queryContractSmart(giftcards, {
-    Deposit: { deposit_id },
+    deposit: { deposit_id },
   });
 
   console.log(result);

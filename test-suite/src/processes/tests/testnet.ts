@@ -25,20 +25,19 @@ import {
   testSendRestitutionFundsToEndowments,
 } from "./core/accounts";
 import {
-  testQuerySettingsControllerConfig,
-  testQuerySettingsControllerEndowSettings,
-  testUpdateSettingsControllerConfig,
   testUpdateEndowmentFees,
   testSetupDao,
   testSetupDonationMatch,
   testUpdateDelegate,
+  testUpdateSettingsControllerConfig,
+  testQuerySettingsControllerConfig,
   testQuerySettingsControllerEndowPermissions,
+  testQuerySettingsControllerEndowSettings,
+  testQuerySettingsControllerEndowController
 } from "./core/settingsController";
 import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
-  testUpdateFundMembers,
-  testUpdateAllianceMembersList,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
@@ -47,17 +46,12 @@ import {
   testQueryIndexFundConfig,
   testQueryIndexFundDeposit,
   testQueryIndexFundFundDetails,
-  testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList,
   testIndexFundUpdateOwner,
   testIndexFundRemoveMember,
-  testIndexFundUpdateAllianceMember,
   testIndexFundUpateRegistrar,
-  testQueryIndexFundAllianceMember,
   testUpdatingIndexFundOwner,
   testUpdatingIndexFundRegistrar,
-  testUpdateAllianceMember,
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
@@ -81,10 +75,9 @@ import {
   testUpdateFees,
   testUpdatingRegistrarNetworkConnections,
   testUpdatingRegistrarUpdateOwner,
-  testQueryRegistrarVaultList,
   testQueryRegistrarConfig,
-  testQueryRegistrarVault,
   testQueryRegistrarNetworkConnection,
+  testQueryRegistrarStrategy,
 } from "./core/registrar";
 import {
   testQueryVaultConfig,
@@ -419,13 +412,34 @@ export async function testExecute(
   // ];
   // await testCreateEndowmentCw3s(actors.apTeam.client, actors.apTeam.addr, registrar, accounts, endowments_batch);
   // await testApTeamChangesEndowmentSettings(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, endowments_batch);
+  // await testCreateEndowment(networkInfo, actors.apTeam.wallet, cw3ReviewTeam, accounts, {
+  //   owner: actors.apTeam.addr,
+  //   maturity_time: undefined,
+  //   name: "Test Normal Endowment",
+  //   categories: { sdgs: [2,11], general: [] },
+  //   tier: 2,
+  //   endow_type: "charity",
+  //   logo: "logo 1",
+  //   image: "logo 1",
+  //   cw4_members: [{ addr: actors.apTeam.addr, weight: 1 }],
+  //   kyc_donors_only: true,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //   cw3_max_voting_period: 604800,
+  //   beneficiaries_allowlist: [],
+  //   contributors_allowlist: [],
+  //   split_max: "1",
+  //   split_min: "0",
+  //   split_default: "0.5",
+  //   ignore_user_splits: false,
+  // },
+  // [actors.apTeam.wallet]);
   // await testCreateNormalEndowment(
-  //   actors.apTeam.client,
+  //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
   //   {
   //     owner: actors.charity1.addr,
-  //     name: "Test-Suite Endowment",
+  //     name: "Test-Suite Normal Endowment",
   //     categories: { sdgs: [2], general: [] },
   //     tier: 0,
   //     endow_type: "normal",
@@ -439,7 +453,7 @@ export async function testExecute(
   //     cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
   //     cw3_max_voting_period: 10000,
   //     beneficiaries_allowlist: [charity1Addr],
-  //     contributors_allowlist: [],
+  //     contributors_allowlist: [charity2Addr],
   //     split_max: "0.8",
   //     split_min: "0.0",
   //     split_default: "0.5",
@@ -611,7 +625,6 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarStrategy(actors.apTeam.client, registrar, vaultLocked1);
-  // await testQueryRegistrarStrategyList(actors.apTeam.client, registrar);
   // await testQueryRegistrarNetworkConnection(
   //   actors.apTeam.client,
   //   registrar,
@@ -632,16 +645,18 @@ export async function testExecute(
   //   settingsController,
   //   endowId1
   // );
-  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr);
+  // await testQuerySettingsControllerEndowController(
+  //   actors.apTeam.client,
+  //   settingsController,
+  //   endowId1
+  // );
+  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId2, actors.apTeam.addr);
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
-  // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
-  // await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
   // await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
   // await testQueryIndexFundActiveFundDonations(actors.apTeam.client, indexFund);
   // await testQueryIndexFundDeposit(actors.apTeam.client, indexFund);
-  // await testQueryIndexFundAllianceMember(actors.apTeam.client, indexFund, actors.apTeam2.addr);
 
   // await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
   // await testQueryVaultTotalBalance(actors.apTeam.client, vaultLocked1);

@@ -558,7 +558,7 @@ export async function testCreateNormalEndowment(
   msg: any
 ): Promise<void> {
   process.stdout.write(
-    "Create a new Normal Endowment directly via the Accounts contract"
+    "Create a new Normal Endowment directly via the Accounts contract\n"
   );
   const endow_res = await sendTransaction(juno, apTeam, accounts, {
     create_endowment: msg,

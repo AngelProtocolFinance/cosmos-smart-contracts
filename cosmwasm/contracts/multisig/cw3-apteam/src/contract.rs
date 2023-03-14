@@ -5,8 +5,8 @@ use angel_core::msgs::accounts::EndowmentDetailsResponse;
 use angel_core::msgs::accounts::QueryMsg::Endowment as EndowmentDetails;
 use angel_core::msgs::cw3_apteam::ExecuteMsg;
 use angel_core::msgs::cw3_multisig::*;
-use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigResponse;
-use angel_core::msgs::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::msgs::registrar::ConfigExtensionResponse as RegistrarConfigExtensionResponse;
+use angel_core::msgs::registrar::QueryMsg::ConfigExtension as RegistrarConfigExtension;
 use angel_core::structs::AccountType;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
@@ -152,12 +152,12 @@ pub fn execute_propose_locked_withdraw(
 
     // Only the endowment owner CW3 multisig can create a locked withdraw proposal
     // 1. Get the CW3 owner of an endowment (for passed ID)
-    let registrar_config: RegistrarConfigResponse =
+    let registrar_config_ext: RegistrarConfigExtensionResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: cfg.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarConfigExtension {})?,
         }))?;
-    let accounts_contract = registrar_config.accounts_contract.unwrap();
+    let accounts_contract = registrar_config_ext.accounts_contract.unwrap();
     let endowment_config: EndowmentDetailsResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: accounts_contract.clone(),

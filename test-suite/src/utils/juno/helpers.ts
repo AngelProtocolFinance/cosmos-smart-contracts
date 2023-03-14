@@ -538,6 +538,8 @@ export async function sendApplicationViaCw3Proposal(
       propose_application: {
         ref_id,
         msg,
+        latest: undefined,
+        meta,
       },
     }
   );

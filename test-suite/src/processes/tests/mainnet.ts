@@ -30,9 +30,7 @@ import {
   testQueryIndexFundConfig,
   testQueryIndexFundDeposit,
   testQueryIndexFundFundDetails,
-  testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList,
   testQueryIndexFundInvolvedAddress,
 } from "./core/indexFunds";
 import {
@@ -51,9 +49,8 @@ import {
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarVaultList,
   testQueryRegistrarConfig,
-  testQueryRegistrarVault,
+  testQueryRegistrarStrategy,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -344,11 +341,8 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
-  // await testQueryAccountsEndowmentList(juno, accounts, 1, 20);
   // await testQueryAccountsState(juno, accounts, 1);
   // await testQueryAccountsEndowment(juno, accounts, 1);
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, accounts);
   // await testQueryIndexFundConfig(juno, indexFund);

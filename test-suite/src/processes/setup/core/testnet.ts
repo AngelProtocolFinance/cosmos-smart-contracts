@@ -79,6 +79,7 @@ export async function setupCore(
     accepted_tokens: any | undefined;
     axelar_gateway: string;
     axelar_ibc_channel: string;
+    axelar_chain_id: string;
   }
 ): Promise<void> {
   networkUrl = _networkUrl;
@@ -101,10 +102,30 @@ export async function setupCore(
     config.funding_goal,
     config.accepted_tokens,
     config.axelar_gateway,
-    config.axelar_ibc_channel
+    config.axelar_ibc_channel,
+    config.axelar_chain_id
   );
   await turnOverApTeamMultisig();
-  // await createIndexFunds();
+
+  console.log("\nSettings arranged contract addresses:\n", `
+    registrar:
+      "${registrar}",
+    cw4GrpApTeam:
+      "${cw4GrpApTeam}",
+    cw3ApTeam:
+      "${cw3ApTeam}",
+    settingsController:
+      "${settingsController}",
+    accounts: "${accounts}",
+    indexFund:
+      "${indexFund}",
+    cw4GrpReviewTeam:
+      "${cw4GrpReviewTeam}",
+    cw3ReviewTeam:
+      "${cw3ReviewTeam}",
+    swapRouter:
+      "${swapRouter}",
+    `);
 }
 
 async function setup(
@@ -117,7 +138,8 @@ async function setup(
   funding_goal: string | undefined,
   accepted_tokens: any | undefined,
   axelar_gateway: string,
-  axelar_ibc_channel: string
+  axelar_ibc_channel: string,
+  axelar_chain_id: string
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each and instantiate the contracts
   registrar = await storeAndInstantiateContract(
@@ -132,6 +154,7 @@ async function setup(
       accepted_tokens: accepted_tokens,
       axelar_gateway,
       axelar_ibc_channel,
+      axelar_chain_id,
     }
   );
   cw4Group = await storeCode(
@@ -339,20 +362,20 @@ async function setup(
     "Update Registrar's config with various wasm codes & contracts"
   );
   await sendTransaction(juno, apTeamAddr, registrar, {
-    update_config: {
+    update_config_extension: {
       accounts_contract: accounts,
       accounts_settings_controller: settingsController,
       applications_review: cw3ReviewTeam,
       index_fund_contract: indexFund,
-      cw3_code: cw3MultiSigEndowment,
-      cw4_code: cw4Group,
       halo_token: apTeamAddr, // Fake halo token addr: Need to be handled
       halo_token_lp_contract: apTeamAddr, // Fake halo token LP addr: Need to be handled
+      donation_match_charites_contract: undefined,
+      cw3_code: cw3MultiSigEndowment,
+      cw4_code: cw4Group,
       subdao_gov_code: undefined,
       subdao_cw20_token_code: undefined,
       subdao_bonding_token_code: undefined,
       donation_match_code: undefined,
-      donation_match_charites_contract: undefined,
     },
   });
   console.log(chalk.green(" Done!"));

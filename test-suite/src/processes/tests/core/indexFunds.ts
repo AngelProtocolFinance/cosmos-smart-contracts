@@ -192,37 +192,6 @@ export async function testUpdatingIndexFundConfigs(
   console.log(chalk.green(" Done!"));
 }
 
-export async function testUpdateAllianceMembersList(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  cw3: string,
-  indexFund: string,
-  address: string,
-  member: any,
-  action: string
-): Promise<void> {
-  process.stdout.write("AP Team updates Angel Alliance members list");
-  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
-    update_alliance_member_list: { address, member, action },
-  });
-  console.log(chalk.green(" Done!"));
-}
-
-export async function testUpdateAllianceMember(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  cw3: string,
-  indexFund: string,
-  address: string,
-  member: any
-): Promise<void> {
-  process.stdout.write("AP Team updates Angel Alliance member");
-  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
-    update_alliance_member: { address, member },
-  });
-  console.log(chalk.green(" Done!"));
-}
-
 //----------------------------------------------------------------------------------------
 // TEST: SC owner can update the fund members to an Index Fund
 //
@@ -325,30 +294,6 @@ export async function testIndexFundRemoveMember(
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: SC owner can update alliance member
-//
-// SCENARIO:
-// Owner updates the alliance member
-//----------------------------------------------------------------------------------------
-export async function testIndexFundUpdateAllianceMember(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
-  indexFund: string,
-  address: string,
-  member: any
-): Promise<void> {
-  process.stdout.write("Test - SC owner can update alliance member");
-
-  const config = await juno.queryContractSmart(indexFund, { config: {} });
-  const cw3 = config.owner;
-
-  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
-    update_alliance_member: { address, member },
-  });
-  console.log(chalk.green(" Passed!"));
-}
-
-//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 
@@ -371,53 +316,6 @@ export async function testQueryIndexFundState(
   process.stdout.write("Test - Query IndexFund State");
   const result: any = await juno.queryContractSmart(indexFund, {
     state: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryIndexFundTcaList(
-  juno: SigningCosmWasmClient,
-  indexFund: string
-): Promise<void> {
-  process.stdout.write("Test - Query IndexFund TcaList");
-  const result: any = await juno.queryContractSmart(indexFund, {
-    alliance_members: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryIndexFundAllianceMember(
-  juno: SigningCosmWasmClient,
-  indexFund: string,
-  address: string
-): Promise<void> {
-  process.stdout.write("Test - Query IndexFund TcaList");
-  const result: any = await juno.queryContractSmart(indexFund, {
-    alliance_member: {
-      address,
-    },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryIndexFundFundsList(
-  juno: SigningCosmWasmClient,
-  indexFund: string,
-  start_after: number | undefined,
-  limit: number | undefined
-): Promise<void> {
-  process.stdout.write("Test - Query IndexFund FundsList");
-  const result: any = await juno.queryContractSmart(indexFund, {
-    funds_list: {
-      limit,
-      start_after,
-    },
   });
 
   console.log(result);

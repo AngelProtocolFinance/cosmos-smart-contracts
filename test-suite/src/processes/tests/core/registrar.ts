@@ -186,29 +186,14 @@ export async function testQueryRegistrarConfig(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarVaultList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar Vault List");
-  const result: any = await juno.queryContractSmart(registrar, {
-    vault_list: { approved: true },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarVault(
+export async function testQueryRegistrarStrategy(
   juno: SigningCosmWasmClient,
   registrar: string,
-  Vault1: string
+  strategy_key: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Registrar Vault");
+  process.stdout.write("Test - Query Registrar Strategy");
   const result: any = await juno.queryContractSmart(registrar, {
-    vault: {
-      vault_addr: Vault1,
-    },
+    strategy: { strategy_key },
   });
 
   console.log(result);

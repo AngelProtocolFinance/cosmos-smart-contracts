@@ -43,24 +43,24 @@ export const testnet = {
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
     registrar:
-      "juno16gyc3r5uxhgqw2mjtxv2795l8fwqn00m9j9fj25cyxk8dls2z5ls82n6vg",
+      "juno120jxhdz7n4qk9kjeelq5q2ae7w3mslc2qeteptvhv83dnff6x56qdsq93m",
     cw4GrpApTeam:
-      "juno1qckn4pkxgpt04azwufygcxm5sx90gvwsgq6d8mc34ugw45tdf3vs6renxh",
+      "juno1m6uc8tqprqmde9w3zz4tta5g7qjtk84lxd3d8kx48p6qf87t9tnqhw22vy",
     cw3ApTeam:
-      "juno1d3ls7cdjaj5tfgsc367ql843wrcztc2g7n7lupejujgeqnrvw5fqh9hm5s",
+      "juno1e24yglups708f4udtxj0fkgrf2r88prpse6nrmunc0gzyycvzl9svz00uu",
     settingsController:
-      "juno1ed9a2268ksgv7fufutnx3sxcyqxnmn839efyrkvnqpuyc0es5x9qs24j5z",
-    accounts: "juno1d4v5h5yr920xjjwcuret5n3meee5l04c58fpjhghdgml8kp57spqvmg4lx",
+      "juno1y9wec20gnat9chrapmlm7jwz6cytvr9jqfeny2h4kw32tqqd2kwq3ctkfu",
+    accounts: "juno1tesh9uuz60dxzh4cy0kvcunfavv4egptgr5e6l3h2cv6apjdmhfsydfklv",
     indexFund:
-      "juno1zkxltk53aa8p4djzc76nuxtyf2pnygjy64ky0e48rhf7c3r0gk7sv0y7r3",
+      "juno1dztxk384lhvtexmmkts3ycjdgyuxnjdr5g08m6rx8mkwykkc6qrqdce9ta",
     cw4GrpReviewTeam:
-      "juno1ge3qfdl2p3fe99ysffcshh9d8fe4tp94d5n0tmqf8fjs69gxvuqqd5kx32",
+      "juno1nqpd8dvgdc94fvytlxell09qv6xkswafjtq3c967p89gy683ccvskae63y",
     cw3ReviewTeam:
-      "juno198p9uuzwwurjfa5fwfg0exm65h2ldn363kuh6mtkxmxuxwe0yy8q7y4jws",
+      "juno19zkn0ch2nnctamtrkp8g5cr0p077lgyefrlehtya854ke050r0mqxxthd2",
     swapRouter:
-      "juno15mgqc7cep5v9l3w4kkaednyvw5ve79njkzs4t72wxeq26rurgt6s483kpk",
+      "juno1pfxh40rmr0wlcr3peqhk4h2xrcuzkvezpnr47n9ufp23mp5m0w7qn7sjld",
     donationMatching: "",
-    giftcards: "",
+    giftcards: "juno138x649c22xxuark66pwwwwyya4xy4lkka4hcxgtfutclxakp5ltqv8dz9j",
     vaultLocked1: "",
     vaultLiquid1: "",
     vaultLocked2: "",
