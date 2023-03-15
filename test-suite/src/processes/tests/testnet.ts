@@ -25,7 +25,6 @@ import {
   testSendRestitutionFundsToEndowments,
 } from "./core/accounts";
 import {
-  testUpdateEndowmentFees,
   testSetupDao,
   testSetupDonationMatch,
   testUpdateDelegate,
@@ -528,21 +527,7 @@ export async function testExecute(
   //   settingsController,
   //   {
   //     owner: actors.apTeam.addr,
-  //     registrar_contract: registrar
-  //   }
-  // );
-
-  // await testUpdateEndowmentFees(
-  //   actors.charity1.client,
-  //   actors.charity1.addr,
-  //   accounts,
-  //   settingsController,
-  //   {
-  //     id: 1,
-  //     earnings_fee: undefined, // Option<EndowmentFee>,
-  //     deposit_fee: undefined,  //       //
-  //     withdraw_fee: undefined, //       //
-  //     aum_fee: undefined,      //       //
+  //     registrar_contract: registrar,
   //   }
   // );
 

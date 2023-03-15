@@ -50,9 +50,6 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentController(msg) => {
             executers::update_endowment_controller(deps, env, info, msg)
         }
-        ExecuteMsg::UpdateEndowmentFees(msg) => {
-            executers::update_endowment_fees(deps, env, info, msg)
-        }
         ExecuteMsg::SetupDao {
             endowment_id,
             setup,

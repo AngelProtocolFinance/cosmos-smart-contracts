@@ -47,7 +47,7 @@ export type EndowmentController = {
   beneficiaries_allowlist: SettingsPermissions;
   contributors_allowlist: SettingsPermissions;
   maturity_allowlist: SettingsPermissions;
-  profile: SettingsPermissions;
+  donation_match_active: SettingsPermissions;
   earnings_fee: SettingsPermissions;
   withdraw_fee: SettingsPermissions;
   deposit_fee: SettingsPermissions;

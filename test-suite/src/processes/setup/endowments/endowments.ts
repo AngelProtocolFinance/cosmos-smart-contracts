@@ -61,9 +61,6 @@ export async function setupCharityEndowments(
           cw3_max_voting_period: charity_cw3_max_voting_period,
           beneficiaries_allowlist: [],
           contributors_allowlist: [],
-          split_max: "1.0",
-          split_min: "0.0",
-          split_default: "0.5",
           earnings_fee: undefined,
           withdraw_fee: undefined,
           deposit_fee: undefined,
@@ -72,7 +69,11 @@ export async function setupCharityEndowments(
           proposal_link: undefined,
           settings_controller: undefined,
           parent: undefined,
-          split_to_liquid: undefined,
+          split_to_liquid: {
+            max: "1.0",
+            min: "0.0",
+            default: "0.5",
+          },
           ignore_user_splits: false,
         },
         [apTeam]

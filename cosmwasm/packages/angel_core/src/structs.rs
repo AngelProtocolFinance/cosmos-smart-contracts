@@ -276,6 +276,7 @@ pub struct EndowmentController {
     pub categories: SettingsPermissions,
     pub ignore_user_splits: SettingsPermissions,
     pub split_to_liquid: SettingsPermissions,
+    pub donation_match_active: SettingsPermissions,
 }
 
 impl EndowmentController {
@@ -291,6 +292,7 @@ impl EndowmentController {
             aum_fee: SettingsPermissions::default(endow_type),
             ignore_user_splits: SettingsPermissions::default(endow_type),
             split_to_liquid: SettingsPermissions::default(endow_type),
+            donation_match_active: SettingsPermissions::default(endow_type),
             // Profile related settings should ALWAYS be modifiable by default,
             // regardless of the endowment type.
             kyc_donors_only: SettingsPermissions {
@@ -343,6 +345,7 @@ impl EndowmentController {
             "image" => Ok(self.image.clone()),
             "logo" => Ok(self.logo.clone()),
             "categories" => Ok(self.categories.clone()),
+            "donation_match_active" => Ok(self.donation_match_active.clone()),
             _ => Err(ContractError::InvalidInputs {}),
         }
     }

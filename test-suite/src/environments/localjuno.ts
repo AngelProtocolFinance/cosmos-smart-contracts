@@ -491,15 +491,15 @@ export async function startSetupEndowments(): Promise<void> {
 
   // Setup endowments
   console.log(chalk.yellow("\nStep 2a. Endowments Setup - Charity"));
-  // await setupCharityEndowments(
-  //   config.networkInfo,
-  //   endowmentDataCharity,
-  //   apTeam,
-  //   cw3ReviewTeam,
-  //   accounts,
-  //   "0.5", // threshold absolute percentage for "charity-cw3"
-  //   604800 // 1 week max voting period time(unit: seconds) for "charity-cw3"
-  // );
+  await setupCharityEndowments(
+    config.networkInfo,
+    endowmentDataCharity,
+    apTeam,
+    cw3ReviewTeam,
+    accounts,
+    "0.5", // threshold absolute percentage for "charity-cw3"
+    604800 // 1 week max voting period time(unit: seconds) for "charity-cw3"
+  );
 
   console.log(chalk.yellow("\nStep 2b. Endowments Setup - Normal"));
   await setupNormalEndowments(

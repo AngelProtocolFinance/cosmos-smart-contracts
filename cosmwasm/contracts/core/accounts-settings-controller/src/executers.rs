@@ -192,6 +192,40 @@ pub fn update_endowment_settings(
         if endow_detail.maturity_time == None
             || env.block.time.seconds() < endow_detail.maturity_time.unwrap()
         {
+            // Update the "EndowmentFee"s
+            if controller.earnings_fee.can_change(
+                &info.sender,
+                &endow_detail.owner,
+                settings.dao.as_ref(),
+                env.block.time,
+            ) {
+                settings.earnings_fee = msg.earnings_fee;
+            }
+            if controller.deposit_fee.can_change(
+                &info.sender,
+                &endow_detail.owner,
+                settings.dao.as_ref(),
+                env.block.time,
+            ) {
+                settings.deposit_fee = msg.deposit_fee;
+            }
+            if controller.withdraw_fee.can_change(
+                &info.sender,
+                &endow_detail.owner,
+                settings.dao.as_ref(),
+                env.block.time,
+            ) {
+                settings.withdraw_fee = msg.withdraw_fee;
+            }
+            if controller.aum_fee.can_change(
+                &info.sender,
+                &endow_detail.owner,
+                settings.dao.as_ref(),
+                env.block.time,
+            ) {
+                settings.aum_fee = msg.aum_fee;
+            }
+            // update allow lists
             if let Some(beneficiaries_allowlist) = msg.beneficiaries_allowlist {
                 if controller.beneficiaries_allowlist.can_change(
                     &info.sender,
@@ -448,79 +482,6 @@ pub fn update_delegate(
     CONTROLLER.save(deps.storage, id, &controller)?;
 
     Ok(Response::default().add_attribute("action", "update_delegate"))
-}
-
-pub fn update_endowment_fees(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: UpdateEndowmentFeesMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let registrar_config_ext: RegistrarConfigExtensionResponse = deps
-        .querier
-        .query_wasm_smart(config.registrar_contract, &RegistrarConfigExtension {})?;
-    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
-        registrar_config_ext.accounts_contract.unwrap(),
-        &angel_core::msgs::accounts::QueryMsg::Endowment { id: msg.id },
-    )?;
-
-    let controller = CONTROLLER
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentController::default(&endow_detail.endow_type));
-    let mut settings = SETTINGS
-        .load(deps.storage, msg.id)
-        .unwrap_or(EndowmentSettings::default());
-
-    // only normalized endowments can update the additional fees
-    if endow_detail.endow_type == EndowmentType::Charity {
-        return Err(ContractError::Std(StdError::generic_err(
-            "Charity Endowments may not change endowment fees",
-        )));
-    }
-
-    // Update the "EndowmentFee"s
-    if controller.earnings_fee.can_change(
-        &info.sender,
-        &endow_detail.owner,
-        settings.dao.as_ref(),
-        env.block.time,
-    ) {
-        settings.earnings_fee = msg.earnings_fee;
-    }
-
-    if controller.deposit_fee.can_change(
-        &info.sender,
-        &endow_detail.owner,
-        settings.dao.as_ref(),
-        env.block.time,
-    ) {
-        settings.deposit_fee = msg.deposit_fee;
-    }
-
-    if controller.withdraw_fee.can_change(
-        &info.sender,
-        &endow_detail.owner,
-        settings.dao.as_ref(),
-        env.block.time,
-    ) {
-        settings.withdraw_fee = msg.withdraw_fee;
-    }
-
-    if controller.aum_fee.can_change(
-        &info.sender,
-        &endow_detail.owner,
-        settings.dao.as_ref(),
-        env.block.time,
-    ) {
-        settings.aum_fee = msg.aum_fee;
-    }
-
-    SETTINGS.save(deps.storage, msg.id, &settings)?;
-
-    Ok(Response::new()
-        .add_attribute("action", "update_endowment_fees")
-        .add_attribute("sender", info.sender.to_string()))
 }
 
 pub fn setup_dao(

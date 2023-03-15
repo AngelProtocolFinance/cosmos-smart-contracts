@@ -16,49 +16,14 @@ export async function testUpdateSettingsControllerConfig(
   juno: SigningCosmWasmClient,
   apTeamAddr: string,
   settingsControllerContract: string,
-  new_config: any
+  newConfigMsg: any
 ): Promise<void> {
   process.stdout.write(
     "Test - ApTeam can update the SettingsController config"
   );
   await sendTransaction(juno, apTeamAddr, settingsControllerContract, {
-    update_config: {
-      owner: new_config.owner,
-      registrar_contract: new_config.registrar_contract,
-    },
+    update_config: newConfigMsg,
   });
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testUpdateEndowmentFees(
-  juno: SigningCosmWasmClient,
-  charity: string,
-  accountsContract: string,
-  settingsControllerContract: string,
-  update_fees_msg: any
-): Promise<void> {
-  process.stdout.write("Test - Endowment owner can update the fees");
-
-  const res = await juno.queryContractSmart(accountsContract, {
-    endowment: { id: update_fees_msg.id },
-  });
-  const cw3 = res.owner as string;
-
-  await sendMessageViaCw3Endowment(
-    juno,
-    charity,
-    cw3,
-    settingsControllerContract,
-    {
-      update_endowment_fees: {
-        id: update_fees_msg.id,
-        earnings_fee: update_fees_msg.earnings_fee,
-        deposit_fee: update_fees_msg.deposit_fee,
-        withdraw_fee: update_fees_msg.withdraw_fee,
-        aum_fee: update_fees_msg.aum_fee,
-      },
-    }
-  );
   console.log(chalk.green(" Passed!"));
 }
 

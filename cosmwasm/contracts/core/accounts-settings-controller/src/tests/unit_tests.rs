@@ -7,7 +7,7 @@ use angel_core::msgs::accounts_settings_controller::{
 };
 use angel_core::msgs::accounts_settings_controller::{
     CreateEndowSettingsMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
-    UpdateEndowmentFeesMsg, UpdateEndowmentSettingsMsg, UpdateMaturityAllowlist,
+    UpdateEndowmentSettingsMsg, UpdateMaturityAllowlist,
 };
 use angel_core::structs::{EndowmentController, EndowmentFee, EndowmentType};
 use cosmwasm_std::testing::{mock_env, mock_info};
@@ -242,6 +242,26 @@ fn test_update_endowment_settings() {
         }),
         ignore_user_splits: Some(true),
         split_to_liquid: None,
+        earnings_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("beneficiary1"),
+            fee_percentage: Decimal::percent(10),
+            active: true,
+        }),
+        deposit_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("beneficiary2"),
+            fee_percentage: Decimal::percent(5),
+            active: true,
+        }),
+        withdraw_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("beneficiary3"),
+            fee_percentage: Decimal::percent(5),
+            active: true,
+        }),
+        aum_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("beneficiary4"),
+            fee_percentage: Decimal::percent(15),
+            active: true,
+        }),
     };
 
     // Endowment state should be NOT closing
@@ -292,104 +312,6 @@ fn test_update_endowment_settings() {
         endow_settings.beneficiaries_allowlist,
         vec![AP_TEAM.to_string(), PLEB.to_string()]
     );
-}
-
-#[test]
-fn test_update_endowment_fees() {
-    // Instantiate the contract
-    let mut deps = mock_dependencies(&[]);
-    let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
-        registrar_contract: REGISTRAR_CONTRACT.to_string(),
-    };
-    let info = mock_info(AP_TEAM, &[]);
-    let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-
-    // Succeed to create EndowmentSettings
-    let info = mock_info("accounts-contract", &[]);
-    let msg = CreateEndowSettingsMsg {
-        id: ENDOW_ID,
-        donation_match_active: false,
-        donation_match_contract: None,
-        beneficiaries_allowlist: vec![],
-        contributors_allowlist: vec![],
-        maturity_allowlist: vec![],
-        endowment_controller: EndowmentController::default(&EndowmentType::Normal),
-        parent: None,
-        split_to_liquid: None,
-        ignore_user_splits: false,
-        earnings_fee: None,
-        deposit_fee: None,
-        withdraw_fee: None,
-        aum_fee: None,
-    };
-    let _ = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::CreateEndowmentSettings(msg),
-    )
-    .unwrap();
-
-    // Endowment SHOULD be "Normal" type
-    let info = mock_info("anyone", &[]);
-    let mut msg = UpdateEndowmentFeesMsg {
-        id: NOT_EXISTING_ENDOW_ID,
-        earnings_fee: Some(EndowmentFee {
-            payout_address: Addr::unchecked("beneficiary1"),
-            fee_percentage: Decimal::percent(10),
-            active: true,
-        }),
-        deposit_fee: Some(EndowmentFee {
-            payout_address: Addr::unchecked("beneficiary2"),
-            fee_percentage: Decimal::percent(5),
-            active: true,
-        }),
-        withdraw_fee: Some(EndowmentFee {
-            payout_address: Addr::unchecked("beneficiary3"),
-            fee_percentage: Decimal::percent(5),
-            active: true,
-        }),
-        aum_fee: Some(EndowmentFee {
-            payout_address: Addr::unchecked("beneficiary4"),
-            fee_percentage: Decimal::percent(15),
-            active: true,
-        }),
-    };
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::UpdateEndowmentFees(msg.clone()),
-    )
-    .unwrap_err();
-    assert_eq!(
-        err,
-        ContractError::Std(StdError::GenericErr {
-            msg: "Charity Endowments may not change endowment fees".to_string()
-        })
-    );
-
-    // Succeed to update the endowment fees
-    let info = mock_info("endowment-owner", &[]);
-    msg.id = 1;
-    let res = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::UpdateEndowmentFees(msg.clone()),
-    )
-    .unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // Check the result
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::EndowmentSettings { id: msg.id },
-    )
-    .unwrap();
-    let endow_settings: EndowmentSettingsResponse = from_binary(&res).unwrap();
     assert_eq!(endow_settings.aum_fee, msg.aum_fee);
     assert_eq!(endow_settings.earnings_fee, msg.earnings_fee);
     assert_eq!(endow_settings.deposit_fee, msg.deposit_fee);
