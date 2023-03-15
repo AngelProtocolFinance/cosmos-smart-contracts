@@ -115,9 +115,6 @@ pub struct CreateEndowmentMsg {
     pub cw3_max_voting_period: u64,
     pub beneficiaries_allowlist: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can)
     pub contributors_allowlist: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub split_max: Decimal,
-    pub split_min: Decimal,
-    pub split_default: Decimal,
     pub earnings_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,

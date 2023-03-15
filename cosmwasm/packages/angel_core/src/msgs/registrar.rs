@@ -60,9 +60,7 @@ pub enum ExecuteMsg {
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub rebalance: Option<RebalanceDetails>,
-    pub split_max: Option<Decimal>,
-    pub split_min: Option<Decimal>,
-    pub split_default: Option<Decimal>,
+    pub split_to_liquid: Option<SplitDetails>,
     pub accepted_tokens: Option<AcceptedTokens>,
     pub treasury: Option<String>,
     pub axelar_gateway: Option<String>,
