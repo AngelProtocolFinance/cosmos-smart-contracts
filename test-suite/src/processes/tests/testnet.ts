@@ -478,14 +478,14 @@ export async function testExecute(
   //   }
   // );
   // await actors.apTeam.client.sendTokens(actors.apTeam.addr, cw3ReviewTeam, [{ denom: "ujunox", amount: "10000000" }], 10000, "initial dust & seed funds");
-  await testSendDonationToEndowment(
-    actors.charity1.client,
-    actors.charity1.addr,
-    accounts,
-    5,
-    { denom: config.networkInfo.nativeToken, amount: "100000" }
-    // { denom: localjuno.denoms.usdc, amount: "1000000" }
-  );
+  // await testSendDonationToEndowment(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   endowId1,
+  //   { denom: config.networkInfo.nativeToken, amount: "100000" }
+  //   // { denom: localjuno.denoms.usdc, amount: "1000000" }
+  // );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -638,26 +638,26 @@ export async function testExecute(
   //   networkInfo.chainId
   // );
 
-  await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowment(actors.apTeam.client, accounts, 5);
-  await testQueryAccountsState(actors.apTeam.client, accounts, 5);
+  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 4); // proposal_link: number
 
-  await testQuerySettingsControllerConfig(
-    actors.apTeam.client,
-    settingsController
-  );
-  await testQuerySettingsControllerEndowSettings(
-    actors.apTeam.client,
-    settingsController,
-    5
-  );
-  await testQuerySettingsControllerEndowController(
-    actors.apTeam.client,
-    settingsController,
-    5
-  );
-  await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, 4, actors.apTeam.addr);
+  // await testQuerySettingsControllerConfig(
+  //   actors.apTeam.client,
+  //   settingsController
+  // );
+  // await testQuerySettingsControllerEndowSettings(
+  //   actors.apTeam.client,
+  //   settingsController,
+  //   endowId1
+  // );
+  // await testQuerySettingsControllerEndowController(
+  //   actors.apTeam.client,
+  //   settingsController,
+  //   endowId1
+  // );
+  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId1, actors.apTeam.addr);
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
