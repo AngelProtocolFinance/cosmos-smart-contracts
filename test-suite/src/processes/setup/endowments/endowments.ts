@@ -123,7 +123,9 @@ export async function setupNormalEndowments(
           aum_fee: item.aum_fee ? item.aum_fee : undefined,
           dao: item.dao ? item.dao : undefined,
           proposal_link: item.proposal_link ? item.proposal_link : undefined,
-          endowment_controller: item.endowment_controller ? item.endowment_controller : undefined,
+          endowment_controller: item.endowment_controller
+            ? item.endowment_controller
+            : undefined,
           parent: item.parent ? item.parent : undefined,
           split_to_liquid: item.split_to_liquid,
           ignore_user_splits: item.ignore_user_splits,
