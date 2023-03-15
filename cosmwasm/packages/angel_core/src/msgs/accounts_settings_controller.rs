@@ -20,8 +20,6 @@ pub enum ExecuteMsg {
     UpdateConfig(UpdateConfigMsg),
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     UpdateEndowmentController(UpdateEndowmentControllerMsg),
-    // Update various "EndowmentFee"s
-    UpdateEndowmentFees(UpdateEndowmentFeesMsg),
     // Set up dao token for "Endowment"
     SetupDao {
         endowment_id: u32,
@@ -74,6 +72,16 @@ pub struct UpdateEndowmentSettingsMsg {
     pub maturity_allowlist: Option<UpdateMaturityAllowlist>,
     pub split_to_liquid: Option<SplitDetails>,
     pub ignore_user_splits: Option<bool>,
+    pub earnings_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
+}
+
+#[cw_serde]
+pub struct UpdateMaturityAllowlist {
+    pub add: Vec<String>,
+    pub remove: Vec<String>,
 }
 
 #[cw_serde]
@@ -95,21 +103,6 @@ pub struct UpdateEndowmentControllerMsg {
     pub deposit_fee: Option<SettingsPermissions>,
     pub withdraw_fee: Option<SettingsPermissions>,
     pub aum_fee: Option<SettingsPermissions>,
-}
-
-#[cw_serde]
-pub struct UpdateEndowmentFeesMsg {
-    pub id: u32,
-    pub earnings_fee: Option<EndowmentFee>,
-    pub deposit_fee: Option<EndowmentFee>,
-    pub withdraw_fee: Option<EndowmentFee>,
-    pub aum_fee: Option<EndowmentFee>,
-}
-
-#[cw_serde]
-pub struct UpdateMaturityAllowlist {
-    pub add: Vec<String>,
-    pub remove: Vec<String>,
 }
 
 #[cw_serde]
