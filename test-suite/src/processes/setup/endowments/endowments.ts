@@ -132,7 +132,7 @@ export async function setupNormalEndowments(
           referral_id: item.referral_id ? item.referral_id : undefined,
         },
       });
-      let endow_id = await parseInt(
+      const endow_id = await parseInt(
         res.logs[0].events
           .find((event) => {
             return event.type == "wasm";
