@@ -59,7 +59,7 @@
                     "gov_controlled": false,
                     "modifiable": true
                 },
-                "profile": {
+                "donation_match_active": {
                     "owner_controlled": true,
                     "gov_controlled": false,
                     "modifiable": true
