@@ -64,19 +64,10 @@ pub fn update_config(
         Some(details) => details,
         None => config.rebalance,
     };
-    let max = match msg.split_max {
-        Some(max) => percentage_checks(max),
-        None => Ok(config.split_to_liquid.max),
+    config.split_to_liquid = match msg.split_to_liquid {
+        Some(splits) => split_checks(splits.max, splits.min, splits.default).unwrap(),
+        None => config.split_to_liquid,
     };
-    let min = match msg.split_min {
-        Some(min) => percentage_checks(min),
-        None => Ok(config.split_to_liquid.min),
-    };
-    let default = match msg.split_default {
-        Some(default) => percentage_checks(default),
-        None => Ok(config.split_to_liquid.default),
-    };
-    config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
     config.accepted_tokens = match msg.accepted_tokens {
         Some(tokens) => tokens,
         None => config.accepted_tokens,

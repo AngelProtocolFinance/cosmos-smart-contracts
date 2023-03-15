@@ -214,9 +214,6 @@ fn new_application_proposal() -> ExecuteMsg {
         cw3_max_voting_period: 60,
         beneficiaries_allowlist: vec![],
         contributors_allowlist: vec![],
-        split_max: Decimal::one(),
-        split_min: Decimal::zero(),
-        split_default: Decimal::zero(),
         earnings_fee: None,
         withdraw_fee: None,
         deposit_fee: None,
@@ -225,7 +222,11 @@ fn new_application_proposal() -> ExecuteMsg {
         proposal_link: Some(1),
         endowment_controller: None,
         parent: None,
-        split_to_liquid: Some(SplitDetails::default()),
+        split_to_liquid: Some(SplitDetails {
+            max: Decimal::one(),
+            min: Decimal::zero(),
+            default: Decimal::percent(20),
+        }),
         ignore_user_splits: false,
         referral_id: None,
     };

@@ -96,9 +96,11 @@ fn update_config() {
             locked_principle_to_liquid: true,
             principle_distribution: Decimal::one(),
         }),
-        split_max: Some(Decimal::one()),
-        split_min: Some(Decimal::zero()),
-        split_default: Some(Decimal::percent(30)),
+        split_to_liquid: Some(SplitDetails {
+            max: Decimal::one(),
+            min: Decimal::zero(),
+            default: Decimal::percent(30),
+        }),
         accepted_tokens: None,
         axelar_gateway: None,
         axelar_ibc_channel: None,
@@ -314,9 +316,7 @@ fn test_add_update_and_remove_accepted_tokens() {
     let update_config_msg = UpdateConfigMsg {
         treasury: None,
         rebalance: None,
-        split_max: None,
-        split_min: None,
-        split_default: None,
+        split_to_liquid: None,
         accepted_tokens: Some(AcceptedTokens {
             native: vec!["new_token".to_string()],
             cw20: vec!["terraFloki4Life".to_string()],
