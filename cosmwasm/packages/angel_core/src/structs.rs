@@ -265,7 +265,6 @@ pub struct EndowmentController {
     pub beneficiaries_allowlist: SettingsPermissions,
     pub contributors_allowlist: SettingsPermissions,
     pub maturity_allowlist: SettingsPermissions,
-    pub profile: SettingsPermissions,
     pub earnings_fee: SettingsPermissions,
     pub withdraw_fee: SettingsPermissions,
     pub deposit_fee: SettingsPermissions,
@@ -286,18 +285,44 @@ impl EndowmentController {
             beneficiaries_allowlist: SettingsPermissions::default(endow_type),
             contributors_allowlist: SettingsPermissions::default(endow_type),
             maturity_allowlist: SettingsPermissions::default(endow_type),
-            profile: SettingsPermissions::default(endow_type),
             earnings_fee: SettingsPermissions::default(endow_type),
             withdraw_fee: SettingsPermissions::default(endow_type),
             deposit_fee: SettingsPermissions::default(endow_type),
             aum_fee: SettingsPermissions::default(endow_type),
-            kyc_donors_only: SettingsPermissions::default(endow_type),
-            name: SettingsPermissions::default(endow_type),
-            image: SettingsPermissions::default(endow_type),
-            logo: SettingsPermissions::default(endow_type),
-            categories: SettingsPermissions::default(endow_type),
             ignore_user_splits: SettingsPermissions::default(endow_type),
             split_to_liquid: SettingsPermissions::default(endow_type),
+            // Profile related settings should ALWAYS be modifiable by default,
+            // regardless of the endowment type.
+            kyc_donors_only: SettingsPermissions {
+                owner_controlled: true,
+                gov_controlled: false,
+                modifiable: true,
+                delegate: None,
+            },
+            name: SettingsPermissions {
+                owner_controlled: true,
+                gov_controlled: false,
+                modifiable: true,
+                delegate: None,
+            },
+            image: SettingsPermissions {
+                owner_controlled: true,
+                gov_controlled: false,
+                modifiable: true,
+                delegate: None,
+            },
+            logo: SettingsPermissions {
+                owner_controlled: true,
+                gov_controlled: false,
+                modifiable: true,
+                delegate: None,
+            },
+            categories: SettingsPermissions {
+                owner_controlled: true,
+                gov_controlled: false,
+                modifiable: true,
+                delegate: None,
+            },
         }
     }
 
