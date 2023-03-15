@@ -389,7 +389,7 @@ async function setup(
   await juno.sendTokens(
     apTeamAddr,
     cw3ReviewTeam,
-    [{ denom: "ujunox", amount: "100000" }],
+    [{ denom: "ujunox", amount: "10000000" }],
     "auto",
     "initial dust & seed funds"
   );
