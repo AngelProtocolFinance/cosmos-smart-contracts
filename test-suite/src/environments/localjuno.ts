@@ -10,14 +10,18 @@ import { localjuno as config } from "../config/localjunoConstants";
 import {
   datetimeStringToUTC,
   getWalletAddress,
-  Endowment,
+  CreateMsgCharityEndowment,
+  CreateMsgNormalEndowment,
 } from "../utils/juno/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
-import { setupEndowments } from "../processes/setup/endowments/endowments";
+import {
+  setupCharityEndowments,
+  setupNormalEndowments,
+} from "../processes/setup/endowments/endowments";
 import { setupGiftcards } from "../processes/setup/accessories/giftcards";
 import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
 import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
@@ -25,7 +29,8 @@ import { setupLoopVaults } from "../processes/setup/vaults/loop";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/testnet";
-import jsonData from "../processes/setup/endowments/endowments_list_testnet.json";
+import jsonDataCharityEndow from "../processes/setup/endowments/testnet_endow_charity_list.json";
+import jsonDataNormalEndow from "../processes/setup/endowments/testnet_endow_normal_list.json";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -37,7 +42,8 @@ let apTeam3: DirectSecp256k1HdWallet;
 let apTreasury: DirectSecp256k1HdWallet;
 let charity1: DirectSecp256k1HdWallet;
 let charity2: DirectSecp256k1HdWallet;
-let charity3: DirectSecp256k1HdWallet;
+let ast1: DirectSecp256k1HdWallet;
+let ast2: DirectSecp256k1HdWallet;
 let pleb: DirectSecp256k1HdWallet;
 let tca: DirectSecp256k1HdWallet;
 
@@ -48,7 +54,8 @@ let apTeam3Account: string;
 let apTreasuryAccount: string;
 let charity1Account: string;
 let charity2Account: string;
-let charity3Account: string;
+let ast1Account: string;
+let ast2Account: string;
 let plebAccount: string;
 let tcaAccount: string;
 let keeperAccount: string;
@@ -155,12 +162,12 @@ async function initialize() {
       prefix: config.networkInfo.walletPrefix,
     }
   );
-  charity3 = await DirectSecp256k1HdWallet.fromMnemonic(
-    config.mnemonicKeys.charity3,
-    {
-      prefix: config.networkInfo.walletPrefix,
-    }
-  );
+  ast1 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.ast1, {
+    prefix: config.networkInfo.walletPrefix,
+  });
+  ast2 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.ast2, {
+    prefix: config.networkInfo.walletPrefix,
+  });
   pleb = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.pleb, {
     prefix: config.networkInfo.walletPrefix,
   });
@@ -174,7 +181,8 @@ async function initialize() {
   apTreasuryAccount = await getWalletAddress(apTreasury);
   charity1Account = await getWalletAddress(charity1);
   charity2Account = await getWalletAddress(charity2);
-  charity3Account = await getWalletAddress(charity3);
+  ast1Account = await getWalletAddress(ast1);
+  ast2Account = await getWalletAddress(ast2);
   plebAccount = await getWalletAddress(pleb);
   tcaAccount = await getWalletAddress(tca);
   keeperAccount = config.wallets.keeper;
@@ -187,7 +195,8 @@ async function initialize() {
   );
   console.log(`Using ${chalk.cyan(charity1Account)} as Charity #1`);
   console.log(`Using ${chalk.cyan(charity2Account)} as Charity #2`);
-  console.log(`Using ${chalk.cyan(charity3Account)} as Charity #3`);
+  console.log(`Using ${chalk.cyan(ast1Account)} as AST #1`);
+  console.log(`Using ${chalk.cyan(ast2Account)} as AST #2`);
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
   console.log(`Using ${chalk.cyan(keeperAccount)} as AWS Keeper`);
@@ -468,22 +477,36 @@ export async function startSetupEndowments(): Promise<void> {
   await initialize();
 
   // parse endowment JSON data
-  const endowmentData: Endowment[] = [];
-  jsonData.data.forEach((el) => {
-    const item: Endowment = el;
-    endowmentData.push(item);
+  const endowmentDataCharity: CreateMsgCharityEndowment[] = [];
+  jsonDataCharityEndow.data.forEach((el) => {
+    const item: CreateMsgCharityEndowment = el;
+    endowmentDataCharity.push(item);
+  });
+
+  const endowmentDataNormal: CreateMsgNormalEndowment[] = [];
+  jsonDataNormalEndow.data.forEach((el) => {
+    const item: CreateMsgNormalEndowment = el;
+    endowmentDataNormal.push(item);
   });
 
   // Setup endowments
-  console.log(chalk.yellow("\nStep 2. Endowments Setup"));
-  await setupEndowments(
+  console.log(chalk.yellow("\nStep 2a. Endowments Setup - Charity"));
+  // await setupCharityEndowments(
+  //   config.networkInfo,
+  //   endowmentDataCharity,
+  //   apTeam,
+  //   cw3ReviewTeam,
+  //   accounts,
+  //   "0.5", // threshold absolute percentage for "charity-cw3"
+  //   604800 // 1 week max voting period time(unit: seconds) for "charity-cw3"
+  // );
+
+  console.log(chalk.yellow("\nStep 2b. Endowments Setup - Normal"));
+  await setupNormalEndowments(
     config.networkInfo,
-    endowmentData,
+    endowmentDataNormal,
     apTeam,
-    cw3ReviewTeam,
-    accounts,
-    "0.5", // threshold absolute percentage for "charity-cw3"
-    604800 // 1 week max voting period time(unit: seconds) for "charity-cw3"
+    accounts
   );
 }
 
@@ -745,7 +768,8 @@ export async function startTests(): Promise<void> {
     apTeam3,
     charity1,
     charity2,
-    charity3,
+    ast1,
+    ast2,
     pleb,
     tca,
     apTeamAccount,
@@ -754,7 +778,8 @@ export async function startTests(): Promise<void> {
     apTreasuryAccount,
     charity1Account,
     charity2Account,
-    charity3Account,
+    ast1Account,
+    ast2Account,
     plebAccount,
     tcaAccount,
     registrar,

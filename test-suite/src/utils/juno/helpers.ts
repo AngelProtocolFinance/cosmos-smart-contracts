@@ -13,28 +13,91 @@ export enum VoteOption {
   NO,
 }
 
-export type Endowment = {
+export type EndowmentFee = {
+  payout_address: string;
+  fee_percentage: string; // "0" - "1"
+  active: boolean;
+};
+
+export type SplitDetails = {
+  max: string;
+  min: string;
+  default: string;
+};
+
+export type CW4Member = {
+  addr: string;
+  weight: number;
+};
+
+export type Delegate = {
+  address: string;
+  expires?: number;
+};
+
+export type SettingsPermissions = {
+  owner_controlled: boolean;
+  gov_controlled: boolean;
+  modifiable: boolean;
+  delegate?: Delegate;
+};
+
+export type EndowmentController = {
+  endowment_controller: SettingsPermissions;
+  beneficiaries_allowlist: SettingsPermissions;
+  contributors_allowlist: SettingsPermissions;
+  maturity_allowlist: SettingsPermissions;
+  profile: SettingsPermissions;
+  earnings_fee: SettingsPermissions;
+  withdraw_fee: SettingsPermissions;
+  deposit_fee: SettingsPermissions;
+  aum_fee: SettingsPermissions;
+  kyc_donors_only: SettingsPermissions;
+  name: SettingsPermissions;
+  image: SettingsPermissions;
+  logo: SettingsPermissions;
+  categories: SettingsPermissions;
+  ignore_user_splits: SettingsPermissions;
+  split_to_liquid: SettingsPermissions;
+};
+
+export type CreateMsgCharityEndowment = {
   ref_id: string;
+  meta: string;
   name: string;
   owner: string;
   tier: number;
-  overview: string;
-  un_sdgs: number[];
+  categories: { sdgs: number[]; general: number[] };
   logo: string;
   image: string;
-  email: string;
-  twitter_handle: string;
-  facebook_page: string;
-  linkedin_page: string;
-  number_of_employees: number;
-  registration_number: string;
-  country_of_origin: string;
-  street_address: string;
-  charity_navigator_rating: string;
-  annual_revenue: string;
-  average_annual_budget: string;
   kyc_donors_only: boolean;
-  meta: string;
+  referral_id?: number;
+};
+
+export type CreateMsgNormalEndowment = {
+  name: string;
+  owner: string;
+  tier: number;
+  categories: { sdgs: number[]; general: number[] };
+  logo: string;
+  image: string;
+  kyc_donors_only: boolean;
+  cw4_members: CW4Member[];
+  cw3_threshold: string;
+  cw3_max_voting_period: number;
+  beneficiaries_allowlist: string[];
+  contributors_allowlist: string[];
+  earnings_fee?: EndowmentFee;
+  withdraw_fee?: EndowmentFee;
+  deposit_fee?: EndowmentFee;
+  aum_fee?: EndowmentFee;
+  dao?: any;
+  proposal_link?: number;
+  endowment_controller?: EndowmentController;
+  parent?: number;
+  split_to_liquid: SplitDetails;
+  ignore_user_splits: boolean;
+  referral_id?: number;
 };
 
 export type Member = {

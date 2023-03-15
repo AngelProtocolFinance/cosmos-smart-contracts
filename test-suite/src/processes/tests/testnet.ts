@@ -33,7 +33,7 @@ import {
   testQuerySettingsControllerConfig,
   testQuerySettingsControllerEndowPermissions,
   testQuerySettingsControllerEndowSettings,
-  testQuerySettingsControllerEndowController
+  testQuerySettingsControllerEndowController,
 } from "./core/settingsController";
 import {
   testDonorSendsToIndexFund,
@@ -177,7 +177,8 @@ export async function testExecute(
   apTeam3: DirectSecp256k1HdWallet,
   charity1: DirectSecp256k1HdWallet,
   charity2: DirectSecp256k1HdWallet,
-  charity3: DirectSecp256k1HdWallet,
+  ast1: DirectSecp256k1HdWallet,
+  ast2: DirectSecp256k1HdWallet,
   pleb: DirectSecp256k1HdWallet,
   tca: DirectSecp256k1HdWallet,
   apTeamAddr: string,
@@ -186,7 +187,8 @@ export async function testExecute(
   apTreasuryAddr: string,
   charity1Addr: string,
   charity2Addr: string,
-  charity3Addr: string,
+  ast1Addr: string,
+  ast2Addr: string,
   plebAddr: string,
   tcaAddr: string,
   registrar: string,
@@ -248,10 +250,15 @@ export async function testExecute(
       wallet: charity2,
       addr: charity2Addr,
     },
-    charity3: {
-      client: await clientSetup(charity3, networkInfo),
-      wallet: charity3,
-      addr: charity3Addr,
+    ast1: {
+      client: await clientSetup(ast1, networkInfo),
+      wallet: ast1,
+      addr: ast1Addr,
+    },
+    ast2: {
+      client: await clientSetup(ast2, networkInfo),
+      wallet: ast2,
+      addr: ast2Addr,
     },
     pleb: {
       client: await clientSetup(pleb, networkInfo),
@@ -363,7 +370,7 @@ export async function testExecute(
   // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 1); // INCOMPLETE: "remove_member" entry should be called from "accounts_contract".
   // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
   // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
-  // await testIndexFundUpdateAllianceMember(actors.apTeam.client, actors.apTeam.addr, indexFund, charity3Addr, { name: "Charity3", logo: undefined, website: undefined });
+  // await testIndexFundUpdateAllianceMember(actors.apTeam.client, actors.apTeam.addr, indexFund, ast1Addr, { name: "Charity3", logo: undefined, website: undefined });
   // await testUpdateFundMembers(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
@@ -438,17 +445,17 @@ export async function testExecute(
   //   actors.charity1.addr,
   //   accounts,
   //   {
-  //     owner: actors.charity1.addr,
+  //     owner: actors.ast1.addr,
   //     name: "Test-Suite Normal Endowment",
-  //     categories: { sdgs: [2], general: [] },
+  //     categories: { sdgs: [], general: [] },
   //     tier: 0,
   //     endow_type: "normal",
   //     logo: "test logo",
   //     image: "test image",
   //     kyc_donors_only: false,
   //     cw4_members: [
-  //       { addr: actors.charity1.addr, weight: 1 },
-  //       { addr: actors.charity2.addr, weight: 1 },
+  //       { addr: actors.ast1.addr, weight: 1 },
+  //       { addr: actors.ast2.addr, weight: 1 },
   //     ],
   //     cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
   //     cw3_max_voting_period: 10000,
@@ -471,14 +478,14 @@ export async function testExecute(
   //   }
   // );
   // await actors.apTeam.client.sendTokens(actors.apTeam.addr, cw3ReviewTeam, [{ denom: "ujunox", amount: "10000000" }], 10000, "initial dust & seed funds");
-  // await testSendDonationToEndowment(
-  //   actors.charity1.client,
-  //   actors.charity1.addr,
-  //   accounts,
-  //   endowId1,
-  //   { denom: config.networkInfo.nativeToken, amount: "100000" }
-  //   // { denom: localjuno.denoms.usdc, amount: "1000000" }
-  // );
+  await testSendDonationToEndowment(
+    actors.charity1.client,
+    actors.charity1.addr,
+    accounts,
+    5,
+    { denom: config.networkInfo.nativeToken, amount: "100000" }
+    // { denom: localjuno.denoms.usdc, amount: "1000000" }
+  );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -631,26 +638,26 @@ export async function testExecute(
   //   networkInfo.chainId
   // );
 
-  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
-  // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
+  await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  await testQueryAccountsEndowment(actors.apTeam.client, accounts, 5);
+  await testQueryAccountsState(actors.apTeam.client, accounts, 5);
   // await testQueryAccountsEndowmentByProposalLink(actors.apTeam.client, accounts, 4); // proposal_link: number
 
-  // await testQuerySettingsControllerConfig(
-  //   actors.apTeam.client,
-  //   settingsController
-  // );
-  // await testQuerySettingsControllerEndowSettings(
-  //   actors.apTeam.client,
-  //   settingsController,
-  //   endowId1
-  // );
-  // await testQuerySettingsControllerEndowController(
-  //   actors.apTeam.client,
-  //   settingsController,
-  //   endowId1
-  // );
-  // await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, endowId2, actors.apTeam.addr);
+  await testQuerySettingsControllerConfig(
+    actors.apTeam.client,
+    settingsController
+  );
+  await testQuerySettingsControllerEndowSettings(
+    actors.apTeam.client,
+    settingsController,
+    5
+  );
+  await testQuerySettingsControllerEndowController(
+    actors.apTeam.client,
+    settingsController,
+    5
+  );
+  await testQuerySettingsControllerEndowPermissions(actors.apTeam.client, settingsController, 4, actors.apTeam.addr);
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);

@@ -13,20 +13,25 @@ import {
   datetimeStringToUTC,
   getWalletAddress,
   Member,
-  Endowment,
+  CreateMsgCharityEndowment,
+  CreateMsgNormalEndowment,
 } from "../utils/juno/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/mainnet";
-import { setupEndowments } from "../processes/setup/endowments/endowments";
+import {
+  setupCharityEndowments,
+  setupNormalEndowments,
+} from "../processes/setup/endowments/endowments";
 import { setupGiftcards } from "../processes/setup/accessories/giftcards";
 // import { setupJunoSwap } from "../processes/setup/junoswap/realnet";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/mainnet";
-import jsonData from "../processes/setup/endowments/endowments_list_mainnet.json";
+import jsonDataCharityEndow from "../processes/setup/endowments/mainnet_endow_charity_list.json";
+import jsonDataNormalEndow from "../processes/setup/endowments/mainnet_endow_normal_list.json";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -183,22 +188,36 @@ export async function startSetupEndowments(): Promise<void> {
   await initialize();
 
   // parse endowment JSON data
-  const endowmentData: Endowment[] = [];
-  jsonData.data.forEach((el) => {
-    const item: Endowment = el;
-    endowmentData.push(item);
+  const endowmentDataCharity: CreateMsgCharityEndowment[] = [];
+  jsonDataCharityEndow.data.forEach((el) => {
+    const item: CreateMsgCharityEndowment = el;
+    endowmentDataCharity.push(item);
+  });
+
+  const endowmentDataNormal: CreateMsgNormalEndowment[] = [];
+  jsonDataNormalEndow.data.forEach((el) => {
+    const item: CreateMsgNormalEndowment = el;
+    endowmentDataNormal.push(item);
   });
 
   // Setup endowments
-  console.log(chalk.yellow("\nStep 2. Endowments Setup"));
-  await setupEndowments(
+  console.log(chalk.yellow("\nStep 2a. Endowments Setup - Charity"));
+  await setupCharityEndowments(
     config.networkInfo,
-    endowmentData,
+    endowmentDataCharity,
     apTeam,
     cw3ReviewTeam,
     accounts,
     "0.5", // threshold absolute percentage for "charity-cw3"
     604800 // 1 week max voting period time(unit: seconds) for "charity-cw3"
+  );
+
+  console.log(chalk.yellow("\nStep 2b. Endowments Setup - Normal"));
+  await setupNormalEndowments(
+    config.networkInfo,
+    endowmentDataNormal,
+    apTeam,
+    accounts
   );
 }
 

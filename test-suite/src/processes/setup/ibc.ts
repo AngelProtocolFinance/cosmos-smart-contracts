@@ -68,7 +68,7 @@ const IbcVersion = "ica-vaults-v1";
 export async function setupIBC(): Promise<void> {
   junoIbcSetupper = await customSigningCosmWasmClient(
     junod,
-    localjuno.mnemonicKeys.charity3
+    localjuno.mnemonicKeys.ast1
   );
   await deployJunoIcaContracts();
 
