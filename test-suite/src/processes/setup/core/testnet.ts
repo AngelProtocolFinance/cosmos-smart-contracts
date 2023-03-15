@@ -107,7 +107,9 @@ export async function setupCore(
   );
   await turnOverApTeamMultisig();
 
-  console.log("\nSettings arranged contract addresses:\n", `
+  console.log(
+    "\nSettings arranged contract addresses:\n",
+    `
     registrar:
       "${registrar}",
     cw4GrpApTeam:
@@ -125,7 +127,8 @@ export async function setupCore(
       "${cw3ReviewTeam}",
     swapRouter:
       "${swapRouter}",
-    `);
+    `
+  );
 }
 
 async function setup(

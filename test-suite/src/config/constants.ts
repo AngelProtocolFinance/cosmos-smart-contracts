@@ -27,11 +27,10 @@ export const testnet = {
       "eager warrior prison into alarm motion annual giggle project silver fabric hover garlic satisfy beach",
     charity2:
       "add buzz humor jump float rotate test rural jazz cave armor pattern update casino undo",
-    charity3:
-      "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
+    ast1: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
+    ast2: "audit sibling loud strong assume save nose salon travel describe debate pioneer",
     pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
-
     junoIbcClient:
       "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
   },
@@ -60,7 +59,8 @@ export const testnet = {
     swapRouter:
       "juno1pfxh40rmr0wlcr3peqhk4h2xrcuzkvezpnr47n9ufp23mp5m0w7qn7sjld",
     donationMatching: "",
-    giftcards: "juno138x649c22xxuark66pwwwwyya4xy4lkka4hcxgtfutclxakp5ltqv8dz9j",
+    giftcards:
+      "juno138x649c22xxuark66pwwwwyya4xy4lkka4hcxgtfutclxakp5ltqv8dz9j",
     vaultLocked1: "",
     vaultLiquid1: "",
     vaultLocked2: "",

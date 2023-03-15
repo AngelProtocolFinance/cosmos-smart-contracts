@@ -8,7 +8,10 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import {
   sendTransaction,
   sendApplicationViaCw3Proposal,
-  Endowment,
+  CreateMsgCharityEndowment,
+  CreateMsgNormalEndowment,
+  getWalletAddress,
+  clientSetup,
 } from "../../../utils/juno/helpers";
 
 let client: SigningCosmWasmClient;
@@ -18,9 +21,9 @@ let accounts: string;
 let cw3ReviewTeam: string;
 
 // setup charity endowments
-export async function setupEndowments(
+export async function setupCharityEndowments(
   networkInfo: any,
-  endowmentData: Endowment[],
+  endowmentData: CreateMsgCharityEndowment[],
   apTeamWallet: DirectSecp256k1HdWallet,
   cw3ReviewTeam: string,
   accountsContract: string,
@@ -33,7 +36,7 @@ export async function setupEndowments(
   let prom = Promise.resolve();
   endowmentData.forEach((item) => {
     prom = prom.then(async () => {
-      console.log(`Building new endowment for owner: ${item.owner}`);
+      console.log(`Building new charity endowment for owner: ${item.owner}`);
       const endow_id = await sendApplicationViaCw3Proposal(
         networkInfo,
         apTeam,
@@ -45,7 +48,7 @@ export async function setupEndowments(
           owner: item.owner,
           maturity_time: undefined,
           name: item.name,
-          categories: { sdgs: item.un_sdgs, general: [] },
+          categories: item.categories,
           tier: item.tier,
           logo: item.logo,
           image: item.image,
@@ -73,6 +76,70 @@ export async function setupEndowments(
           ignore_user_splits: false,
         },
         [apTeam]
+      );
+      console.log(chalk.green(`> Endowment ID: ${endow_id} - Done!`));
+    });
+  });
+
+  await prom;
+}
+
+// setup normal endowments
+export async function setupNormalEndowments(
+  networkInfo: any,
+  endowmentData: CreateMsgNormalEndowment[],
+  apTeamWallet: DirectSecp256k1HdWallet,
+  accountsContract: string
+): Promise<void> {
+  apTeam = apTeamWallet;
+  accounts = accountsContract;
+  const sender_addr = await getWalletAddress(apTeamWallet);
+  const sender_client = await clientSetup(apTeamWallet, networkInfo);
+  let prom = Promise.resolve();
+  endowmentData.forEach((item) => {
+    prom = prom.then(async () => {
+      console.log(`Building new normalized endowment for owner: ${item.owner}`);
+      const res = await sendTransaction(sender_client, sender_addr, accounts, {
+        create_endowment: {
+          owner: item.owner,
+          maturity_time: undefined,
+          name: item.name,
+          categories: item.categories,
+          tier: item.tier,
+          logo: item.logo,
+          image: item.image,
+          endow_type: "normal",
+          cw4_members: item.cw4_members,
+          kyc_donors_only: item.kyc_donors_only,
+          cw3_threshold: {
+            absolute_percentage: { percentage: item.cw3_threshold },
+          },
+          cw3_max_voting_period: item.cw3_max_voting_period,
+          beneficiaries_allowlist: item.beneficiaries_allowlist,
+          contributors_allowlist: item.contributors_allowlist,
+          earnings_fee: item.earnings_fee ? item.earnings_fee : undefined,
+          withdraw_fee: item.withdraw_fee ? item.withdraw_fee : undefined,
+          deposit_fee: item.deposit_fee ? item.deposit_fee : undefined,
+          aum_fee: item.aum_fee ? item.aum_fee : undefined,
+          dao: item.dao ? item.dao : undefined,
+          proposal_link: item.proposal_link ? item.proposal_link : undefined,
+          endowment_controller: item.endowment_controller
+            ? item.endowment_controller
+            : undefined,
+          parent: item.parent ? item.parent : undefined,
+          split_to_liquid: item.split_to_liquid,
+          ignore_user_splits: item.ignore_user_splits,
+          referral_id: item.referral_id ? item.referral_id : undefined,
+        },
+      });
+      const endow_id = await parseInt(
+        res.logs[0].events
+          .find((event) => {
+            return event.type == "wasm";
+          })
+          ?.attributes.find((attribute) => {
+            return attribute.key == "endow_id";
+          })?.value as string
       );
       console.log(chalk.green(`> Endowment ID: ${endow_id} - Done!`));
     });
