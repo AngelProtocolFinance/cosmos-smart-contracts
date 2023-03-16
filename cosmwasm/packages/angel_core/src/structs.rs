@@ -1,7 +1,7 @@
 use crate::errors::core::ContractError;
 use crate::msgs::subdao_bonding_token::CurveType;
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, StdError, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Expiration;
@@ -357,60 +357,144 @@ impl EndowmentController {
     ) -> Result<(), ContractError> {
         match name.as_str() {
             "beneficiaries_allowlist" => {
-                self.beneficiaries_allowlist = permissions;
-                Ok(())
+                if self.beneficiaries_allowlist.modifiable {
+                    self.beneficiaries_allowlist = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "contributors_allowlist" => {
-                self.contributors_allowlist = permissions;
-                Ok(())
+                if self.contributors_allowlist.modifiable {
+                    self.contributors_allowlist = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "maturity_allowlist" => {
-                self.maturity_allowlist = permissions;
-                Ok(())
+                if self.maturity_allowlist.modifiable {
+                    self.maturity_allowlist = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "split_to_liquid" => {
-                self.split_to_liquid = permissions;
-                Ok(())
+                if self.split_to_liquid.modifiable {
+                    self.split_to_liquid = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "ignore_user_splits" => {
-                self.ignore_user_splits = permissions;
-                Ok(())
+                if self.ignore_user_splits.modifiable {
+                    self.ignore_user_splits = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "earnings_fee" => {
-                self.earnings_fee = permissions;
-                Ok(())
+                if self.earnings_fee.modifiable {
+                    self.earnings_fee = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "withdraw_fee" => {
-                self.withdraw_fee = permissions;
-                Ok(())
+                if self.withdraw_fee.modifiable {
+                    self.withdraw_fee = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "deposit_fee" => {
-                self.deposit_fee = permissions;
-                Ok(())
+                if self.deposit_fee.modifiable {
+                    self.deposit_fee = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "aum_fee" => {
-                self.aum_fee = permissions;
-                Ok(())
+                if self.aum_fee.modifiable {
+                    self.aum_fee = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "kyc_donors_only" => {
-                self.kyc_donors_only = permissions;
-                Ok(())
+                if self.kyc_donors_only.modifiable {
+                    self.kyc_donors_only = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "name" => {
-                self.name = permissions;
-                Ok(())
+                if self.name.modifiable {
+                    self.name = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "image" => {
-                self.image = permissions;
-                Ok(())
+                if self.image.modifiable {
+                    self.image = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "logo" => {
-                self.logo = permissions;
-                Ok(())
+                if self.logo.modifiable {
+                    self.logo = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             "categories" => {
-                self.categories = permissions;
-                Ok(())
+                if self.categories.modifiable {
+                    self.categories = permissions;
+                    Ok(())
+                } else {
+                    Err(ContractError::Std(StdError::generic_err(
+                        "You are attempting to modify a field which has been locked forever",
+                    )))
+                }
             }
             _ => Err(ContractError::InvalidInputs {}),
         }
