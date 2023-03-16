@@ -7,13 +7,14 @@ use angel_core::structs::{
 };
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Addr, Decimal, StdError};
+use std::str::Utf8Error;
 
 const MOCK_CW3_CODE_ID: u64 = 18;
 const MOCK_CW4_CODE_ID: u64 = 19;
 const AP_TEAM: &str = "juno1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const REVIEW_TEAM: &str = "juno1rcznds2le2eflj3y4e8ep3e4upvq04sc65xxxx";
 const USDC: &str = "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4";
-const STRATEGY_KEY: &str = "strategy-native";
+const STRATEGY_KEY: Result<&str, Utf8Error> = std::str::from_utf8(&[0, 1, 3, 1]);
 const CHAIN_ID: &str = "juno";
 
 fn instantiate_msg() -> InstantiateMsg {
@@ -179,7 +180,7 @@ fn test_add_update_and_remove_strategy() {
     let _res = execute(deps.as_mut(), mock_env(), info, add_network_info_msg).unwrap();
 
     let add_strategy_msg = ExecuteMsg::StrategyAdd {
-        strategy_key: STRATEGY_KEY.to_string(),
+        strategy_key: STRATEGY_KEY.unwrap().to_string(),
         strategy: StrategyParams {
             approval_state: StrategyApprovalState::Approved,
             locale: StrategyLocale::Native,
@@ -191,12 +192,12 @@ fn test_add_update_and_remove_strategy() {
     };
 
     let update_strategy_msg = ExecuteMsg::StrategyUpdate {
-        strategy_key: STRATEGY_KEY.to_string(),
+        strategy_key: STRATEGY_KEY.unwrap().to_string(),
         approval_state: StrategyApprovalState::WithdrawOnly,
     };
 
     let remove_strategy_msg = ExecuteMsg::StrategyRemove {
-        strategy_key: STRATEGY_KEY.to_string(),
+        strategy_key: STRATEGY_KEY.unwrap().to_string(),
     };
 
     // Only contract owner can add/remove/update a strategy
@@ -235,7 +236,7 @@ fn test_add_update_and_remove_strategy() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::Strategy {
-            strategy_key: STRATEGY_KEY.to_string(),
+            strategy_key: STRATEGY_KEY.unwrap().to_string(),
         },
     )
     .unwrap();
@@ -253,7 +254,7 @@ fn test_add_update_and_remove_strategy() {
     // update strategy status
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::StrategyUpdate {
-        strategy_key: STRATEGY_KEY.to_string(),
+        strategy_key: STRATEGY_KEY.unwrap().to_string(),
         approval_state: StrategyApprovalState::WithdrawOnly,
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -263,7 +264,7 @@ fn test_add_update_and_remove_strategy() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::Strategy {
-            strategy_key: STRATEGY_KEY.to_string(),
+            strategy_key: STRATEGY_KEY.unwrap().to_string(),
         },
     )
     .unwrap();
@@ -276,7 +277,7 @@ fn test_add_update_and_remove_strategy() {
     // remove strategy
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::StrategyRemove {
-        strategy_key: STRATEGY_KEY.to_string(),
+        strategy_key: STRATEGY_KEY.unwrap().to_string(),
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
@@ -285,7 +286,7 @@ fn test_add_update_and_remove_strategy() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::Strategy {
-            strategy_key: STRATEGY_KEY.to_string(),
+            strategy_key: STRATEGY_KEY.unwrap().to_string(),
         },
     )
     .unwrap_err();

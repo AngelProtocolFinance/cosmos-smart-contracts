@@ -1,6 +1,6 @@
 use crate::state::{CONFIG, CONFIG_EXTENSION, FEES, NETWORK_CONNECTIONS, STRATEGIES};
 use angel_core::msgs::registrar::*;
-use cosmwasm_std::{Decimal, Deps, StdResult};
+use cosmwasm_std::{Decimal, Deps, StdError, StdResult};
 use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -69,9 +69,17 @@ pub fn query_config_extension(deps: Deps) -> StdResult<ConfigExtensionResponse> 
 }
 
 pub fn query_strategy(deps: Deps, strategy_key: String) -> StdResult<StrategyDetailResponse> {
+    // check the strategy key provided is correct length of bytes (4)
+    let strat_bytes = strategy_key.as_bytes();
+    if strat_bytes.len() != 4 {
+        return Err(StdError::InvalidDataSize {
+            expected: 4_u64,
+            actual: strat_bytes.len() as u64,
+        });
+    }
     // this fails if no vault is found
     Ok(StrategyDetailResponse {
-        strategy: STRATEGIES.load(deps.storage, strategy_key.as_bytes())?,
+        strategy: STRATEGIES.load(deps.storage, &strat_bytes)?,
     })
 }
 
