@@ -13,4 +13,5 @@ pub mod subdao;
 pub mod subdao_bonding_token;
 pub mod swap_router;
 pub mod vault;
+pub mod vault_router;
 pub mod ve_token;

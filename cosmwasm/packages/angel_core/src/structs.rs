@@ -587,6 +587,37 @@ pub struct StrategyParams {
     pub liquid_addr: Option<Addr>, // for EVM Registrars can just hold a 0x00000 for Non-Native?
 }
 
+/// @param destination_chain The Axelar string name of the blockchain that will receive redemptions/refunds
+/// @param strategy_id The 4 byte truncated keccak256 hash of the strategy name, i.e. bytes4(keccak256("Goldfinch"))
+/// @param selector The Vault method that should be called
+/// @param account_id The endowment uid
+/// @param token The token (if any) that was forwarded along with the calldata packet by GMP (IBC denom)
+/// @param lock_amt The amount of said token that is intended to interact with the locked vault
+/// @param liq_amt The amount of said token that is intended to interact with the liquid vault
+#[cw_serde]
+pub struct VaultActionData {
+    pub destination_chain: String,
+    pub strategy_id: String,
+    pub selector: String,
+    pub account_ids: Vec<u32>,
+    pub token: String,
+    pub lock_amt: Uint128,
+    pub liq_amt: Uint128,
+}
+
+impl VaultActionData {
+    pub fn validate_amounts(&self, fund_amount: Uint128) -> bool {
+        // amt fwd equal expected amt and
+        // check that at least one vault is expected to receive a deposit
+        if fund_amount == (self.liq_amt + self.lock_amt)
+            && (self.lock_amt > Uint128::zero() || self.liq_amt > Uint128::zero())
+        {
+            return true;
+        }
+        false
+    }
+}
+
 #[cw_serde]
 pub struct StrategyInvestment {
     pub strategy_key: String,

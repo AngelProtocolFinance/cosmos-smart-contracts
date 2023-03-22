@@ -52,13 +52,18 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         amount: Uint128, // vault tokens to be burned
     },
+    RedeemAll {
+        endowment_id: u32,
+    },
     /// reinvest vault assets from self (if AccountType::Liquid)
     /// over to it's AccountType::Locked (sibling) vault
     ReinvestToLocked {
         endowment_id: u32,
         amount: Uint128,
     },
-    Harvest {},
+    Harvest {
+        account_ids: Vec<u32>,
+    },
     RestakeClaimReward {
         reward_token_bal_before: Uint128,
     },
