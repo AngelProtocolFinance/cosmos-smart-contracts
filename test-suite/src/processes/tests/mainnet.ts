@@ -334,6 +334,11 @@ export async function testExecute(
   //   status: 3,
   //   beneficiary: { wallet: { address: apTeamAddr } }
   // });
+  // await testUpdateEndowmentStatus(juno, apTeamAddr, accounts, {
+  //   endowment_id: 159,
+  //   status: 3,
+  //   beneficiary: { endowment: { id: 166 } }
+  // });
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
@@ -372,7 +377,7 @@ export async function testExecute(
   //   "5000000000", // deposit
   //   100800, // snapshot period
   //   undefined, // unbonding period
-  //   undefined // gov_hodler_contract
+  //   undefined // gov_hodler
   // );
   // await testGovResetClaims(juno, apTeamAddr, haloGov, [apTeamAddr]);
   // await testQueryGovConfig(juno, haloGov);

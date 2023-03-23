@@ -125,7 +125,7 @@ async function initialize() {
   haloCommunity = config.halo.community_contract;
   haloDistributor = config.halo.distributor_contract;
   haloGov = config.halo.gov_contract;
-  haloGovHodler = config.halo.gov_hodler_contract;
+  haloGovHodler = config.halo.gov_hodler;
   haloStaking = config.halo.staking_contract;
   haloVesting = config.halo.vesting_contract;
 

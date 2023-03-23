@@ -11,6 +11,7 @@ export const localjuno = {
     gasPrice: "0.01ujuno",
     axelarGateway: "axelar1dv4u5k73pzqrxlzujxg3qp8kvc3pje7jtdvu72npnt5zhq05ejcsn5qme5",
     axelarIbcChannel: "channel-7",
+    axelarChainId: "juno",
   },
 
   mnemonicKeys: {
@@ -113,7 +114,7 @@ export const localjuno = {
     community_contract: "",
     distributor_contract: "",
     gov_contract: "",
-    gov_holder: "",
+    gov_hodler: "",
     staking_contract: "",
     vesting_contract: "",
   },
