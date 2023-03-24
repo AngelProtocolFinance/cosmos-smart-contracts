@@ -105,16 +105,17 @@ pub fn strategy_add(
     // check that an approved network connection was set for the StrategyParams
     let _network = NETWORK_CONNECTIONS.load(deps.storage, &strategy.chain)?;
 
+    // check the strategy key provided is correct length of bytes (4)
+    let strat_bytes = strategy_key.as_bytes();
+    if strat_bytes.len() != 4 {
+        return Err(ContractError::InvalidInputs {});
+    }
     // check that the vault does not already exist for a given address in storage
     // add new strategy if all looks good
-    STRATEGIES.update(
-        deps.storage,
-        &strategy_key.as_bytes(),
-        |existing| match existing {
-            Some(_) => Err(ContractError::StrategyAlreadyExists {}),
-            None => Ok(strategy),
-        },
-    )?;
+    STRATEGIES.update(deps.storage, &strat_bytes, |existing| match existing {
+        Some(_) => Err(ContractError::StrategyAlreadyExists {}),
+        None => Ok(strategy),
+    })?;
     Ok(Response::default())
 }
 
@@ -129,8 +130,14 @@ pub fn strategy_remove(
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
+
+    // check the strategy key provided is correct length of bytes (4)
+    let strat_bytes = strategy_key.as_bytes();
+    if strat_bytes.len() != 4 {
+        return Err(ContractError::InvalidInputs {});
+    }
     // remove the Strategy from storage
-    STRATEGIES.remove(deps.storage, &strategy_key.as_bytes());
+    STRATEGIES.remove(deps.storage, &strat_bytes);
     Ok(Response::default())
 }
 
@@ -146,8 +153,14 @@ pub fn strategy_update(
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
+
+    // check the strategy key provided is correct length of bytes (4)
+    let strat_bytes = strategy_key.as_bytes();
+    if strat_bytes.len() != 4 {
+        return Err(ContractError::InvalidInputs {});
+    }
     // try to look up the given strategy in Storage
-    let mut strategy = STRATEGIES.load(deps.storage, strategy_key.as_bytes())?;
+    let mut strategy = STRATEGIES.load(deps.storage, &strat_bytes)?;
 
     // update strategy with approval state from passed arg
     strategy.approval_state = approval_state;

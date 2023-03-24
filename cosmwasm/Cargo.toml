@@ -19,6 +19,7 @@ members = [
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/donation-match",
     "contracts/normalized-endowment/fee-distributor",
+    "contracts/vaults/vault-router",
 ]
 
 exclude = [
