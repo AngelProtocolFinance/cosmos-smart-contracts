@@ -162,12 +162,12 @@ How to know if LocalTerra is working properly?
 ### Compile contracts
 
 ```bash
-# .zshrc or .bashrc
+# In ~/.zshrc or ~/.bashrc
 # set the optimizer version to whichever latest version of optimizer (currently it is 0.11.5):
 alias workspace-optimizer='docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/workspace-optimizer:0.12.4'
+  cosmwasm/workspace-optimizer:0.12.10'
 ```
 
 ```bash
@@ -199,43 +199,28 @@ nano ./src/config/localjunoConstants.ts
 
 ### Run full setup of contracts & all tests
 
-The npm commands follow a formula to help make it easier to remember commands and ensure we know exactly what we're running and where. It is setup as follows:
-`npm run < network >-< action >-< module >`
-
-Network options:
-
+The `yarn tests` command walks you through the process of running actions against our contracts on the various networks we support. To help make it easier we've setup CLI prompts to collect: 
+1. The Network you want to interact with.
 - `localjuno`
 - `testnet`
 - `mainnet`
+- `localterra`
+- `localibc`
 
-Action options:
-
+2. The Action you want to take. 
+Based on your network chosen in step #1, the actions may vary. Valid options will be presented to you in a list. In general, actions are as follows:
 - `setup`: instantiates and configures all contracts for a module
 - `migrate`: migrates all contracts for a module (using wasms in the respective repos)
-- `tests`: runs all tests that are active the main tests file (`/src/tests/<testnet | mainnet>.ts`) [AN: LocalJuno & TestNet share the testnet tests]
+- `tests`: runs all tests that are active/uncommented in the main tests file (`/src/tests/<testnet | mainnet>.ts`) [AN: LocalJuno & TestNet share the testnet tests]
 
-Module options:
-
+3. OPTIONAL: Target for action
+This specifies the exact target of the action, where more than one is possible. It's only applicable to `setup` & `migrate` actions. General info about the target categories and what they cover:
 - `core`: Registrar, Accounts, Index Fund, Multisigs, Vaults, etc
 - `junoswap`: JunoSwap HALO CW20 token, HALO/axlUSDC Pair, & HALO/axlUSDC Pair LP Token
 - `halo`: All "support" contracts for HALO Token (gov, collector, distributor, vesting, etc)
 
-#### Complete steps for the setup of AP contracts ecosystem & running test (ex. using LocalJuno)
 
-```bash
-npm install
-npm run test:localjuno-setup-core
-npm run test:localjuno-setup-junoswap
-npm run test:localjuno-setup-halo
-npm run test:localjuno-tests
-```
+**NOTE:** After each of the `setup` action commands is executed, you may see contract addresses or wasm code information displayed. That will need to updated in the `./src/config/constants.ts` file before proceeding to run the next action commands. These commands build upon on another, with `setup` being the starting point for testing on localjuno.
 
-**NOTE:** After each of the setup commands, you may see key contract addresses or wasm codes that will need to updated in your constants file before proceeding to run the next command. These commands build upon on another.
-
-**ALSO NOTE:** To run the above on other networks, simply swap out the network option in the npm command.
 
 We are building off the excellent work done by 0xLarry (from whom we lovingly :heart: ~~stole~~ borrowed).
-
-**ALSO NOTE:** From `v2`, the test scripts related to `lbp` contracts are not maintained.
-The reason is that they are no more needed from `v2`.
-We just keep them for completeness.

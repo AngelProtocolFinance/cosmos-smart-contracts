@@ -19,6 +19,7 @@ Cargo.lock
 **/*.rs.bk
 
 # yarn stuff that we can ignore
+yarn-error.log
 .yarn/*
 !.yarn/cache
 !.yarn/patches

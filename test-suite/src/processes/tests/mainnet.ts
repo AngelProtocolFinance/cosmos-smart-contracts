@@ -341,7 +341,7 @@ export async function testExecute(
   // });
 
   // Test query
-  // await testQueryRegistrarConfig(juno, registrar);
+  await testQueryRegistrarConfig(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);

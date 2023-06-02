@@ -147,7 +147,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet phoenix-1
   networkInfo: {
-    url: "https://juno-rpc.angelprotocol.io",
+    url: "https://rpc-juno.itastakers.com",
     chainId: "juno-1",
     walletPrefix: "juno",
     nativeToken: "ujuno",

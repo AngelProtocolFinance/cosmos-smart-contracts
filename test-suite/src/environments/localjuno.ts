@@ -29,8 +29,10 @@ import { setupLoopVaults } from "../processes/setup/vaults/loop";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/testnet";
-import jsonDataCharityEndow from "../processes/setup/endowments/testnet_endow_charity_list.json";
-import jsonDataNormalEndow from "../processes/setup/endowments/testnet_endow_normal_list.json";
+import {
+  endowListCharity,
+  endowListNormal,
+} from "../processes/setup/endowments/testnetEndowLists";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -476,24 +478,11 @@ export async function startSetupEndowments(): Promise<void> {
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   await initialize();
 
-  // parse endowment JSON data
-  const endowmentDataCharity: CreateMsgCharityEndowment[] = [];
-  jsonDataCharityEndow.data.forEach((el) => {
-    const item: CreateMsgCharityEndowment = el;
-    endowmentDataCharity.push(item);
-  });
-
-  const endowmentDataNormal: CreateMsgNormalEndowment[] = [];
-  jsonDataNormalEndow.data.forEach((el) => {
-    const item: CreateMsgNormalEndowment = el;
-    endowmentDataNormal.push(item);
-  });
-
   // Setup endowments
   console.log(chalk.yellow("\nStep 2a. Endowments Setup - Charity"));
   await setupCharityEndowments(
     config.networkInfo,
-    endowmentDataCharity,
+    endowListCharity,
     apTeam,
     cw3ReviewTeam,
     accounts,
@@ -504,7 +493,7 @@ export async function startSetupEndowments(): Promise<void> {
   console.log(chalk.yellow("\nStep 2b. Endowments Setup - Normal"));
   await setupNormalEndowments(
     config.networkInfo,
-    endowmentDataNormal,
+    endowListNormal,
     apTeam,
     accounts
   );
