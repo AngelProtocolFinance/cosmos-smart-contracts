@@ -68,6 +68,7 @@ import {
   testQueryProposal,
   testQueryProposalList,
   testQueryMultisigConfig,
+  testQueryApplicationsCw3Balances,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -315,6 +316,7 @@ export async function testExecute(
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
   // await testQueryMultisigConfig(actors.apTeam.client, cw3ReviewTeam);
+  // await testQueryApplicationsCw3Balances(actors.apTeam.client, cw3ReviewTeam);
 
   /* --- GIFTCARD contract --- */
   // await testSendDepositToGiftcards(actors.apTeam.client, actors.apTeam.addr, giftcards, { denom: "ujunox", amount: "4206900" });

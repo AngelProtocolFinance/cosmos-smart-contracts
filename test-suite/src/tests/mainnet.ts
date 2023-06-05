@@ -46,6 +46,7 @@ import {
   testQueryProposal,
   testQueryProposalList,
   testQueryMultisigConfig,
+  testQueryApplicationsCw3Balances,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -146,6 +147,7 @@ export async function testExecute(
   // await testQueryProposal(juno, cw3ReviewTeam, 181);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
   // await testQueryMultisigThreshold(juno, cw3ReviewTeam);
+  // await testQueryApplicationsCw3Balances(juno, cw3ReviewTeam);
 
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
@@ -341,7 +343,7 @@ export async function testExecute(
   // });
 
   // Test query
-  await testQueryRegistrarConfig(juno, registrar);
+  // await testQueryRegistrarConfig(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);

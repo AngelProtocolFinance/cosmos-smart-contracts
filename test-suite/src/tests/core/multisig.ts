@@ -300,6 +300,20 @@ export async function testUpdateCw3ApplicationsConfig(
   console.log(chalk.green(" Passed!"));
 }
 
+export async function testQueryApplicationsCw3Balances(
+  juno: SigningCosmWasmClient,
+  applications: string
+): Promise<void> {
+  process.stdout.write("Test - Query Applications multisig balances\n");
+  const ujuno_bal: any = await juno.getBalance(applications, "ujuno");
+  console.log("uJUNO", ujuno_bal);
+  const ujunox_bal: any = await juno.getBalance(applications, "ujunox");
+  console.log("uJUNOx", ujunox_bal);
+  const usdc_bal: any = await juno.getBalance(applications, "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034");
+  console.log("axlUSDC", usdc_bal);
+  console.log(chalk.green(" Passed!"));
+}
+
 export async function testQueryMultisigGroupWeight(
   juno: SigningCosmWasmClient,
   multisig_group: string
