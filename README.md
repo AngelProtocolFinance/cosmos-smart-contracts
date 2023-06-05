@@ -179,22 +179,22 @@ workspace-optimizer
 
 You need to tell the test suite where to find the wasms artifacts files locally for the various repos it works with.
 
-In the `src/config` folder there is an example file for setting the parameters that point to your local wasm folders: `wasmPaths.ts.example`
+In the `src/utils/config` folder there is an example file for setting the parameters that point to your local wasm folders: `wasmPaths.ts.example`
 In the newly created file, edit the `wasm_path` object's attributes for the `core` and `lbp` to point to the correct local artifacts folders.
 
 ```bash
-cp ./src/config/wasmPaths.ts.example ./src/config/wasmPaths.ts
-nano ./src/config/wasmPaths.ts
+cp ./src/utils/config/wasmPaths.ts.example ./src/utils/config/wasmPaths.ts
+nano ./src/utils/config/wasmPaths.ts
 ```
 
 ### Optional: LocalJuno constants file setup
 
-In the `src/config` folder there is an example file for setting the constants for your LocalJuno parameters (contracts, init input settings, wallets, etc): `localjunoConstants.ts.example`
+In the `src/utils/config` folder there is an example file for setting the constants for your LocalJuno parameters (contracts, init input settings, wallets, etc): `localjunoConstants.ts.example`
 In the newly created file, edit the `wasm_path` object's attributes for the `core` to point to the correct local artifacts folders.
 
 ```bash
-cp ./src/config/localjunoConstants.ts.example ./src/config/localjunoConstants.ts
-nano ./src/config/localjunoConstants.ts
+cp ./src/utils/config/localjunoConstants.ts.example ./src/utils/config/localjunoConstants.ts
+nano ./src/utils/config/localjunoConstants.ts
 ```
 
 ### Run full setup of contracts & all tests
@@ -220,7 +220,7 @@ This specifies the exact target of the action, where more than one is possible. 
 - `halo`: All "support" contracts for HALO Token (gov, collector, distributor, vesting, etc)
 
 
-**NOTE:** After each of the `setup` action commands is executed, you may see contract addresses or wasm code information displayed. That will need to updated in the `./src/config/constants.ts` file before proceeding to run the next action commands. These commands build upon on another, with `setup` being the starting point for testing on localjuno.
+**NOTE:** After each of the `setup` action commands is executed, you may see contract addresses or wasm code information displayed. That will need to updated in the `./src/utils/config/constants.ts` file before proceeding to run the next action commands. These commands build upon on another, with `setup` being the starting point for testing on localjuno.
 
 
 We are building off the excellent work done by 0xLarry (from whom we lovingly :heart: ~~stole~~ borrowed).

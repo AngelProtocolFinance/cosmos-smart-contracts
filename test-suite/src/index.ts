@@ -1,5 +1,5 @@
 import * as readline from "readline/promises";
-import { TestsUniverse } from "./environments";
+import { TestsUniverse } from "./utils/environments";
 
 //----------------------------------------------------------------------------------------
 // Test-suite for Local, TestNet, and MainNet

@@ -1,0 +1,128 @@
+// ---------------------------------------------------------------------------------------------------
+// LocalJuno information
+// ---------------------------------------------------------------------------------------------------
+export const localjuno = {
+  // LocalJuno
+  networkInfo: {
+    url: "localhost:26657",
+    chainId: "localjuno",
+    walletPrefix: "juno",
+    nativeToken: "ujuno",
+    gasPrice: "0.01ujuno",
+    axelarGateway:
+      "axelar1dv4u5k73pzqrxlzujxg3qp8kvc3pje7jtdvu72npnt5zhq05ejcsn5qme5",
+    axelarIbcChannel: "channel-7",
+    axelarChainId: "juno",
+  },
+
+  mnemonicKeys: {
+    apTeam:
+      "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
+    apTeam2:
+      "knee verify salmon erosion brand ten term three cake help certain bus phrase biology cruel",
+    apTeam3:
+      "move example spice hint gym liberty weasel drink midnight snow forest vital accident glove dignity",
+    apTreasury:
+      "truck vacuum tunnel buzz wealth save come short fit kite poverty fork blade venue sword",
+    charity1:
+      "eager warrior prison into alarm motion annual giggle project silver fabric hover garlic satisfy beach",
+    charity2:
+      "add buzz humor jump float rotate test rural jazz cave armor pattern update casino undo",
+    ast1: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
+    ast2: "audit sibling loud strong assume save nose salon travel describe debate pioneer",
+    pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
+    tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
+  },
+
+  wallets: {
+    keeper: "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642", // AWS KEEPER WALLET (Donatoooor mngmnt wallet for now)
+  },
+
+  denoms: {
+    usdc: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+    usdt: "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+  },
+
+  // Should be updated contract addresses after deploying wasms in the LocalJuno
+  contracts: {
+    registrar: "",
+    indexFund: "",
+    cw4GrpApTeam: "",
+    cw3ApTeam: "",
+    accounts: "",
+    cw4GrpReviewTeam: "",
+    cw3ReviewTeam: "",
+    swapRouter: "",
+    settingsController: "",
+    donationMatching: "",
+    giftcards: "",
+    vaultLocked1: "",
+    vaultLiquid1: "",
+    vaultLocked2: "",
+    vaultLiquid2: "",
+
+    endowId1: 1,
+    endowId2: 2,
+    endowId3: 3,
+    endowId4: 4,
+  },
+
+  // JunoSwap contracts
+  junoswap: {
+    junoswap_token_code: 0,
+    junoswap_factory: "",
+    halo_token_contract: "",
+    halo_luna_pair_contract: "",
+    halo_luna_pair_lp_token: "",
+    initial_halo_supply: "1000000000000000",
+    halo_liquidity: "20000000000000",
+    native_liquidity: "1000000000000",
+  },
+
+  // Loopswap contracts
+  loopswap: {
+    loopswap_token_code: 30,
+    loopswap_pair_code: 31, // fatory: 16, farming: 17,
+
+    loopswap_factory: "",
+    loopswap_farming: "",
+
+    loop_token_contract: "",
+    loop_juno_pair_contract: "",
+    loop_juno_pair_lp_token: "",
+    initial_loop_supply: "1000000000000000",
+    lj_pair_loop_liquidity: "20000000",
+    lj_pair_juno_liquidity: "10000000",
+
+    malo_token_contract: "",
+    malo_juno_pair_contract: "",
+    malo_juno_pair_lp_token: "",
+    initial_malo_supply: "1000000000000000",
+    mj_pair_malo_liquidity: "20000000",
+    mj_pair_juno_liquidity: "10000000",
+
+    kalo_token_contract: "",
+    kalo_juno_pair_contract: "",
+    kalo_juno_pair_lp_token: "",
+    initial_kalo_supply: "1000000000000000",
+    kj_pair_kalo_liquidity: "20000000",
+    kj_pair_juno_liquidity: "10000000",
+
+    malo_kalo_pair_contract: "",
+    malo_kalo_pair_lp_token: "",
+    mk_pair_malo_liquidity: "10000000",
+    mk_pair_kalo_liquidity: "10000000",
+  },
+
+  // HALO support contracts
+  halo: {
+    airdrop_contract: "",
+    collector_contract: "",
+    community_contract: "",
+    distributor_contract: "",
+    gov_contract: "",
+    gov_hodler: "",
+    staking_contract: "",
+    vesting_contract: "",
+  },
+};
