@@ -35,9 +35,7 @@ import { TestsUniverse } from "./utils/environments";
 
   // check if we need to find the sub-aciton target (not needed for tests & any localibc items)
   if (network != "localibc" && action.toLowerCase() != "tests") {
-    const targetOpts: string[] = Object.keys(
-      TestsUniverse[network][action]
-    );
+    const targetOpts: string[] = Object.keys(TestsUniverse[network][action]);
     const target = await rl
       .question(`Target? ${targetOpts} `)
       .then((input) => input.toLowerCase());
