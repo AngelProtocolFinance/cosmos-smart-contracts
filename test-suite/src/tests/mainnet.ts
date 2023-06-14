@@ -40,6 +40,7 @@ import {
   testProposalApprovingEndowment,
   testCw3CastVote,
   testCw3ExecutePoll,
+  testCreateEndowmentCw3,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
@@ -241,7 +242,7 @@ export async function testExecute(
   //   endowments_batch,
   //   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034"
   // );
-  // await testCreateEndowmentCw3s(juno, apTeamAddr, registrar, accounts, endowments_batch);
+  // await testCreateEndowmentCw3(juno, apTeamAddr, registrar, accounts, 176, "juno1...124");
   // await testApTeamChangesEndowmentSettings(juno, apTeamAddr, cw3ApTeam, accounts, endowments_batch);
   // await testCreateNormalEndowment(juno, apTeamAddr, accounts, {
   //   owner: apTeamAddr,

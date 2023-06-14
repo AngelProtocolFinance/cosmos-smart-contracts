@@ -147,11 +147,11 @@ export const testnet = {
 export const mainnet = {
   // MainNet phoenix-1
   networkInfo: {
-    url: "https://rpc-juno.itastakers.com",
+    url: "https://juno-rpc.polkachu.com",
     chainId: "juno-1",
     walletPrefix: "juno",
     nativeToken: "ujuno",
-    gasPrice: "0.025ujuno",
+    gasPrice: "0.075ujuno",
     axelarGateway: "???",
     axelarIbcChannel: "???",
     axelarChainId: "juno",

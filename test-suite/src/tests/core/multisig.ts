@@ -4,6 +4,7 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import {
+  instantiateContract,
   sendTransaction,
   toEncodedBinary,
   VoteOption,
@@ -298,6 +299,43 @@ export async function testUpdateCw3ApplicationsConfig(
     },
   });
   console.log(chalk.green(" Passed!"));
+}
+
+// Create a new CW3 multisig for an existing endowment
+// 1. Instantiate the Endowment CW3 multisig (pass the new owner(s) w/ init msg)
+// 2. Get the new CW3 address from the logs
+export async function testCreateEndowmentCw3(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  accounts: string,
+  endowId: number,
+  newOwner: string
+): Promise<void> {
+  // grab registrar configs (need CW3/CW4 wasm codes)
+  const registrarConfig = await juno.queryContractSmart(registrar, {
+    config: {},
+  });
+  console.log(`CW3 code: ${registrarConfig.cw3_code}`);
+  console.log(`CW4 code: ${registrarConfig.cw4_code}`);
+
+  // grab current endowment state data (curr CW3 owner)
+  const endow = await juno.queryContractSmart(accounts, {
+    endowment: { id: endowId },
+  });
+  console.log(`Curr CW3 owner: ${endow.owner}\n`);
+
+  process.stdout.write("Instantiating new CW3 Endowment contract");
+  await instantiateContract(juno, apTeam, apTeam, registrarConfig.cw3_code, {
+    id: endowId,
+    cw4_members: [{ addr: newOwner, weight: 1 }],
+    cw4_code: registrarConfig.cw4_code,
+    threshold: {
+      absolute_percentage: { percentage: "0.5" },
+    },
+    max_voting_period: { height: 604800 },
+    registrar_contract: registrar,
+  });
 }
 
 export async function testQueryApplicationsCw3Balances(
