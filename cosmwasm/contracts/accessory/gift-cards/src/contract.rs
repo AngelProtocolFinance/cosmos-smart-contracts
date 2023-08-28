@@ -12,7 +12,7 @@ use crate::state::{Config, Deposit, GenericBalance, BALANCES, CONFIG, DEPOSITS};
 // version info for migration info
 const CONTRACT_NAME: &str = "gift-cards";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
-const AP_CROSSCHAIN_ADDR: &str = "juno1kwzx0d3t4m504xj8hluzcvvkyv9qqa7s529642"; // AWS KEEPER WALLET
+const AP_CROSSCHAIN_ADDR: &str = "juno1gkay4pd877tagydvcc8uvasxfuvz7nedpstp83"; // AWS GC Transfers
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
