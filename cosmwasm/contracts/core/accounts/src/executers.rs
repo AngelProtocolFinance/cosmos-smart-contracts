@@ -1579,7 +1579,7 @@ pub fn withdraw(
         asset.check(deps.api, None)?;
         // check for assets with zero amounts and raise error if found
         if asset.amount.is_zero() {
-            return Err(ContractError::InvalidZeroAmount {});
+            return Err(ContractError::ZeroAmount {});
         }
 
         // fetch the amount of an asset held in the state balance
@@ -1877,7 +1877,7 @@ pub fn spend_allowance(
 
     // check for assets with zero amounts and raise error if found
     if asset.amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     // fetch the amount of an asset held in the state balance

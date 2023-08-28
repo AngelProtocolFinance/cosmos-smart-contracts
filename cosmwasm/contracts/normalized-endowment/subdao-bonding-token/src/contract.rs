@@ -80,7 +80,7 @@ pub fn receive_cw20(
     }
 
     if cw20_msg.amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let token_holder_address = deps.api.addr_validate(&cw20_msg.sender)?;
@@ -440,7 +440,7 @@ pub fn execute_transfer(
     amount: Uint128,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let rcpt_addr = deps.api.addr_validate(&recipient)?;
@@ -473,7 +473,7 @@ pub fn execute_burn(
     amount: Uint128,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     // lower balance
@@ -505,7 +505,7 @@ pub fn execute_mint(
     amount: Uint128,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
@@ -546,7 +546,7 @@ pub fn execute_send(
     msg: Binary,
 ) -> Result<Response, ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let rcpt_addr = deps.api.addr_validate(&contract)?;

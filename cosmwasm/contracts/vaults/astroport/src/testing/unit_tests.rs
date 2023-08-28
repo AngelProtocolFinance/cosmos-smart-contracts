@@ -645,7 +645,7 @@ fn test_stake_lp_token_from_deposit() {
         },
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // Computation of `lp_amount` can detect overflow/underflow error.
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
@@ -1348,7 +1348,7 @@ fn test_restake_claim_reward() {
         },
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // Successful run returns several messages
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);

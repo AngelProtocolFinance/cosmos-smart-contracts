@@ -601,7 +601,7 @@ fn test_stake_lp_token_from_deposit() {
         },
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // Only the contract itself can call "StakeLpToken" entry
     let info = mock_info("anyone", &[]);
@@ -1314,7 +1314,7 @@ fn test_restake_claim_reward() {
         },
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // Successful run returns several messages
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);

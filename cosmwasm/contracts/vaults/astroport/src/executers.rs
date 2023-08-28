@@ -296,7 +296,7 @@ pub fn restake_claim_reward(
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
     if reward_amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     // Re-stake the `reward token`s for more yield
@@ -934,7 +934,7 @@ pub fn stake_lp_token(
         .checked_sub(lp_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
     if lp_amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let lp_stake_amount: Uint128;
@@ -1569,7 +1569,7 @@ fn execute_mint(
     amount: Uint128,
 ) -> Result<(), ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let mut config = TOKEN_INFO.load(deps.storage)?;
@@ -1610,7 +1610,7 @@ fn execute_burn(
     amount: Uint128,
 ) -> Result<(), ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     // lower balance

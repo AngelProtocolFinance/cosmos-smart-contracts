@@ -24,7 +24,7 @@ pub enum ContractError {
     InsufficientFunds {},
 
     #[error("Invalid zero amount")]
-    InvalidZeroAmount {},
+    ZeroAmount {},
 
     #[error("Invalid inputs")]
     InvalidInputs {},

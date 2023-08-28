@@ -816,7 +816,7 @@ fn test_deposit() {
         }),
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // There SHOULD be active fund before any deposit
     let info = mock_info(

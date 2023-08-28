@@ -170,7 +170,7 @@ fn test_buy() {
         ExecuteMsg::Receive(cw20_receive_msg),
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // Succeed to "buy"
     let info = mock_info("reserve-token-address", &[]);

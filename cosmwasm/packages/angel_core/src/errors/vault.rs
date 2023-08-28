@@ -15,7 +15,7 @@ pub enum ContractError {
     CannotSetOwnAccount {},
 
     #[error("Invalid zero amount")]
-    InvalidZeroAmount {},
+    ZeroAmount {},
 
     #[error("Minting cannot exceed the cap")]
     CannotExceedCap {},
@@ -52,9 +52,6 @@ impl From<cw20ContractError> for ContractError {
             cw20ContractError::InvalidXmlPreamble {} => ContractError::Std(StdError::GenericErr {
                 msg: "Invalid xml preamble".to_string(),
             }),
-            cw20ContractError::InvalidZeroAmount {} => ContractError::Std(StdError::GenericErr {
-                msg: "Invalid zero amount".to_string(),
-            }),
             cw20ContractError::LogoTooBig {} => ContractError::Std(StdError::GenericErr {
                 msg: "Logo Too Big".to_string(),
             }),
@@ -64,6 +61,9 @@ impl From<cw20ContractError> for ContractError {
             cw20ContractError::Std(e) => ContractError::Std(e),
             cw20ContractError::Unauthorized {} => ContractError::Unauthorized {},
             cw20ContractError::InvalidExpiration {} => todo!(),
+            _ => ContractError::Std(StdError::GenericErr {
+                msg: "Unknown Error".to_string(),
+            }),
         }
     }
 }

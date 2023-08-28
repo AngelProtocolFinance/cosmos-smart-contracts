@@ -45,7 +45,7 @@ pub fn execute_invest(
 
     // make sure it's a non-zero amount
     if deposit_token.amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     // validate the action amounts data (against total funds passed)

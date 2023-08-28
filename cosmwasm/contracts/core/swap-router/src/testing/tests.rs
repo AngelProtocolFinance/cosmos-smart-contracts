@@ -600,7 +600,7 @@ fn test_send_swap_receipt() {
         },
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // Succeed to "send_swap_receipt"
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);

@@ -1200,7 +1200,7 @@ fn execute_mint(
     amount: Uint128,
 ) -> Result<(), ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     let mut config = TOKEN_INFO.load(deps.storage)?;
@@ -1235,7 +1235,7 @@ fn execute_burn(
     amount: Uint128,
 ) -> Result<(), ContractError> {
     if amount == Uint128::zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     // lower balance

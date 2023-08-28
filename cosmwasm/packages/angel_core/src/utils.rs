@@ -257,7 +257,7 @@ pub fn validate_deposit_fund(
 
     // Cannot deposit zero amount
     if fund.amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
 
     Ok(fund)

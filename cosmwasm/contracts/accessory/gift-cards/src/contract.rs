@@ -2,7 +2,6 @@ use cosmwasm_std::{
     entry_point, to_binary, Addr, BankMsg, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut,
     Env, MessageInfo, Response, StdError, StdResult, WasmMsg,
 };
-use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
@@ -10,8 +9,8 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::state::{Config, Deposit, GenericBalance, BALANCES, CONFIG, DEPOSITS};
 
 // version info for migration info
-const CONTRACT_NAME: &str = "gift-cards";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+// const CONTRACT_NAME: &str = "gift-cards";
+// const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const AP_CROSSCHAIN_ADDR: &str = "juno1gkay4pd877tagydvcc8uvasxfuvz7nedpstp83"; // AWS GC Transfers
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -135,7 +134,7 @@ pub fn execute_spend(
     // available balance is not zero & is enough to meet requested amount
     if spendable.amount.is_zero() {
         return Err(StdError::GenericErr {
-            msg: "InvalidZeroAmount".to_string(),
+            msg: "ZeroAmount".to_string(),
         });
     }
     if spendable.amount < fund.amount {
@@ -254,22 +253,6 @@ pub fn query_deposit(deps: Deps, deposit_id: u64) -> StdResult<Deposit> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, StdError> {
-    let ver = get_contract_version(deps.storage)?;
-    // ensure we are migrating from an allowed contract
-    if ver.contract != CONTRACT_NAME {
-        return Err(StdError::GenericErr {
-            msg: "Can only upgrade from same type".to_string(),
-        });
-    }
-    // note: better to do proper semver compare, but string compare *usually* works
-    if ver.version >= CONTRACT_VERSION.to_string() {
-        return Err(StdError::GenericErr {
-            msg: "Cannot upgrade from a newer version".to_string(),
-        });
-    }
-    // set the new version
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, StdError> {
     Ok(Response::default())
 }

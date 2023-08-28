@@ -30,7 +30,7 @@ pub fn send_swap_receipt(
         asset_info.query_balance(&deps.querier, env.contract.address.to_string())?;
     let swap_amount = receiver_balance.checked_sub(prev_balance)?;
     if swap_amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
+        return Err(ContractError::ZeroAmount {});
     }
     // Take care of 2 cases:
     //   - `accounts_contract` should receive the operation result

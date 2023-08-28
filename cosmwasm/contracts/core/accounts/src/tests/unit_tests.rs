@@ -1593,7 +1593,7 @@ fn test_spend_allowance() {
         },
     };
     let err = execute(deps.as_mut(), env.clone(), info, spend_allowance_msg).unwrap_err();
-    assert_eq!(err, ContractError::InvalidZeroAmount {});
+    assert_eq!(err, ContractError::ZeroAmount {});
 
     // "spend_allowance" fails since the amount is too big
     let info = mock_info(&spender.to_string(), &[]);
