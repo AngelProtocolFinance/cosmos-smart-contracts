@@ -24,7 +24,7 @@ export async function testSendDepositToGiftcards(
     juno,
     apTeam,
     giftcards,
-    { deposit: { to_address: undefined } },
+    { Deposit: { to_address: undefined } },
     [coin]
   );
   console.log(chalk.green(" Passed!"));
@@ -40,7 +40,7 @@ export async function testClaimGiftcardsDeposit(
 ): Promise<void> {
   process.stdout.write("Test - Claim a Deposit in Gift Card Contract");
   const res = await sendTransaction(juno, apTeam, giftcards, {
-    claim: { deposit, recipient },
+    Claim: { deposit, recipient },
   });
   console.log(chalk.green(" Passed!"));
 }
@@ -57,7 +57,7 @@ export async function testSpendGiftcardsBalance(
 ): Promise<void> {
   process.stdout.write("Test - Spend from a balance in Gift Card Contract");
   const res = await sendTransaction(juno, apTeam, giftcards, {
-    spend: {
+    Spend: {
       asset: { info: { native: assset_denom }, amount: asset_amount },
       endow_id,
       locked_percentage,
@@ -74,7 +74,7 @@ export async function testQueryGiftcardsBalance(
 ): Promise<void> {
   process.stdout.write("Test - Query Gift Cards Balance for some address");
   const result = await juno.queryContractSmart(giftcards, {
-    balance: { address },
+    Balance: { address },
   });
 
   console.log(result);
@@ -87,7 +87,7 @@ export async function testQueryGiftcardsConfig(
 ): Promise<void> {
   process.stdout.write("Test - Query Gift Cards config");
   const result = await juno.queryContractSmart(giftcards, {
-    config: {},
+    Config: {},
   });
 
   console.log(result);
@@ -101,7 +101,7 @@ export async function testQueryGiftcardsDeposit(
 ): Promise<void> {
   process.stdout.write("Test - Query Gift Cards Deposit record");
   const result = await juno.queryContractSmart(giftcards, {
-    deposit: { deposit_id },
+    Deposit: { deposit_id },
   });
 
   console.log(result);

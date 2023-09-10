@@ -53,7 +53,7 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpReviewTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
-  // await storeAndMigrateContract(juno, apTeam, giftcards, 'fundraising.wasm');
+  // await storeAndMigrateContract(juno, apTeam, fundraising, 'fundraising.wasm');
   // await storeAndMigrateContract(juno, apTeam, giftcards, 'gift_cards.wasm');
   // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
   // await migrateVaults(juno, apTeam, vaultContracts);

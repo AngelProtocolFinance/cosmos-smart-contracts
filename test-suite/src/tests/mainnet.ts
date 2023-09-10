@@ -116,6 +116,14 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
+import {
+  testSendDepositToGiftcards,
+  testClaimGiftcardsDeposit,
+  testSpendGiftcardsBalance,
+  testQueryGiftcardsBalance,
+  testQueryGiftcardsConfig,
+  testQueryGiftcardsDeposit,
+} from "./core/accessories";
 
 export async function testExecute(
   juno: SigningCosmWasmClient,
@@ -366,6 +374,14 @@ export async function testExecute(
   //   indexFund,
   //   "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
   // );
+
+  /* --- GIFTCARD contract --- */
+  // await testSendDepositToGiftcards(juno, apTeamAddr, giftcards, { denom: "ujunox", amount: "4206900" });
+  // await testClaimGiftcardsDeposit(juno, apTeamAddr, giftcards, 1, actors.apTeam2.addr);
+  // await testSpendGiftcardsBalance(juno, apTeam2Addr, giftcards, "ujuno", "100000", 22, "0", "1");
+  // await testQueryGiftcardsConfig(juno, giftcards);
+  // await testQueryGiftcardsDeposit(juno, giftcards, 1);
+  // await testQueryGiftcardsBalance(juno, giftcards, "juno1nat09n7vfkgrv3p78vyan203umugmrkxe9mcrz");
 
   // HALO gov Tests
   // await testGovUpdateConfig(
