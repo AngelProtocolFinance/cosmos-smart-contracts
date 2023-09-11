@@ -8,12 +8,9 @@ import {
   testRejectUnapprovedDonations,
   testApTeamChangesEndowmentSettings,
   testSendDonationToEndowment,
-  testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testQueryAccountsProfile,
   testQueryAccountsState,
-  testQueryAccountsTransactions,
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
@@ -35,9 +32,7 @@ import {
   testQueryIndexFundConfig,
   testQueryIndexFundDeposit,
   testQueryIndexFundFundDetails,
-  testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList,
   testQueryIndexFundInvolvedAddress,
 } from "./core/indexFunds";
 import {
@@ -47,18 +42,19 @@ import {
   testProposalApprovingEndowment,
   testCw3CastVote,
   testCw3ExecutePoll,
+  testCreateEndowmentCw3,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
   testQueryProposal,
   testQueryProposalList,
   testQueryMultisigConfig,
+  testQueryApplicationsCw3Balances,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarVaultList,
   testQueryRegistrarConfig,
-  testQueryRegistrarVault,
+  testQueryRegistrarStrategy,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -122,6 +118,14 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
+import {
+  testSendDepositToGiftcards,
+  testClaimGiftcardsDeposit,
+  testSpendGiftcardsBalance,
+  testQueryGiftcardsBalance,
+  testQueryGiftcardsConfig,
+  testQueryGiftcardsDeposit,
+} from "./core/accessories";
 
 export async function testExecute(
   juno: SigningCosmWasmClient,
@@ -132,7 +136,6 @@ export async function testExecute(
   accounts: string,
   settingsController: string,
   donationMatching: string,
-  endowmentID: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
   cw4GrpReviewTeam: string,
@@ -144,7 +147,7 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
-  giftcards: string,
+  giftcards: string
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testCloseEndowment(juno, apTeamAddr, accounts, 77);
@@ -158,6 +161,7 @@ export async function testExecute(
   // await testQueryProposal(juno, cw3ReviewTeam, 181);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
   // await testQueryMultisigThreshold(juno, cw3ReviewTeam);
+  // await testQueryApplicationsCw3Balances(juno, cw3ReviewTeam);
 
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
@@ -251,7 +255,7 @@ export async function testExecute(
   //   endowments_batch,
   //   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034"
   // );
-  // await testCreateEndowmentCw3s(juno, apTeamAddr, registrar, accounts, endowments_batch);
+  // await testCreateEndowmentCw3(juno, apTeamAddr, registrar, accounts, 176, "juno1...124");
   // await testApTeamChangesEndowmentSettings(juno, apTeamAddr, cw3ApTeam, accounts, endowments_batch);
   // await testCreateNormalEndowment(juno, apTeamAddr, accounts, {
   //   owner: apTeamAddr,
@@ -346,6 +350,11 @@ export async function testExecute(
   //   status: 3,
   //   beneficiary: { wallet: { address: apTeamAddr } }
   // });
+  // await testUpdateEndowmentStatus(juno, apTeamAddr, accounts, {
+  //   endowment_id: 159,
+  //   status: 3,
+  //   beneficiary: { endowment: { id: 166 } }
+  // });
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
@@ -353,18 +362,10 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
-<<<<<<< Updated upstream:test-suite/src/processes/tests/mainnet.ts
-  // await testQueryAccountsEndowmentList(juno, accounts, 1, 20);
-  // await testQueryAccountsState(juno, accounts, 1);
-  // await testQueryAccountsEndowment(juno, accounts, 1);
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsBalance(juno, endowmentContract);
-=======
+  await testQueryAccountsConfig(juno, accounts);
   await testQueryAccountsState(juno, accounts, 77);
   await testQueryAccountsEndowment(juno, accounts, 77);
->>>>>>> Stashed changes:test-suite/src/tests/mainnet.ts
   // await testQueryVaultConfig(juno, anchorVault);
-  // await testQueryAccountsConfig(juno, accounts);
   // await testQueryIndexFundConfig(juno, indexFund);
   // await testQueryIndexFundState(juno, indexFund);
   // await testQueryIndexFundTcaList(juno, indexFund);
@@ -379,6 +380,14 @@ export async function testExecute(
   //   "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
   // );
 
+  /* --- GIFTCARD contract --- */
+  // await testSendDepositToGiftcards(juno, apTeamAddr, giftcards, { denom: "ujunox", amount: "4206900" });
+  // await testClaimGiftcardsDeposit(juno, apTeamAddr, giftcards, 1, actors.apTeam2.addr);
+  // await testSpendGiftcardsBalance(juno, apTeam2Addr, giftcards, "ujuno", "100000", 22, "0", "1");
+  // await testQueryGiftcardsConfig(juno, giftcards);
+  // await testQueryGiftcardsDeposit(juno, giftcards, 1);
+  // await testQueryGiftcardsBalance(juno, giftcards, "juno1nat09n7vfkgrv3p78vyan203umugmrkxe9mcrz");
+
   // HALO gov Tests
   // await testGovUpdateConfig(
   //   juno,
@@ -392,7 +401,7 @@ export async function testExecute(
   //   "5000000000", // deposit
   //   100800, // snapshot period
   //   undefined, // unbonding period
-  //   undefined // gov_hodler_contract
+  //   undefined // gov_hodler
   // );
   // await testGovResetClaims(juno, apTeamAddr, haloGov, [apTeamAddr]);
   // await testQueryGovConfig(juno, haloGov);

@@ -5,14 +5,15 @@ services:
       context: .
       args:
         - arch=${ARCH:-x86_64}
-    command: ./setup_and_run.sh juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y juno1akkesf6xfuny3upfaq6yfvefzfr8jt2jfhvlw2 juno1zc0096jj442gqeypy3scmn94vfu0xfsrtwzkhm juno1kcufszvg4vet0nrnapqrerj6mk8a939mhsnw94 juno122lpgk48n9ue8eduzrr87s35fn7c7l3mgkuzse juno1k7jkmvzkrr3rv4htqvmh63f0fmvm89dfpqc6y5 juno18ppy5rcu2408qytvl8rlgxjqa7rja9xslu8v6s juno1qtajej3gturf3pmzgmrp92vuewltxug0284r8h juno1y82spheyrp2kdrvv00t7z9frcsp5w6a3g4g6m2 juno1k5amrgvkck804vyr6r09x6y5scc922uvyu8q8z
+    command: ./setup_and_run.sh juno16g2rahf5846rxzp3fwlswy08fz8ccuwk03k57y juno1akkesf6xfuny3upfaq6yfvefzfr8jt2jfhvlw2 juno1zc0096jj442gqeypy3scmn94vfu0xfsrtwzkhm juno1kcufszvg4vet0nrnapqrerj6mk8a939mhsnw94 juno122lpgk48n9ue8eduzrr87s35fn7c7l3mgkuzse juno1k7jkmvzkrr3rv4htqvmh63f0fmvm89dfpqc6y5 juno18ppy5rcu2408qytvl8rlgxjqa7rja9xslu8v6s juno1qtajej3gturf3pmzgmrp92vuewltxug0284r8h juno1y82spheyrp2kdrvv00t7z9frcsp5w6a3g4g6m2 juno1k5amrgvkck804vyr6r09x6y5scc922uvyu8q8z juno1kwtvrefq38ap87wnau3ex66d7rtq9vs26lgalt
     ports:
       - 1317:1317 # rest
       - 26656:26656 # p2p
       - 26657:26657 # rpc
     environment:
-      - GAS_LIMIT=30000000
-      - STAKE_TOKEN=ujunox
+      - GAS_LIMIT=${GAS_LIMIT:-10000000}
+      - STAKE_TOKEN=${STAKE_TOKEN:-ujunox}
+      - TIMEOUT_COMMIT=${TIMEOUT_COMMIT:-5s}
       - UNSAFE_CORS=true
       - CHAIN_ID=localjuno
       - FEE_TOKEN=ujuno

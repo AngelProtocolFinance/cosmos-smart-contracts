@@ -3,8 +3,18 @@
 import * as path from "path";
 import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendMessageViaCw3Proposal, sendMessagesViaCw3Proposal, sendTransaction, storeCode, migrateContract, storeAndMigrateContract, toEncodedBinary } from "../../utils/juno/helpers";
-import { wasm_path } from "../../config/wasmPaths";
+import {
+  sendMessageViaCw3Proposal,
+  sendMessagesViaCw3Proposal,
+  sendTransaction,
+  storeCode,
+  migrateContract,
+  storeAndMigrateContract,
+  storeAndMigrateContractViaCw3,
+  storeAndInstantiateContract,
+  toEncodedBinary,
+} from "../utils/helpers/juno";
+import { wasm_path } from "../utils/config/wasmPaths";
 
 // -----------------------------
 // Base functions to migrate contracts with
@@ -21,16 +31,13 @@ export async function migrateCore(
   cw3ReviewTeam: string,
   swapRouter: string,
   settingsController: string,
+  donationMatching: string,
   giftcards: string,
   vaultContracts: string[],
+  axelarGateway: string,
+  axelarIbcChannel: string,
+  axelarChainId: string
 ): Promise<void> {
-<<<<<<< Updated upstream:test-suite/src/processes/migrate/core.ts
-  // run the migrations desired
-  // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 0);
-  // await migrateVaults(juno, apTeam, vaultContracts);
-  // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm', { fee_charity: '0.2', fee_normal: '0.2', settings_controller_contract: settingsController });
-  // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
-=======
   // await storeAndMigrateContract(juno, apTeam, registrar, "registrar.wasm", {
   //   axelar_gateway: axelarGateway,
   //   axelar_ibc_channel: axelarIbcChannel,
@@ -41,15 +48,25 @@ export async function migrateCore(
   // await storeAndMigrateContractViaCw3(juno, apTeam, cw3ApTeam, accounts, "accounts.wasm");
   // await storeAndMigrateContract(juno, apTeam, settingsController, 'accounts_settings_controller.wasm');
   // await storeAndMigrateContractViaCw3(juno, apTeam, cw3ApTeam, settingsController, 'accounts_settings_controller.wasm');
->>>>>>> Stashed changes:test-suite/src/migrate/core.ts
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpReviewTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
-  // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
-  // await storeAndMigrateContract(juno, apTeam, settingsController, 'settings_controller.wasm');
+  // await storeAndMigrateContract(juno, apTeam, fundraising, 'fundraising.wasm');
   // await storeAndMigrateContract(juno, apTeam, giftcards, 'gift_cards.wasm');
+  // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
+  // await migrateVaults(juno, apTeam, vaultContracts);
+  // await migrateEndowmentCw3s(
+  //   juno,
+  //   apTeam,
+  //   cw3ApTeam,
+  //   registrar,
+  //   accounts,
+  //   1,
+  //   25
+  // );
+  // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 1, 50);
 }
 
 // -------------------------------------------------
@@ -64,27 +81,17 @@ async function migrateVaults(
   const codeId = await storeCode(
     juno,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/loopswap_vault.wasm`)
+    path.resolve(__dirname, `${wasm_path.mock_vault}/mock_vault.wasm`)
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-
   process.stdout.write("Migrate Vault contracts\n");
   let prom = Promise.resolve();
   let id = 1;
   vaults.forEach((vault) => {
     // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(
-      () =>
-        new Promise(async (resolve, reject) => {
-          try {
-            await migrateContract(juno, apTeam, vault, codeId, {});
-            console.log(chalk.green(`Vault ${id++} of ${vaults.length} - Done!`));
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        })
-    );
+    prom = prom.then(async () => {
+      await migrateContract(juno, apTeam, vault, codeId, {});
+      console.log(chalk.green(`Vault ${id++} of ${vaults.length} - Done!`));
+    });
   });
 
   await prom;
@@ -100,7 +107,8 @@ async function migrateEndowmentCw3s(
   cw3ApTeam: string,
   registrar: string,
   accounts: string,
-  max_id: number,
+  start_id: number,
+  max_process: number
 ): Promise<void> {
   process.stdout.write("Uploading Endowment CW3 Wasm");
   const codeId = await storeCode(
@@ -108,42 +116,49 @@ async function migrateEndowmentCw3s(
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/cw3_endowment.wasm`)
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
-  process.stdout.write("Ensure Registrar has the latest Endowment CW3 Wasm code set");
-  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, { update_config: { cw3_code: codeId } });
+  process.stdout.write(
+    "Ensure Registrar has the latest Endowment CW3 Wasm code set"
+  );
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
+    update_config: { cw3_code: codeId },
+  });
 
-  process.stdout.write(`Migrate all Endowment CW3 contracts (max id: ${max_id})\n`);
+  process.stdout.write(
+    `Migrate all Endowment CW3 contracts (start ID: ${start_id}; No. to process: ${max_process})\n`
+  );
   let prom = Promise.resolve();
-  let final_msgs: any[] = [];
-  const ids_range = new Array(max_id).fill(0).map((d, i) => i + 1);
+  const final_msgs: any[] = [];
+  const ids_range = new Array(max_process).fill(0).map((d, i) => i + start_id);
   ids_range.forEach((id) => {
     // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(
-      () =>
-        new Promise(async (resolve, reject) => {
-          try {
-            console.log(chalk.yellow(`Building migration message for Endowment ID: ${id}`));
-            const res = await juno.queryContractSmart(accounts, { endowment: { id } });
-            const cw3 = res.owner as string;
-            // push a new migration message to the array
-            final_msgs.push({
-              wasm: {
-                migrate: {
-                  contract_addr: cw3,
-                  new_code_id: codeId,
-                  msg: toEncodedBinary({})
-                },
-              },
-            });
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        })
-    );
+    prom = prom.then(async () => {
+      console.log(
+        chalk.yellow(`Building migration message for Endowment ID: ${id}`)
+      );
+      const res = await juno.queryContractSmart(accounts, {
+        endowment: { id },
+      });
+      const cw3 = res.owner as string;
+      // push a new migration message to the array
+      final_msgs.push({
+        wasm: {
+          migrate: {
+            contract_addr: cw3,
+            new_code_id: codeId,
+            msg: toEncodedBinary({}),
+          },
+        },
+      });
+    });
   });
   await prom;
-  await sendMessagesViaCw3Proposal(juno, apTeam, cw3ApTeam, "Migrate several Endowment multisig contracts", final_msgs);
+  await sendMessagesViaCw3Proposal(
+    juno,
+    apTeam,
+    cw3ApTeam,
+    "Migrate several Endowment multisig contracts",
+    final_msgs
+  );
   console.log(chalk.green(" Done!"));
 }

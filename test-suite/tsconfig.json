@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "strict": true,
     "esModuleInterop": true,
+    "target": "es6",
     "moduleResolution": "node",
-    "preserveConstEnums": true,
-    "resolveJsonModule": true
-  }
+    "sourceMap": true,
+    "outDir": "dist"
+  },
+  "lib": ["es2015"]
 }
