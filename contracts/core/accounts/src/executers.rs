@@ -711,10 +711,11 @@ pub fn distribute_to_beneficiary(
     info: MessageInfo,
     id: u32,
 ) -> Result<Response, ContractError> {
-    if info.sender != env.contract.address {
+    let config = CONFIG.load(deps.storage)?;
+    if !(info.sender == env.contract.address || info.sender == config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    let config = CONFIG.load(deps.storage)?;
+
     let mut state = STATES.load(deps.storage, id)?;
 
     // Consolidate all locked & liquid assets for the closing endowment if going to a wallet,
@@ -804,11 +805,11 @@ pub fn distribute_to_beneficiary(
             }
         }
     }
-
-    // zero out the closing endowment's balances
-    state.balances = BalanceInfo::default();
-    STATES.save(deps.storage, id, &state)?;
-
+    if state.closing_beneficiary != None {
+        // zero out the closing endowment's balances
+        state.balances = BalanceInfo::default();
+        STATES.save(deps.storage, id, &state)?;
+    }
     Ok(Response::default().add_submessages(msgs))
 }
 
