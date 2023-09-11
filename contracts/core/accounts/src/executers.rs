@@ -1629,5 +1629,15 @@ pub fn close_endowment(
 
     Ok(Response::new()
         .add_attribute("action", "close_endowment")
-        .add_submessages(redeem_messages))
+        .add_submessages(redeem_messages)
+        // start distribution of Account SC's balances on hand to the set beneficiary
+        .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(
+                &angel_core::messages::accounts::ExecuteMsg::DistributeToBeneficiary { id },
+            )
+            .unwrap(),
+            funds: vec![],
+        })))
+    )
 }

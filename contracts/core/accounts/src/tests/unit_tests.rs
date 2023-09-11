@@ -863,7 +863,7 @@ fn test_close_endowment() {
         },
     )
     .unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // Check the config & state
     let res = query(
